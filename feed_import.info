@@ -1,0 +1,10 @@
+; $Id$
+
+name = Feed Import
+description = Imports content from XML files using XPATH
+package = Feeds
+version = 1.00-beta
+core = 7.x
+files[] = feed_import.inc.php
+files[] = feed_import_filter.inc.php
+configure = admin/config/feed_import

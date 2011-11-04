@@ -1,0 +1,132 @@
+<?php
+// $Id$
+
+/**
+ * Implements hook_schema().
+ */
+function feed_import_schema() {
+  $schema['feed_import_hashes'] = array(
+    'description' => 'Feed import hashes',
+    'fields' => array(
+          'id' => array(
+            'type' => 'serial',
+            'not null' => TRUE, 
+            'unsigned' => TRUE,
+            'description' => 'Primary key',
+          ),
+          
+          'feed_id' => array(
+            'type' => 'int',
+            'not null' => TRUE, 
+            'unsigned' => TRUE,
+            'description' => 'Feed id',
+          ),
+          
+          'entity_id' => array(
+            'type' => 'int',
+            'not null' => TRUE, 
+            'unsigned' => TRUE,
+            'description' => 'Entity id',
+          ),
+          
+          'hash' => array(
+            'type' => 'varchar',
+            'length' => 32, 
+            'not null' => TRUE, 
+            'description' => 'An uniq hash to identify feed item',
+          ),
+          
+          'expire' => array(
+            'type' => 'int',
+            'unsigned' => TRUE,
+            'default' => 0,
+            'description' => 'Timestamp when item expires. 0 = never expires'
+          )
+    ),
+    'primary key' => array('id'), //set primary key
+  );
+  
+  $schema['feed_import_settings'] = array(
+    'description' => 'Feed import settings',
+    'fields' => array(
+          'id' => array(
+            'type' => 'serial',
+            'not null' => TRUE, 
+            'unsigned' => TRUE,
+            'description' => 'Primary key',
+          ),
+          
+          'enabled' => array(
+            'type' => 'int',
+            'size' => 'tiny',
+            'not null' => TRUE, 
+            'unsigned' => TRUE,
+            'description' => 'If feed is enabled or not',
+          ),
+          
+          'name' => array(
+            'type' => 'varchar',
+            'length' => 255, 
+            'not null' => TRUE, 
+            'description' => 'Feed name',
+          ),
+          
+          'url' => array(
+            'type' => 'varchar',
+            'length' => 255, 
+            'not null' => TRUE, 
+            'description' => 'Url to XML file',
+          ),
+          
+          'time' => array(
+            'type' => 'int',
+            'default' => 0,
+            'description' => 'Seconds to keep items in feed',
+          ),
+          
+          'entity_info' => array(
+            'type' => 'blob',
+            'size' => 'big', 
+            'not null' => TRUE, 
+            'description' => 'Info about entity wich is populated by import',
+          ),
+          
+          'xpath' => array(
+            'type' => 'blob',
+            'size' => 'big', 
+            'not null' => TRUE, 
+            'description' => 'XPATH settings',
+          ),
+    ),
+    'primary key' => array('id'), //set primary key
+  );
+    
+  return $schema;
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function feed_import_uninstall() {
+  db_drop_table('feed_import_hashes');
+  db_drop_table('feed_import_settings');
+  $vars = array(
+                'feed_import_field_param_name',
+                'feed_import_entity_info',
+                'feed_import_entity_info_expire',
+                'feed_import_entity_info_keep',
+                'feed_import_insert_hashes_chunk',
+                'feed_import_hash_property',
+                'feed_import_update_ids_chunk',
+                'feed_import_processFeedChunked_xml_head',
+                'feed_import_processFeedChunked_chunk_length',
+                'feed_import_last_executed_import',
+                'feed_import_time_between_imports',
+                'feed_import_last_imported_feed',
+                'feed_import_delete_items_per_cron',
+                'feed_import_import_running',
+                'feed_import_use_cron',
+                );
+  array_map('variable_del', $vars);
+}
