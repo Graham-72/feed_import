@@ -1,20 +1,28 @@
 <?php
+
+/**
+ * @file
+ * User interface, cron functions for feed_import module
+ */
+
 /**
  * Implements hook_help().
  */
 function feed_import_help($path, $arg) {
   if ($path == 'admin/help#feed_import') {
     return t(<<<HELP
-    Allows content to be added from an xml. While project is in sandbox read documentation from http://drupal.org/project/...
+    Allows content to be added from xml files.
+    While project is in sandbox
+    read documentation from http:// drupal.org/sandbox/SorinSarca/1331632
 HELP
-             );
+    );
   }
 }
 
 /**
  * Implements hook_permision().
  */
-function feed_import_permission(){
+function feed_import_permission() {
   return array(
     'feed_import_permission' => array(
       'title' => t('Administer feed import settings'),
@@ -28,7 +36,6 @@ function feed_import_permission(){
  */
 function feed_import_menu() {
   $items = array();
-  
   $items['admin/config/feed_import'] = array(
     'title' => 'Feed Import',
     'description' => 'Configure feed import',
@@ -37,9 +44,7 @@ function feed_import_menu() {
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_NORMAL_ITEM,
   );
-  
-  
-   $items['admin/config/feed_import/add'] = array(
+  $items['admin/config/feed_import/add'] = array(
     'title' => 'Add new feed',
     'description' => 'Add a new feed',
     'page callback' => 'drupal_get_form',
@@ -48,9 +53,8 @@ function feed_import_menu() {
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 1,
-   );
-   
-   $items['admin/config/feed_import/import'] = array(
+  );
+  $items['admin/config/feed_import/import'] = array(
     'title' => 'Import feed',
     'description' => 'Import an existing feed',
     'page callback' => 'drupal_get_form',
@@ -59,9 +63,8 @@ function feed_import_menu() {
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 2,
-   );
-   
-   $items['admin/config/feed_import/export/all'] = array(
+  );
+  $items['admin/config/feed_import/export/all'] = array(
     'title' => 'Export all feeds',
     'description' => 'Exports all feeds',
     'page callback' => 'feed_import_export_feed_form',
@@ -70,9 +73,8 @@ function feed_import_menu() {
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 3,
-   );
-   
-   $items['admin/config/feed_import/settings'] = array(
+  );
+  $items['admin/config/feed_import/settings'] = array(
     'title' => 'Settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_settings_form'),
@@ -80,9 +82,8 @@ function feed_import_menu() {
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 4,
-   );
-   
-   $items['admin/config/feed_import/export/%'] = array(
+  );
+  $items['admin/config/feed_import/export/%'] = array(
     'title' => 'Export feeds',
     'description' => 'Export feeds',
     'page callback' => 'feed_import_export_feed_form',
@@ -90,44 +91,39 @@ function feed_import_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_CALLBACK,
-   );
-   
-   $items['admin/config/feed_import/process'] = array(
+  );
+  $items['admin/config/feed_import/process'] = array(
     'title' => 'Process feed',
     'page callback' => 'feed_import_process_feed',
     'access callback' => 'user_access',
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_CALLBACK,
-   );
-   
-   $items['admin/config/feed_import/enable'] = array(
+  );
+  $items['admin/config/feed_import/enable'] = array(
     'title' => 'Enable feed',
     'page callback' => 'feed_import_change_status',
     'page arguments' => array('enable'),
     'access callback' => 'user_access',
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_CALLBACK,
-   );
-   
-   $items['admin/config/feed_import/disable'] = array(
+  );
+  $items['admin/config/feed_import/disable'] = array(
     'title' => 'Disable feed',
     'page callback' => 'feed_import_change_status',
     'page arguments' => array('disable'),
     'access callback' => 'user_access',
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_CALLBACK,
-   );
-   
-   $items['admin/config/feed_import/delete'] = array(
+  );
+  $items['admin/config/feed_import/delete'] = array(
     'title' => 'Delete feed',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_delete_feed_form'),
     'access callback' => 'user_access',
     'access arguments' => array('feed_import_permission'),
     'type' => MENU_CALLBACK,
-   );
-   
-   $items['admin/config/feed_import/edit/%/feed'] = array(
+  );
+  $items['admin/config/feed_import/edit/%/feed'] = array(
     'title' => 'Edit feed',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_edit_feed_form', 4),
@@ -136,9 +132,8 @@ function feed_import_menu() {
     'type' => MENU_LOCAL_TASK,
     'tab_root' => 'admin/config/feed_import/edit/%',
     'weight' => 1,
-   );
-   
-   $items['admin/config/feed_import/edit/%/pre-filter'] = array(
+  );
+  $items['admin/config/feed_import/edit/%/pre-filter'] = array(
     'title' => 'Edit pre-filters',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_edit_filter_form', '#pre_filter', 4),
@@ -147,9 +142,8 @@ function feed_import_menu() {
     'type' => MENU_LOCAL_TASK,
     'tab_root' => 'admin/config/feed_import/edit/%',
     'weight' => 2,
-   );
-   
-   $items['admin/config/feed_import/edit/%/filter'] = array(
+  );
+  $items['admin/config/feed_import/edit/%/filter'] = array(
     'title' => 'Edit filters',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_edit_filter_form', '#filter', 4),
@@ -158,69 +152,63 @@ function feed_import_menu() {
     'type' => MENU_LOCAL_TASK,
     'tab_root' => 'admin/config/feed_import/edit/%',
     'weight' => 3,
-   );
-
+  );
   return $items;
 }
-
 
 /**
  * Implements hook_entity_delete()
  */
 function feed_import_entity_delete($entity, $type) {
-  //feed_import_add_to_delete(..id..);
   $info = FeedImport::getEntityInfo($type);
   $id = @$entity->{$info['column']};
   if($id && is_numeric($id)) {
     feed_import_add_to_delete($id);
   }
 }
+
 /**
  * Schedule an item for removing from feed import items at the end of the script
- * @param int $id Entity id
+ * @param int $id
+ *   Entity id
  */
 function feed_import_add_to_delete($id = NULL) {
+  // ids to delete
   static $ids = array();
+  // if delete function is registered at shutdown
   static $registered = FALSE;
   if(!$registered) {
+    // register shutdown function
     drupal_register_shutdown_function(__FUNCTION__, NULL);
     $registered = TRUE;
   }
+  // NULL means function is called at shutdown
+  // so delete items
   if($id == NULL) {
     FeedImport::deleteItemsbyEntityId($ids);
+    // reset ids
     $ids = array();
-  } else {
+  }
+  else {
+    // just add to array an integer id
     $ids[] = (int)$id;
   }
-}
-
-
-
-/**
- * Implements hook_cron_queue_info()
- */
-function feed_import_cron_queue_info() {  
-  $queues['feed_import_delete'] = array(
-    'worker callback' => 'feed_import_delete_items',
-    'time' => 3600,
-  );
-  return $queues;
 }
 
 /**
  * Implements hook_cron()
  */
 function feed_import_cron() {
-  //check if cron import is enabled
+  // check if cron import is enabled
   if(!variable_get('feed_import_use_cron', FALSE)) {
     return;
   }
-  //check if there is an already running import or there are no feeds
-  //overlapping an import to same entity is bad
+  // check if there is an already running import or there are no feeds
+  // overlapping an import for the same entity is bad
   if(!variable_get('feed_import_import_running', FALSE)) {
     $last_executed = variable_get('feed_import_last_executed_import', 0);
-    $time_between = variable_get('feed_import_time_between_imports', 3600); 
-    //check if time between imports elapsed
+    $time_between = variable_get('feed_import_time_between_imports', 3600);
+    // check if time between imports elapsed
     if($last_executed + $time_between < REQUEST_TIME) {
       $feeds = FeedImport::loadFeeds(TRUE);
       if(!empty($feeds)) {
@@ -228,101 +216,90 @@ function feed_import_cron() {
         $last_feed = variable_get('feed_import_last_imported_feed', '');
         if($last_feed == '') {
           $last_feed = 0;
-        } else {
+        }
+        else {
           $last_feed = (array_search($last_feed, $feed_names)+1) % count($feed_names);
         }
         $last_feed = $feed_names[$last_feed];
         $feeds = $feeds[$last_feed];
         variable_set('feed_import_last_imported_feed', $last_feed);
         variable_set('feed_import_last_executed_import', REQUEST_TIME);
-        //mark import as running
+        // mark import as running
         variable_set('feed_import_import_running', TRUE);
-        //process feed
+        // process feed
         feed_import_import_items($feeds);
-        //change running status
+        // change running status
         variable_set('feed_import_import_running', FALSE);
         unset($feeds, $feed_names, $last_feed);
       }
     }
   }
-  
-  
-  //delete expired items
-  $delete = DrupalQueue::get('feed_import_delete');
-  //add to queue only if there aren't queues
-  if(!$delete->numberOfItems()) {
-    //get expired items keyed by entity name
-    $ids = FeedImport::getExpiredItems();
-    if(empty($ids)) {
-      return;
-    }
-    //get chunk limit
-    $limit = variable_get('feed_import_delete_items_per_cron', 300);
-    foreach($ids as $key => &$id) {
-      //get expired items in chunks
-      $id = array_chunk($id, $limit);
-      foreach($id as &$d) {
-        //add to queue
-        $delete->createItem(array($key => $d));
-        $d = NULL;
-      }
-      $id = NULL;
-    }
-    unset($ids);
-  }
+  // delete expired items
+  $ids = FeedImport::getExpiredItems(variable_get('feed_import_delete_items_per_cron', 300));
+  feed_import_delete_items($ids);
+  unset($ids);
 }
+
 /**
  * Import feed and set report
+ * @param array &$feed
+ *   Feed info array
  */
 function feed_import_import_items(&$feed) {
+  // process feed
   FeedImport::processFeed($feed);
+  // get generated report
   $report = FeedImport::$report;
-  FeedImport::$report = array(); //reset report
+  // reset feed report
+  FeedImport::$report = array();
+  // set report message
   $msg = 'Feed %feed imported.
-          Started %started, file downloaded & parsed %parse, processing items %process, total duration %time, 
-          total feed items %total, rescheduled %rescheduled, updated %updated, new %new.';
-          
-  watchdog('feed_import_cron_info', $msg, array(
-                        '%feed' => $feed['name'],
-                        '%started' => date('d/m/Y H:i:s', $report['start']),
-                        '%time' => gmdate('H:i:s', $report['time']),
-                        '%parse' => gmdate('H:i:s', $report['parse']),
-                        '%process' => gmdate('H:i:s', $report['time'] - $report['parse']),
-                        '%total' => $report['total'],
-                        '%rescheduled' => $report['rescheduled'],
-                        '%updated' => $report['updated'],
-                        '%new' => $report['new'],
-                      )
-           );
+          Started %started, file downloaded & parsed %parse,
+          processing items %process, total duration %time,
+          total feed items %total, rescheduled %rescheduled,
+          updated %updated, new %new.';
+  $info = array(
+    '%feed' => $feed['name'],
+    '%started' => date('d/m/Y H:i:s', $report['start']),
+    '%time' => gmdate('H:i:s', $report['time']),
+    '%parse' => gmdate('H:i:s', $report['parse']),
+    '%process' => gmdate('H:i:s', $report['time'] - $report['parse']),
+    '%total' => $report['total'],
+    '%rescheduled' => $report['rescheduled'],
+    '%updated' => $report['updated'],
+    '%new' => $report['new'],
+  );
+  watchdog('feed_import_cron_info', $msg, $info);
 }
+
 /**
- * Delete feed an set report
+ * Delete feed and set report
+ * @param array &$items
+ *   Array of entity ids keyed by entity type
  */
-function feed_import_delete_items($items) {
+function feed_import_delete_items(&$items) {
   $start = time();
   $ids = array();
+  // get deleted ids
   foreach($items as $type => &$value) {
     $value = FeedImport::entityDelete($type, $value);
     $ids += $value;
     $value = NULL;
   }
   unset($items);
+  // delete items from feed_import_hashes
   FeedImport::deleteItemsbyEntityId($ids);
   $count = count($ids);
   unset($ids);
+  // set report message
   $msg = 'Deleted %count items. Started %started, duration %time';
-  watchdog('feed_import_cron_info', $msg, array(
-                          '%count' => $count,
-                          '%started' => date('d/m/Y H:i:s', $start),
-                          '%time' => gmdate('H:i:s', time() - $start),
-                      )
-          );
+  $info = array(
+    '%count' => $count,
+    '%started' => date('d/m/Y H:i:s', $start),
+    '%time' => gmdate('H:i:s', time() - $start),
+  );
+  watchdog('feed_import_cron_info', $msg, $info);
 }
-
-
-
-
-/***** User interface ***********/
 
 /**
  * Settings form
@@ -334,114 +311,110 @@ function feed_import_settings_form($form, &$form_state) {
     '#title' => t('Cron import'),
     '#description' => t('Run import for enabled feeds at cron'),
   );
-  
   $form['feed_import_time_between_imports'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_time_between_imports', 3600),
     '#title' => t('Time between two imports at cron (seconds)'),
     '#description' => t('Time betwwen two cron imports.'),
   );
-  
   $form['feed_import_delete_items_per_cron'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_delete_items_per_cron', 300),
     '#title' => t('Expired items delete per cron (seconds)'),
     '#description' => t('How many expired items to delete when cron runs.'),
   );
-    
   $form['feed_import_insert_hashes_chunk'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_insert_hashes_chunk', 500),
     '#title' => t('Chunk size for inserting hashes'),
     '#description' => t('How many items to insert at once'),
   );
-  
   $form['feed_import_update_ids_chunk'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_update_ids_chunk', 1000),
     '#title' => t('Chunk size for updating expire time'),
     '#description' => t('How many items to update at once'),
   );
-  
   $form['feed_import_hash_property'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_hash_property', '_feed_item_hash'),
     '#title' => t('Tomporary property wich holds item hash'),
     '#description' => t('Change this only if you already have a property named like this.'),
   );
-  
   $form['feed_import_field_param_name'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_field_param_name', '[field]'),
     '#title' => t('Param name for filters'),
     '#description' => t('Enter this when using filters and you want to send extracted field value as argument.'),
   );
-  
   $form['feed_import_entity_info_keep'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_entity_info_keep', 0),
     '#title' => t('Keep entity info in cache (seconds)'),
     '#description' => t('Entity info is used for UI'),
   );
-  
   $form['feed_import_processFeedChunked_xml_head'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_processFeedChunked_xml_head', '<?xml version="1.0" encoding="utf-8"?>'),
     '#title' => t('If you use processFeedChunked function then set xml properties'),
     '#description' => t('Change xml properties like encoding.'),
   );
-  
   $form['feed_import_processFeedChunked_chunk_length'] = array(
     '#type' => 'textfield',
-    '#default_value' => variable_get('feed_import_processFeedChunked_chunk_length', 8192), //8k
+    '#default_value' => variable_get('feed_import_processFeedChunked_chunk_length', 8192),
     '#title' => t('If you use processFeedChunked function then set chunk size in bytes'),
     '#description' => t('How many bytes to read in each chunk (default 8192 = 8k)'),
   );
-  
   return system_settings_form($form);
 }
 
-
 /**
  * List all feeds
+ *
+ * @return string
+ *   A formatted table containing all feeds
  */
 function feed_import_list_feeds() {
-    $feeds = FeedImport::loadFeeds(); //load all feeds
-    $rows = array();
-    foreach($feeds as &$feed) {
-        $feed['name'] = l($feed['name'], 'admin/config/feed_import/edit/' . $feed['id'] . '/feed');
-        $feed['url'] = l($feed['url'], $feed['url'], array('attributes' => array('target' => '_new')));
-        if($feed['enabled']) {
-            $enabled = TRUE;
-            $feed['enabled'] = t('Yes') . ' ' . l('Disable', 'admin/config/feed_import/disable/' . $feed['id']);
-        } else {
-            $enabled = FALSE;
-            $feed['enabled'] = t('No') . ' ' . l('Enable', 'admin/config/feed_import/enable/' . $feed['id']);
-        }
-        
-        $feed['operations'][] = l(t('Edit'), 'admin/config/feed_import/edit/' . $feed['id'] . '/feed');
-        $feed['operations'][] = l(t('Process'), 'admin/config/feed_import/process/' . $feed['id']);
-        $feed['operations'][] = l(t('Export'), 'admin/config/feed_import/export/' . $feed['id']);
-        $feed['operations'][] = l(t('Delete'), 'admin/config/feed_import/delete/' . $feed['id']);
-        
-        $feed['operations'] = implode(' ', $feed['operations']);
-        
-        //check url status ...
-        $rows[] = array(
-                  'data' => array($feed['name'], $feed['url'], $feed['enabled'], $feed['operations']),
-                  'class' => array($enabled ? 'enabled-feed' : 'disabled-feed'),
-                );
-                  
+  $path = 'admin/config/feed_import';
+  // load all feeds
+  $feeds = FeedImport::loadFeeds();
+  $rows = array();
+  foreach($feeds as &$feed) {
+    $feed['name'] = l($feed['name'], $path . '/edit/' . $feed['id'] . '/feed');
+    $feed['url'] = l($feed['url'], $feed['url'], array('attributes' => array('target' => '_new')));
+    if($feed['enabled']) {
+      $enabled = TRUE;
+      $feed['enabled'] = t('Yes') . ' ' . l('Disable', $path . '/disable/' . $feed['id']);
     }
-    drupal_add_css(drupal_get_path('module', 'feed_import') . '/feed_import.css', array('type' => 'file'));
-    return theme('table', array(
-        'header' => array(t('Name'), t('Url'), t('Enabled'), t('Operations')),
-        'rows' => $rows,
-    ));
+    else {
+      $enabled = FALSE;
+      $feed['enabled'] = t('No') . ' ' . l('Enable', $path . '/enable/' . $feed['id']);
+    }
+    // add operations
+    $feed['operations'][] = l(t('Edit'), $path . '/edit/' . $feed['id'] . '/feed');
+    $feed['operations'][] = l(t('Process'), $path . '/process/' . $feed['id']);
+    $feed['operations'][] = l(t('Export'), $path . '/export/' . $feed['id']);
+    $feed['operations'][] = l(t('Delete'), $path . '/delete/' . $feed['id']);
+    $feed['operations'] = implode(' ', $feed['operations']);
+    $rows[] = array(
+      'data' => array($feed['name'], $feed['url'], $feed['enabled'], $feed['operations']),
+      'class' => array($enabled ? 'enabled-feed' : 'disabled-feed'),
+    );
+  }
+  $path = drupal_get_path('module', 'feed_import') . '/feed_import.css';
+  drupal_add_css($path, array('type' => 'file'));
+  $rows = array(
+    'header' => array(t('Name'), t('Url'), t('Enabled'), t('Operations')),
+    'rows' => $rows,
+  );
+  return theme('table', $rows);
 }
 
 /**
  * Processes a feed
+ *
+ * @param int $id
+ *   Feed id to process
  */
 function feed_import_process_feed($id = 0) {
   $err = FALSE;
@@ -453,7 +426,8 @@ function feed_import_process_feed($id = 0) {
     } else {
       $err = TRUE;
     }
-  } else {
+  }
+  else {
     $err = TRUE;
   }
   if($err) {
@@ -461,60 +435,86 @@ function feed_import_process_feed($id = 0) {
   }
   drupal_goto('admin/config/feed_import');
 }
+
 /**
  * Export feed
+ *
+ * @param int $id
+ *   Feed id to be exported
+ *
+ * @return string
+ *   A textarea containing serialized feed code
  */
 function feed_import_export_feed_form($id = 0) {
   if($id == 'all') {
     $feed = FeedImport::loadFeeds(FALSE);
-  } else {
+  }
+  else {
     $feed = FeedImport::loadFeeds(FALSE, $id);
     if(!$feed) {
-        drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-        drupal_goto('admin/config/feed_import');
-        return;
+      drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+      drupal_goto('admin/config/feed_import');
+      return;
     }
   }
   $feed = serialize($feed);
-  $output = '<h2>' . t('Copy and save all code below. Paste it where you want to import feed.') . '</2>';
-  $output .= theme('textarea', array('element' => array('#value' => $feed, '#rows' => 20)));
+  $output = '<h2>';
+  $output .= t('Copy and save all code below. Paste it where you want to import feed.');
+  $output .= '</h2>';
+  $vars = array(
+    'element' => array(
+      '#value' => $feed,
+      '#rows' => 20,
+    ),
+  );
+  $output .= theme('textarea', $vars);
   return $output;
 }
+
 /**
- * Feed import
+ * Feed import form
  */
 function feed_import_import_feed_form($form, &$form_state) {
-  $form['code'] = array (
+  $form['code'] = array(
     '#type' => 'textarea',
-    '#title' => t('Paste code here'),
+    '#title' => t('Paste your code here'),
     '#rows' => 10,
   );
-  $form['submit'] = array (
+  $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Start import'),
   );
   return $form;
 }
+
+/**
+ * Feed import form validate
+ */
 function feed_import_import_feed_form_validate($form, &$form_state) {
-    $ok = @unserialize(trim($form_state['values']['code']));
-    if(!$ok) {
-      form_error($form['code'], t('Code couldn\'t be imported!'));
-    }
+  $ok = @unserialize(trim($form_state['values']['code']));
+  if(!$ok) {
+    form_error($form['code'], t('Code couldn\'t be imported!'));
+  }
 }
+
+/**
+ * Feed import form submit
+ */
 function feed_import_import_feed_form_submit($form, &$form_state) {
   $feeds = @unserialize($form_state['values']['code']);
-  //there is only one feed
+  // there is only one feed
   if(isset($feeds['xpath']['#root'])) {
-    $feeds['enabled'] = 0; //disable
+    $feeds['enabled'] = 0;
     FeedImport::saveFeed($feeds);
     drupal_set_message(t('Feed @name was imported and disabled', array('@name' => $feeds['name'])));
-  } else {
+  }
+  else {
     $names = array();
     foreach($feeds as &$feed) {
       $feed['enabled'] = 0;
       FeedImport::saveFeed($feed);
       $names[] = $feed['name'];
-      $feed= NULL;
+      $feed = NULL;
     }
     $names = implode(', ', $names);
     drupal_set_message(t('Feeds @names were imported and disabled', array('@names' => $names)));
@@ -526,570 +526,561 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
  * Add a new feed form
  */
 function feed_import_add_new_feed_form($form, &$form_state) {
-    $form['name'] = array (
-        '#type' => 'textfield',
-        '#title' => t('Feed name'),
-        '#description' => t('This usually is source name.'),
-        '#required' => TRUE,
-    );
-    
-    $entities = FeedImport::getEntityInfo();
-    $options = array();
-    foreach($entities as &$entity) {
-      $options[$entity['name']] = $entity['name'];
-    }
-    $form['entity'] = array(
-        '#type' => 'select',
-        '#options' => $options,
-        '#default_value' => 'node',
-        '#title' => t('Entity name'),
-        '#description' => t('Entity where you want to import content. Ex: "node"'),
-        '#required' => TRUE,
-    );
-    
-    $form['url'] = array (
-        '#type' => 'textfield',
-        '#title' => t('URL to XML feed'),
-        '#description' => t('Please use a valid url that returns a valid xml file!'),
-        '#required' => TRUE,
-    );
-    
-    $options = array();
-    foreach(FeedImport::$processFunctions as $f) {
-      $options[$f] = $f;
-    }
-    $form['process_function'] = array(
-      '#type' => 'select',
-      '#options' => $options,
-      '#title' => t('Select feed processing function'),
-      '#description' => t('Read help for more information about processing functions'),
-    );
-    
-    $form['time'] = array (
-        '#type' => 'textfield',
-        '#title' => t('Keep imported items (seconds)'),
-        '#description' => t('This is used to delete items after expiration.'),
-        '#default_value' => 0,
-        '#required' => TRUE,
-    );
-    
-    $form['enabled'] = array (
-        '#type' => 'checkbox',
-        '#title' => t('Feed is active'),
-        '#default_value' => 0,
-    );
-    
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Add feeed'),
-    );
-    
-    return $form;
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Feed name'),
+    '#description' => t('This usually is source name.'),
+    '#required' => TRUE,
+  );
+  $entities = FeedImport::getEntityInfo();
+  $options = array();
+  foreach($entities as &$entity) {
+    $options[$entity['name']] = $entity['name'];
+  }
+  $form['entity'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => 'node',
+    '#title' => t('Entity name'),
+    '#description' => t('Entity where you want to import content. Ex: "node"'),
+    '#required' => TRUE,
+  );
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL to XML feed'),
+    '#description' => t('Please use a valid url that returns a valid xml file!'),
+    '#required' => TRUE,
+  );
+  $options = array();
+  foreach(FeedImport::$processFunctions as $f) {
+    $options[$f] = $f;
+  }
+  $form['process_function'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#title' => t('Select feed processing function'),
+    '#description' => t('Read help for more information about processing functions'),
+  );
+  $form['time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Keep imported items (seconds)'),
+    '#description' => t('This is used to delete items after expiration.'),
+    '#default_value' => 0,
+    '#required' => TRUE,
+  );
+  $form['enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Feed is active'),
+    '#default_value' => 0,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add feeed'),
+  );
+  return $form;
 }
+
+/**
+ * Add new feed form validate
+ */
 function feed_import_add_new_feed_form_validate($form, &$form_state) {
   $feeds = FeedImport::loadFeeds();
   if(isset($feeds[$form_state['values']['name']])) {
     form_error($form['name'], t('Feed name already exists!'));
   }
 }
+
+/**
+ * Add new feed form submit
+ */
 function feed_import_add_new_feed_form_submit($form, &$form_state) {
-    $entity = FeedImport::getEntityInfo($form_state['values']['entity']);
-    FeedImport::saveFeed(array(
-            'name' => $form_state['values']['name'],
-            'url' => $form_state['values']['url'],
-            'time' => (int)$form_state['values']['time'],
-            'enabled' => (int)$form_state['values']['enabled'],
-            'entity_info' => array(
-                '#entity' => $form_state['values']['entity'],
-                '#table_pk' => $entity['column'],
-            ),
-            'xpath' => array(
-              '#root' => '//?',
-              '#uniq' => '?',
-              '#process_function' => $form_state['values']['process_function'],
-              '#items' => array(),
-            ),
-        ));
-    drupal_set_message(t('Feed @name was created',  array('@name' => $form_state['values']['name'])));
-    drupal_goto('admin/config/feed_import');
+  $entity = FeedImport::getEntityInfo($form_state['values']['entity']);
+  $feed = array(
+    'name' => $form_state['values']['name'],
+    'url' => $form_state['values']['url'],
+    'time' => (int) $form_state['values']['time'],
+    'enabled' => (int) $form_state['values']['enabled'],
+    'entity_info' => array(
+      '#entity' => $form_state['values']['entity'],
+      '#table_pk' => $entity['column'],
+    ),
+    'xpath' => array(
+      '#root' => '// ?',
+      '#uniq' => '?',
+      '#process_function' => $form_state['values']['process_function'],
+      '#items' => array(),
+    ),
+  );
+  // save feed
+  FeedImport::saveFeed($feed);
+  drupal_set_message(t('Feed @name was created',  array('@name' => $form_state['values']['name'])));
+  drupal_goto('admin/config/feed_import');
 }
-
-
-
 
 /**
  * Enable/disable feeds
+ * @param string $how
+ *   enable/disable options
+ * @param int $id
+ *   Feed id to enable or disable
  */
 function feed_import_change_status($how, $id = 0) {
-    $id = (int) $id;
-    if($id) {
-        $how = ($how == 'enable') ? 1: 0;
-        db_update('feed_import_settings')
-            ->fields(array('enabled' => $how))
-            ->condition('id', $id, '=')
-            ->execute();
-        drupal_set_message($how ? t('Feed enabled') : t('Feed disabled'));
-    }
-    drupal_goto('admin/config/feed_import');
+  $id = (int) $id;
+  if($id) {
+    $how = ($how == 'enable') ? 1: 0;
+    db_update('feed_import_settings')
+      ->fields(array('enabled' => $how))
+      ->condition('id', $id, '=')
+      ->execute();
+    drupal_set_message($how ? t('Feed enabled') : t('Feed disabled'));
+  }
+  drupal_goto('admin/config/feed_import');
 }
 
 /**
  * Feed delete form
  */
 function feed_import_delete_feed_form($form, &$form_state, $id = 0) {
-    if(!$id) {
-        drupal_goto('admin/config/feed_import');
-        return;
-    }
-    $form['id'] = array(
-        '#type' => 'hidden',
-        '#value' => $id,
-    );
-    
-    $form['submit'] = array(
-        '#prefix' => t('This action cannot be undone! Proceed?') . '<br />' . l(t('Cancel'), 'admin/config/feed_import') . ' ',
-        '#type' => 'submit',
-        '#value' => t('Delete feed and all its contents'),
-    );
-    return $form;
-}
-function feed_import_delete_feed_form_submit($form, &$form_state) {
-    db_delete('feed_import_settings')
-        ->condition('id', $form_state['values']['id'], '=')
-        ->execute();
-    db_delete('feed_import_hashes')
-        ->condition('feed_id', $form_state['values']['id'], '=')
-        ->execute();
-    drupal_set_message(t('Feed deleted!'));
+  if(!$id) {
     drupal_goto('admin/config/feed_import');
+    return;
+  }
+  $form['id'] = array(
+    '#type' => 'hidden',
+    '#value' => $id,
+  );
+  $form['submit'] = array(
+    '#prefix' => t('This action cannot be undone! Proceed?'),
+    '#type' => 'submit',
+    '#value' => t('Delete feed and all its contents'),
+  );
+  $form['submit']['#prefix'] .= '<br />' . l(t('Cancel'), 'admin/config/feed_import') . ' ';
+  return $form;
 }
-
 
 /**
- * Edit a feed
+ * Feed delete form submit
+ */
+function feed_import_delete_feed_form_submit($form, &$form_state) {
+  db_delete('feed_import_settings')
+    ->condition('id', $form_state['values']['id'], '=')
+    ->execute();
+  db_delete('feed_import_hashes')
+    ->condition('feed_id', $form_state['values']['id'], '=')
+    ->execute();
+  drupal_set_message(t('Feed deleted!'));
+  drupal_goto('admin/config/feed_import');
+}
+
+/**
+ * Edit feed form
  */
 function feed_import_edit_feed_form($form, &$form_state, $id) {
-    $feed = FeedImport::loadFeeds(FALSE, $id);
-    if(!$feed) {
-        drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-        return;
+  // get feed
+  $feed = FeedImport::loadFeeds(FALSE, $id);
+  if(!$feed) {
+    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+    return;
+  }
+  $form['info'] = array(
+    '#prefix' => '<h2>',
+    '#suffix' => '</h2>',
+    '#markup' => t('Edit feed @name', array('@name' => $feed['name'])),
+  );
+  // basic feed fields
+  $form['id'] = array(
+    '#type' => 'hidden',
+    '#value' => $feed['id'],
+  );
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Feed name'),
+    '#description' => t('This usually is source name.'),
+    '#default_value' => $feed['name'],
+    '#required' => TRUE,
+  );
+  $options = array();
+  $entities = FeedImport::getEntityInfo();
+  foreach($entities as &$entity) {
+    $options[$entity['name']] = $entity['name'];
+  }
+  if(!@$feed['entity_info']['#entity']) {
+    $feed['entity_info']['#entity'] = 'node';
+  }
+  $form['entity'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => @$feed['entity_info']['#entity'],
+    '#title' => t('Entity name'),
+    '#description' => t('Entity where you want to import content. Ex: "node"'),
+    '#required' => TRUE,
+    '#disabled' => @count($feed['xpath']['#items']),
+  );
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('URL to XML feed'),
+    '#description' => t('Please use a valid url that returns a valid XML file!'),
+    '#default_value' => $feed['url'],
+    '#required' => TRUE,
+  );
+  $options = array();
+  foreach(FeedImport::$processFunctions as $f) {
+    $options[$f] = $f;
+  }
+  $form['process_function'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => @$feed['xpath']['#process_function'],
+    '#title' => t('Select process function'),
+  );
+  $form['time'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Keep imported items (seconds)'),
+    '#description' => t('This is used to delete items after expiration. 0 means item don\'t expire.'),
+    '#default_value' => $feed['time'],
+    '#required' => TRUE,
+  );
+  $form['enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Feed is active'),
+    '#default_value' => $feed['enabled'],
+  );
+  // xpath settings fieldset
+  $form['xpath'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('XPATH settings'),
+  );
+  $form['xpath']['root'] = array(
+    '#type' => 'textfield',
+    '#default_value' => @$feed['xpath']['#root'],
+    '#title' => t('Enter xpath item parent'),
+    '#description' => t('Usualy this starts with "//" and it\'s base query (context for all items).'),
+    '#required' => TRUE,
+  );
+  $form['xpath']['uniq'] = array(
+    '#type' => 'textfield',
+    '#default_value' => @$feed['xpath']['#uniq'],
+    '#title' => t('Enter xpath to a unique identifier of item'),
+    '#description' => t('This is unique per item. Usually it\'s an ID.'),
+    '#required' => TRUE,
+  );
+  // xpath items
+  $form['xpath']['items'] = array(
+    '#type' => 'container',
+    '#attributes' => array('id' => 'xpath_items'),
+    '#prefix' => '<label for="xpath_items">' . t('Current fields') . '</label>',
+  );
+  $xpaths = array();
+  if(isset($form_state['#current_item'])) {
+    for($i = 0; $i <= $form_state['#current_item']; $i++) {
+      if(isset($form_state['values']['xpath_' . $i])) {
+        $vars = array(
+          '#field' => $form_state['complete form']['xpath']['items']['container_' . $i]['#title'],
+          '#xpath' => @implode(PHP_EOL, @$form_state['values']['xpath_' . $i]),
+          '#default_value' => @$form_state['values']['default_' . $i],
+        );
+        $xpaths +=  feed_import_generate_xpath_item($i, $vars);
+      }
     }
-    $form['info'] = array(
-      '#prefix' => '<h2>',
-      '#suffix' => '</h2>',
-      '#markup' => t('Edit feed @name', array('@name' => $feed['name'])),
-    );
-    //basic feed fields    
-    $form['id'] = array(
-        '#type' => 'hidden',
-        '#value' => $feed['id'],
-    );
-    
-    $form['name'] = array (
-        '#type' => 'textfield',
-        '#title' => t('Feed name'),
-        '#description' => t('This usually is source name.'),
-        '#default_value' => $feed['name'],
-        '#required' => TRUE,
-    );
-    
-    $entities = FeedImport::getEntityInfo();
-    $options = array();
-    foreach($entities as &$entity) {
-      $options[$entity['name']] = $entity['name'];
+  }
+  else {
+    $form_state['#current_item'] = -1;
+    if(!empty($feed['xpath']['#items'])) {
+      foreach($feed['xpath']['#items'] as &$field) {
+        $form_state['#current_item']++;
+        $xpaths += feed_import_generate_xpath_item($form_state['#current_item'], $field, TRUE);
+      }
     }
-    if(!@$feed['entity_info']['#entity']) {
-      $feed['entity_info']['#entity'] = 'node';
-    }
-    $form['entity'] = array(
-        '#type' => 'select',
-        '#options' => $options,
-        '#default_value' => @$feed['entity_info']['#entity'],
-        '#title' => t('Entity name'),
-        '#description' => t('Entity where you want to import content. Ex: "node"'),
-        '#required' => TRUE,
-        '#disabled' => @count($feed['xpath']['#items']),
-    );
-    
-    $form['url'] = array (
-        '#type' => 'textfield',
-        '#title' => t('URL to XML feed'),
-        '#description' => t('Please use a valid url that returns a valid xml file!'),
-        '#default_value' => $feed['url'],
-        '#required' => TRUE,
-    );
-    
-    $options = array();
-    foreach(FeedImport::$processFunctions as $f) {
-      $options[$f] = $f;
-    }
-    $form['process_function'] = array(
-      '#type' => 'select',
-      '#options' => $options,
-      '#default_value' => @$feed['xpath']['#process_function'],
-      '#title' => t('Select process function'),
-      //'#description' => l(t('Read about process functions'), 'admin/config/feed_import'),
-    );
-    
-    $form['time'] = array (
-        '#type' => 'textfield',
-        '#title' => t('Keep imported items (seconds)'),
-        '#description' => t('This is used to delete items after expiration. 0 means item don\'t expire.'),
-        '#default_value' => $feed['time'],
-        '#required' => TRUE,
-    );
-    
-    $form['enabled'] = array (
-        '#type' => 'checkbox',
-        '#title' => t('Feed is active'),
-        '#default_value' => $feed['enabled'],
-    );
-    
-    //xpath settings
-    $form['xpath'] = array(
-        '#type' => 'fieldset',
-        '#collapsible' => TRUE,
-        '#collapsed' => FALSE,
-        '#title' => t('XPATH settings'),
-    );
-    
-    $form['xpath']['root'] = array(
-        '#type' => 'textfield',
-        '#default_value' => @$feed['xpath']['#root'],
-        '#title' => t('Enter xpath item parent'),
-        '#description' => t('Usualy this starts with "//" and it\'s base query (context for all items).'),
-        '#required' => TRUE,
-    );
-    
-    $form['xpath']['uniq'] = array(
-        '#type' => 'textfield',
-        '#default_value' => @$feed['xpath']['#uniq'],
-        '#title' => t('Enter xpath to a unique identifier of item'),
-        '#description' => t('This is unique per item. Usually it\'s an ID.'),
-        '#required' => TRUE,
-    );
-    
-    //xpath items
-    $form['xpath']['items'] = array (
-        '#type' => 'container',
-        '#attributes' => array('id' => 'xpath_items'),
-        '#prefix' => '<label for="xpath_items">' . t('Current fields') . '</label>',
-    );
-    
-    $xpaths = array();
-    if(isset($form_state['#current_item'])) {
-        for($i = 0; $i <= $form_state['#current_item']; $i++) {
-            if(isset($form_state['values']['xpath_' . $i])) {
-                $xpaths +=  feed_import_generate_xpath_item($i, array(
-                                                                '#field' => $form_state['complete form']['xpath']['items']['container_' . $i]['#title'],
-                                                                '#xpath' => @implode(PHP_EOL, @$form_state['values']['xpath_' . $i]),
-                                                                '#default_value' => @$form_state['values']['default_' . $i],
-                                                                )
-                                                            );  
-            }
-        }
-    } else {
-        $form_state['#current_item'] = -1;
-        if(!empty($feed['xpath']['#items'])) {
-            foreach($feed['xpath']['#items'] as &$field) {
-                $form_state['#current_item']++;
-                $xpaths += feed_import_generate_xpath_item($form_state['#current_item'], $field, TRUE);
-            }
-        }
-        
-    }
-    
-    $cbk = @$form_state['triggering_element']['#parents'][0];
-    switch(true) {
-        case $cbk == 'add_new_item':
-            $form_state['#current_item']++;
-            $xpaths += feed_import_generate_xpath_item($form_state['#current_item'], array('#field' => $form_state['values']['add_new_item_field']));
-            break;
-        case preg_match('/remove_container_([0-9]{1,9})/', $cbk, $match):
-            unset($xpaths['container_' . $match[1]]); //delete container      
-            break;
-    }
-
-    
-    $form['xpath']['items'] += $xpaths;
-    if(!empty($xpaths)) {
-        //hide($form['entity_info']);
-    };
-    unset($xpaths);
-    //add new name
-    $fields_options = array();
-    foreach($entities[$feed['entity_info']['#entity']]['columns'] as $f => &$v) {
-      if(!isset($feed['xpath']['#items'][$f]))
-        $fields_options[$f] = $f;
-    }
-    $form['xpath']['add_new_item_field'] = array (
-      '#type' => 'select',
-      '#options' => $fields_options,
-      '#title' => t('Add new field'),
-      '#description' => t('Select field name and click "' . t('Add field') . '" button'),
-    );
-    //add new item button
-    $form['xpath']['add_new_item'] = array (
-        '#type' => 'button',
-        '#value' => t('Add selected field'),
-        '#inline' => TRUE,
-        '#ajax' => array (
-          'event' => 'click',
-          'callback' => 'feed_import_ajax_add_new_item',
-          'wrapper' => 'xpath_items',
-          'method' => 'append',
-        ),
-    );
-    
-    //submit buttons
-        
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save feed'),
-    );
-    
-    $form['cancel'] = array(
-        '#type' => 'submit',
-        '#value' => t('Cancel'),
-    );
-    
-    //add js
-    $form['#attached'] = array(
-      'js' => array(
-        'data' => drupal_get_path('module', 'feed_import') . '/feed_import.js',
-        'type' => 'file',
-      ),
-    );
-    
-    return $form;
+  }
+  $cbk = @$form_state['triggering_element']['#parents'][0];
+  switch(true) {
+    case $cbk == 'add_new_item':
+      $form_state['#current_item']++;
+      $vars = array('#field' => $form_state['values']['add_new_item_field']);
+      $xpaths += feed_import_generate_xpath_item($form_state['#current_item'], $vars);
+      break;
+    case preg_match('/remove_container_([0-9]{1,9})/', $cbk, $match):
+      // delete container
+      unset($xpaths['container_' . $match[1]]);
+      break;
+  }
+  $form['xpath']['items'] += $xpaths;
+  unset($xpaths);
+  // add new name
+  $fields_options = array();
+  foreach($entities[$feed['entity_info']['#entity']]['columns'] as $f => &$v) {
+    if(!isset($feed['xpath']['#items'][$f]))
+      $fields_options[$f] = $f;
+  }
+  $form['xpath']['add_new_item_field'] = array(
+    '#type' => 'select',
+    '#options' => $fields_options,
+    '#title' => t('Add new field'),
+    '#description' => t('Select field name and click "' . t('Add field') . '" button'),
+  );
+  // add new item button
+  $form['xpath']['add_new_item'] = array(
+    '#type' => 'button',
+    '#value' => t('Add selected field'),
+    '#inline' => TRUE,
+    '#ajax' => array(
+      'event' => 'click',
+      'callback' => 'feed_import_ajax_add_new_item',
+      'wrapper' => 'xpath_items',
+      'method' => 'append',
+    ),
+  );
+  // submit buttons
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save feed'),
+  );
+  $form['cancel'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+  );
+  // add js
+  $form['#attached'] = array(
+    'js' => array(
+      'data' => drupal_get_path('module', 'feed_import') . '/feed_import.js',
+      'type' => 'file',
+    ),
+  );
+  return $form;
 }
 
+/**
+ * Edit feed form validate
+ */
 function feed_import_edit_feed_form_validate($form, &$form_state) {
-    switch(@$form_state['clicked_button']['#parents'][0]) {
-      case 'cancel':
-        drupal_goto('admin/config/feed_import');
-        return;
-      //case 'go_filter'
-        break;
-    }
+  // cancel button pressed
+  if(@$form_state['clicked_button']['#parents'][0] == 'cancel') {
+    drupal_goto('admin/config/feed_import');
+  }
 }
 
+/**
+ * Edit feed form submit
+ */
 function feed_import_edit_feed_form_submit($form, &$form_state) {
-    $values = &$form_state['values'];
-    $feed = FeedImport::loadFeeds(FALSE, $values['id']);
-    if(!$feed) {
-        drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-        return;
+  $values = &$form_state['values'];
+  $feed = FeedImport::loadFeeds(FALSE, $values['id']);
+  if(!$feed) {
+    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+    return;
+  }
+  $entity = FeedImport::getEntityInfo($values['entity']);
+  $items = array();
+  for($i = 0; $i<=$form_state['#current_item']; $i++) {
+    $field = @$form_state['complete form']['xpath']['items']['container_' . $i]['#title'];
+    if($field && array_key_exists($field, $entity['columns'])) {
+      $items[$field] = array(
+        '#field' => $field,
+        '#column' => $entity['columns'][$field],
+        '#xpath' => explode(PHP_EOL, $values['xpath_' . $i]),
+        '#default_value' => $values['default_' . $i],
+        '#filter' => isset($feed['xpath']['#items'][$field]['#filter']) ? $feed['xpath']['#items'][$field]['#filter'] : array(),
+        '#pre_filter' => isset($feed['xpath']['#items'][$field]['#pre_filter']) ? $feed['xpath']['#items'][$field]['#pre_filter'] : array(),
+      );
     }
-    $entity = FeedImport::getEntityInfo($values['entity']);
-    $items = array();
-    for($i = 0; $i<=$form_state['#current_item']; $i++) {
-        $field = @$form_state['complete form']['xpath']['items']['container_' . $i]['#title'];
-        if($field && array_key_exists($field, $entity['columns'])) {
-            $items[$field] =
-                array(
-                    '#field' => $field,
-                    '#column' => $entity['columns'][$field],
-                    '#xpath' => explode(PHP_EOL, $values['xpath_' . $i]),
-                    '#default_value' => $values['default_' . $i],
-                    '#filter' => isset($feed['xpath']['#items'][$field]['#filter']) ? $feed['xpath']['#items'][$field]['#filter'] : array(),
-                    '#pre_filter' => isset($feed['xpath']['#items'][$field]['#pre_filter']) ? $feed['xpath']['#items'][$field]['#pre_filter'] : array(),
-                );
-        }
-    }
-    $feed = array(
-        'id' => (int)$values['id'],
-        'name' => $values['name'],
-        'url' => $values['url'],
-        'time' => (int)$values['time'],
-        'enabled' => (int)$values['enabled'],
-        'entity_info' => array (
-            '#entity' => $values['entity'],
-            '#table_pk' => $entity['column'],
-        ),
-        'xpath' => array (
-            '#root' => $values['root'],
-            '#uniq' => $values['uniq'],
-            '#process_function' => $values['process_function'],
-            '#items' => $items,
-        ),
-    );
-    
-    FeedImport::saveFeed($feed, TRUE);
-    drupal_set_message(t('Feed @name saved!', array('@name' => $feed['name'])));
+  }
+  $feed = array(
+    'id' => (int)$values['id'],
+    'name' => $values['name'],
+    'url' => $values['url'],
+    'time' => (int)$values['time'],
+    'enabled' => (int)$values['enabled'],
+    'entity_info' => array(
+      '#entity' => $values['entity'],
+      '#table_pk' => $entity['column'],
+    ),
+    'xpath' => array(
+      '#root' => $values['root'],
+      '#uniq' => $values['uniq'],
+      '#process_function' => $values['process_function'],
+      '#items' => $items,
+    ),
+  );
+  // save feed
+  FeedImport::saveFeed($feed, TRUE);
+  drupal_set_message(t('Feed @name saved!', array('@name' => $feed['name'])));
 }
+
 /**
  * Ajax callback to add a new item
  */
 function feed_import_ajax_add_new_item($form, &$form_state) {
-    return $form['xpath']['items']['container_' . $form_state['#current_item']];
+  return $form['xpath']['items']['container_' . $form_state['#current_item']];
 }
 
 /**
  * Ajax callback to remove an item
  */
 function feed_import_ajax_remove_item($form, &$form_state) {
-    return ''; //send empty string to remove container
+  // send empty string to remove container
+  return '';
 }
 
 /**
  * Generate field
+ *
+ * @param int $pos
+ *   Fieldset number
+ * @param array $values
+ *   Array containing default values
+ * @param bool $collapsed
+ *   Inicates if fieldset is collapsed
+ *
+ * @return array
+ *   Fieldset containing xpath inputs
  */
 function feed_import_generate_xpath_item($pos = 0, $values = NULL, $collapsed = FALSE) {
-    $container = 'container_' . $pos;
-    $item[$container] = array (
-        '#type' => 'fieldset',
-        '#collapsible' => TRUE,
-        '#collapsed' => $collapsed,
-        '#title' => isset($values['#field']) ? $values['#field'] : t('Unspecified field'),
-        '#attributes' => array('id' => 'item_container_' . $pos),
-    );
-    
-    $container = &$item[$container];
-      
-    $container['xpath_' . $pos] = array (
-        '#type' => 'textarea',
-        '#default_value' => isset($values['#xpath']) ? implode(PHP_EOL, $values['#xpath']) : '',
-        '#title' => t('XPATH'),
-        '#description' => t('Enter XPATH to item. You can enter multiple XPATHs (one per line) until one passes pre-filter.')
-    );
-    
-    
-    $container['default_' . $pos] = array (
-        '#type' => 'textfield',
-        '#default_value' => isset($values['#default_value']) ? $values['#default_value'] : '',
-        '#title' => t('Default value'),
-        '#description' => t('If no XPATH passes pre-filter then use a default value.')
-    );
-    
-    $container['remove_container_' . $pos] = array (
-        '#type' => 'button',
-        '#value' => t('Remove field @field', array('@field' => strtoupper($container['#title']))),
-        '#ajax' => array (
-            'event' => 'click',
-            'wrapper' => 'item_container_' . $pos,
-            'method' => 'replace',
-            'callback' => 'feed_import_ajax_remove_item',
-        ),
-    );
-    
-    return $item;
+  $container = 'container_' . $pos;
+  $item[$container] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => $collapsed,
+    '#title' => isset($values['#field']) ? $values['#field'] : t('Unspecified field'),
+    '#attributes' => array('id' => 'item_container_' . $pos),
+  );
+  $container = &$item[$container];
+  $container['xpath_' . $pos] = array(
+    '#type' => 'textarea',
+    '#default_value' => isset($values['#xpath']) ? implode(PHP_EOL, $values['#xpath']) : '',
+    '#title' => t('XPATH'),
+    '#description' => t('Enter XPATH to item. You can enter multiple XPATHs (one per line) until one passes pre-filter.'),
+  );
+  $container['default_' . $pos] = array(
+    '#type' => 'textfield',
+    '#default_value' => isset($values['#default_value']) ? $values['#default_value'] : '',
+    '#title' => t('Default value'),
+    '#description' => t('If no XPATH passes pre-filter then use a default value.'),
+  );
+  $container['remove_container_' . $pos] = array(
+    '#type' => 'button',
+    '#value' => t('Remove field @field', array('@field' => strtoupper($container['#title']))),
+    '#ajax' => array(
+      'event' => 'click',
+      'wrapper' => 'item_container_' . $pos,
+      'method' => 'replace',
+      'callback' => 'feed_import_ajax_remove_item',
+    ),
+  );
+  return $item;
 }
-
-
 
 
 /**
  * Edit filter form
  */
 function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id = 0) {
-    $feed = FeedImport::loadFeeds(FALSE, $id);
-    if(!$feed) {
-        drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-        return;
-    }
-    if(!isset($form_state['#item_filter'])) {
-        $form_state['#item_filter'] = $f; //save filter
-        $form_state['#filter_fields'] = array_keys($feed['xpath']['#items']); //save fields to be filtered
-    }
-    $form['#filter_fields'] = $form_state['#filter_fields'];
-    $param_field = variable_get('feed_import_field_param_name', '[field]');
-    $help = <<<HELP
-     FILTER NAME: a name given by you for this filter<br />
-     FILTER FUNCTION: name of php function to apply to field value.
-     You may also use a static function like this: ClassName::functionName.
-     Also check our provided filters in FeedImportFilter class.<br />
-     FUNCTION PARAMS: enter here params (one per line) for php function. 
-     Enter "@param_field" (without quotes) were you want to be sent field value as parameter.<br />
-     Filtered value is the resulted string of all function calls.<br />
-HELP;
-    $help = t($help, array('@param_field' => $param_field));
-    
-    $form['info'] = array (
-        '#prefix' => '<h2>',
-        '#suffix' => '</h2>' . $help,
-        '#markup' => t('Edit @filter for @name', array(
-                                                '@name' => $feed['name'],
-                                                '@filter' => $form_state['#item_filter'] == '#filter' ? t('filters') : t('pre-filters'),
-                                                )
-                       ),
-    );
-    
-    $form['id'] = array(
-        '#type' => 'hidden',
-        '#value' => $feed['id'],
-    );
-    
-    if(isset($form_state['values'])) {
-      foreach($form_state['#filter_fields'] as &$field) {
-        $filters = array();
-        $filter[$field]['#tree'] = TRUE;
-        $pos = 0;
-        if(!empty($form_state['values']['table_content'][$field]))
-        foreach($form_state['values']['table_content'][$field] as &$filter) {
-          $filters[$field][$pos] = feed_import_new_filter($pos,
-                                           array(
-                                             '#name' => $filter['name'],
-                                             '#function' => $filter['function'],
-                                             '#params' => explode(PHP_EOL, $filter['params']),
-                                           )
-                                       );
-          $pos++;
-        }
-        //add new field
-        if($form_state['#add_filter'] == $field) {
-          $filters[$field][$pos] = feed_import_new_filter($pos,
-                                            array(
-                                              '#name' => '',
-                                              '#function' => '',
-                                              '#params' => array($param_field),
-                                            )
-                                        );
-        }
-
-        $form['container_' . $field] = array (
-            '#type' => 'fieldset',
-            '#title' => $field,
-            '#collapsible' => TRUE,
-            '#collapsed' => $field != $form_state['#add_filter'] && $field != $form_state['#delete_filter'],
-            'table_content' => array('#tree' => TRUE) + $filters,
-            'actions' => feed_import_add_filter_actions($field),
+  $feed = FeedImport::loadFeeds(FALSE, $id);
+  if(!$feed) {
+    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+    return;
+  }
+  if(!isset($form_state['#item_filter'])) {
+    // save filter
+    $form_state['#item_filter'] = $f;
+    // save fields to be filtered
+    $form_state['#filter_fields'] = array_keys($feed['xpath']['#items']);
+  }
+  $form['#filter_fields'] = $form_state['#filter_fields'];
+  $param_field = variable_get('feed_import_field_param_name', '[field]');
+  $help = array();
+  $help[0]  = t('Filter name') . ': ' . t('A name given by you for this filter.');
+  $help[1]  = t('Filter function') . ': ' . t('Name of the php function to apply on field value.') . ' ';
+  $help[1] .= t('You may also use a static function like this: ClassName::functionName.') . ' ';
+  $help[1] .= t('Also check our provided filters in FeedImportFilter class.');
+  $help[2]  = t('Function params') . ': ' . t('Enter here params (one per line) for php function.') . ' ';
+  $help[2] .= t('Enter "@param_field" (without quotes) were you want to be sent field value as parameter.',
+                array('@param_field' => $param_field)) . ' ';
+  $help[3]  = t('Filtered value is the resulted string of all function calls from top to bottom.');
+  $help = implode('<br />', $help);
+  $vars = array(
+    '@name' => $feed['name'],
+    '@filter' => $form_state['#item_filter'] == '#filter' ? t('filters') : t('pre-filters'),
+  );
+  $form['info'] = array(
+    '#prefix' => '<h2>',
+    '#suffix' => '</h2>' . $help,
+    '#markup' => t('Edit @filter for @name', $vars),
+  );
+  $form['id'] = array(
+    '#type' => 'hidden',
+    '#value' => $feed['id'],
+  );
+  if(isset($form_state['values'])) {
+    foreach($form_state['#filter_fields'] as &$field) {
+      $filters = array();
+      $filter[$field]['#tree'] = TRUE;
+      $pos = 0;
+      if(!empty($form_state['values']['table_content'][$field]))
+      foreach($form_state['values']['table_content'][$field] as &$filter) {
+        $vars = array(
+          '#name' => $filter['name'],
+          '#function' => $filter['function'],
+          '#params' => explode(PHP_EOL, $filter['params']),
         );
+        $filters[$field][$pos] = feed_import_new_filter($pos, $vars);
+        $pos++;
       }
-    } else { //take from feed
-      foreach($feed['xpath']['#items'] as $field => &$val) {
-          $filters = array();
-          $filters[$field]['#tree'] = TRUE;
-          $pos = 0;
-          foreach($val[$form_state['#item_filter']] as $name => &$filter) {
-              $filters[$field][$pos] = feed_import_new_filter($pos,
-                                              array(
-                                                  '#name' => $name,
-                                                  '#function' => $filter['#function'],
-                                                  '#params' => $filter['#params'],
-                                                )
-                                              );
-              $pos++;
-          }
-          $form['container_' . $field] = array (
-            '#type' => 'fieldset',
-            '#title' => $field,
-            '#collapsible' => TRUE,
-            '#collapsed' => TRUE,
-            'table_content' => array('#tree' => TRUE) + $filters,
-            'actions' => feed_import_add_filter_actions($field),
-          );
+      // add new field
+      if($form_state['#add_filter'] == $field) {
+        $vars = array(
+          '#name' => '',
+          '#function' => '',
+          '#params' => array($param_field),
+        );
+        $filters[$field][$pos] = feed_import_new_filter($pos, $vars);
       }
+      $form['container_' . $field] = array(
+        '#type' => 'fieldset',
+        '#title' => $field,
+        '#collapsible' => TRUE,
+        '#collapsed' => ($field != $form_state['#add_filter']) && ($field != $form_state['#delete_filter']),
+        'table_content' => array('#tree' => TRUE) + $filters,
+        'actions' => feed_import_add_filter_actions($field),
+      );
     }
-    
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Save filters'),
-        '#prefix' => t('Your filters will be saved only after you press the button below.') . '<br />',
-    );
-    
-    return $form;
+  }
+  else {
+    foreach($feed['xpath']['#items'] as $field => &$val) {
+      $filters = array();
+      $filters[$field]['#tree'] = TRUE;
+      $pos = 0;
+      foreach($val[$form_state['#item_filter']] as $name => &$filter) {
+        $vars = array(
+          '#name' => $name,
+          '#function' => $filter['#function'],
+          '#params' => $filter['#params'],
+        );
+        $filters[$field][$pos] = feed_import_new_filter($pos, $vars);
+        $pos++;
+      }
+      $form['container_' . $field] = array(
+        '#type' => 'fieldset',
+        '#title' => $field,
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        'table_content' => array('#tree' => TRUE) + $filters,
+        'actions' => feed_import_add_filter_actions($field),
+      );
+    }
+  }
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save filters'),
+    '#prefix' => t('Your filters will be saved only after you press the button below.') . '<br />',
+  );
+  return $form;
 }
+
+/**
+ * Edit filter form validate
+ */
 function feed_import_edit_filter_form_validate(&$form, &$form_state) {
   if($form_state['submitted']) return;
   $delete_filter = NULL;
@@ -1104,7 +1095,7 @@ function feed_import_edit_filter_form_validate(&$form, &$form_state) {
         $delete_filter = $match[1];
         break;
     }
-    //delete selected
+    // delete selected
     if($field == $delete_filter) {
        foreach($form_state['values']['table_content'][$field] as $key => &$filter) {
           if($filter['selected'])
@@ -1119,155 +1110,166 @@ function feed_import_edit_filter_form_validate(&$form, &$form_state) {
   $form_state['#delete_filter'] = $delete_filter;
 }
 
+/**
+ * Edit filter form submit
+ */
 function feed_import_edit_filter_form_submit($form, &$form_state) {
-    $values = &$form_state['values'];
-    $feed = FeedImport::loadFeeds(FALSE, $values['id']);
-    if(!$feed) {
-        drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-        return;
-    }
-    foreach($feed['xpath']['#items'] as $field => &$item) {
-       $item[$form_state['#item_filter']] = array();
-       if(!empty($values['table_content'][$field])) {
-        usort($values['table_content'][$field], 'feed_import_sort_filter_by_weight');
-        foreach($values['table_content'][$field] as &$filter) {
-          if(!$filter['name'] || !$filter['function']) continue;
-          if(!$filter['params'])  {
-           $filter['params'] = array(variable_get('feed_import_field_param_name','[field]'));
-          } else {
-            $filter['params'] = explode(PHP_EOL, $filter['params']);
-          }
-          $item[$form_state['#item_filter']][$filter['name']] = array('#function' => $filter['function'], '#params' => $filter['params']);
-          $filter = NULL;
-        }  
+  $values = &$form_state['values'];
+  $feed = FeedImport::loadFeeds(FALSE, $values['id']);
+  if(!$feed) {
+    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+    return;
+  }
+  foreach($feed['xpath']['#items'] as $field => &$item) {
+    $item[$form_state['#item_filter']] = array();
+    if(!empty($values['table_content'][$field])) {
+     usort($values['table_content'][$field], 'feed_import_sort_filter_by_weight');
+     foreach($values['table_content'][$field] as &$filter) {
+        if(!$filter['name'] || !$filter['function']) {
+          continue;
+        }
+        if(!$filter['params'])  {
+         $filter['params'] = array(variable_get('feed_import_field_param_name','[field]'));
+        }
+        else {
+          $filter['params'] = explode(PHP_EOL, $filter['params']);
+        }
+        $item[$form_state['#item_filter']][$filter['name']] = array(
+          '#function' => $filter['function'],
+          '#params' => $filter['params'],
+        );
+        $filter = NULL;
       }
     }
-    FeedImport::saveFeed($feed, TRUE);
-    drupal_set_message(t('@filter saved for @name',
-                         array(
-                               '@filter' => $form_state['#item_filter'] == '#filter' ? t('Filters') : t('Pre-filters'),
-                               '@name' => $feed['name'])
-                         )
-                       );
+  }
+  // save feed
+  FeedImport::saveFeed($feed, TRUE);
+  $vars = array(
+    '@filter' => $form_state['#item_filter'] == '#filter' ? t('Filters') : t('Pre-filters'),
+    '@name' => $feed['name'],
+  );
+  drupal_set_message(t('@filter saved for @name', $vars));
 }
 
-
-
 /**
- * usort callback, for sorting dilters by weight
+ * usort callback, for sorting filters by weight
  */
 function feed_import_sort_filter_by_weight($a, $b) {
   if($a['weight'] == $b['weight']) return 0;
   return $a['weight'] > $b['weight'] ? 1 : -1;
 }
 
-
 /**
  * Return new filter elements
+ *
+ * @param int $pos
+ *   Filter position
+ * @param array $values
+ *   Default filter values
+ *
+ *  @return array
+ *    Array containing filter html forms
  */
 function feed_import_new_filter($pos = 0, $values = NULL) {
-    return array (
-        'name' => array (
-        '#type' => 'textfield',
-        '#size' => 30,
-        '#default_value' => isset($values['#name']) ? $values['#name'] : '',
-      ),
-      
-      'function' => array(
-        '#type' => 'textfield',
-        '#size' => 30,
-        '#default_value' => isset($values['#function']) ? $values['#function'] : '',
-      ),
-      
-     'params' => array(
-        '#type' => 'textarea',
-        '#default_value' => isset($values['#params']) ? implode(PHP_EOL, $values['#params']) : '',
-        '#rows' => 2,
-      ),
-      
-      'selected' => array (
-        '#type' => 'checkbox',
-        '#default_value' => 0,
-      ),
-      //...
-      
-      'weight' => array (
-        '#type' => 'weight',
-        '#delta' => 15,
-        '#default_value' => $pos,
-        '#attributes' => array('class' => array('weight')),
-      )
-    );
+  return array(
+    'name' => array(
+      '#type' => 'textfield',
+      '#size' => 30,
+      '#default_value' => isset($values['#name']) ? $values['#name'] : '',
+    ),
+    'function' => array(
+      '#type' => 'textfield',
+      '#size' => 30,
+      '#default_value' => isset($values['#function']) ? $values['#function'] : '',
+    ),
+   'params' => array(
+      '#type' => 'textarea',
+      '#default_value' => isset($values['#params']) ? implode(PHP_EOL, $values['#params']) : '',
+      '#rows' => 2,
+    ),
+    'selected' => array(
+      '#type' => 'checkbox',
+      '#default_value' => 0,
+    ),
+    'weight' => array(
+      '#type' => 'weight',
+      '#delta' => 15,
+      '#default_value' => $pos,
+      '#attributes' => array('class' => array('weight')),
+    )
+  );
 }
 
 /**
- * Add filter actions: add new, remove all
+ * Add filter button actions: add new, remove all
+ *
+ * @param string $field
+ *   Field name
+ *
+ * @return array
+ *   Array with buttons
  */
 function feed_import_add_filter_actions($field) {
-   return array(
-      ('add_new_filter_' . $field) => array (
-        '#type' => 'button',
-        '#value' => t('Add new filter to @field', array('@field' => strtoupper($field))),
-      ),
-      ('delete_selected_filters_' . $field) => array (
-        '#type' => 'button',
-        '#value' => t('Remove selected from @field', array('@field' => strtoupper($field))),
-      ),
-    );
+  return array(
+    ('add_new_filter_' . $field) => array(
+      '#type' => 'button',
+      '#value' => t('Add new filter to @field', array('@field' => strtoupper($field))),
+    ),
+    ('delete_selected_filters_' . $field) => array(
+      '#type' => 'button',
+      '#value' => t('Remove selected from @field', array('@field' => strtoupper($field))),
+    ),
+   );
 }
+
 /**
  * Implements hook_theme()
  */
 function feed_import_theme() {
-    return array(
-        'feed_import_edit_filter_form' => array(
-            'render element' => 'form',
-        ),
-    );
+  return array(
+    'feed_import_edit_filter_form' => array(
+      'render element' => 'form',
+    ),
+  );
 }
 
 /**
  * Theme form feed_import_edit_filter_form
  */
 function theme_feed_import_edit_filter_form($form) {
-    $form = $form['form'];
-    $header = array(
-        t('Filter name'),
-        t('Filter function'),
-        t('Function params (one per line)'),
-        t('Select'),
-        t('Weight'),
-    );
-    foreach($form['#filter_fields'] as &$field) {
-        $rows = array();
-        if(!empty($form['container_' . $field]['table_content'][$field]))
-        foreach($form['container_' . $field]['table_content'][$field] as $id => &$row) {
-            if(!is_numeric($id)) {
-                continue;
-            }
-            $data = array('name', 'function', 'params', 'selected', 'weight');
-            foreach($data as &$d) {
-              //unset($row[$d]['#value']);
-              if(isset($row[$d]['#checked'])) $row[$d]['#checked'] = FALSE;
-              $row[$d]['#value'] = $row[$d]['#default_value'];
-              $d = drupal_render($row[$d]);
-            }
-            
-            $rows[] = array('data' => $data, 'class' => array('draggable'),);
-            //$row = NULL; $data = NULL;
+  $form = $form['form'];
+  $header = array(
+    t('Filter name'),
+    t('Filter function'),
+    t('Function params (one per line)'),
+    t('Select'),
+    t('Weight'),
+  );
+  foreach($form['#filter_fields'] as &$field) {
+    $rows = array();
+    if(!empty($form['container_' . $field]['table_content'][$field]))
+    foreach($form['container_' . $field]['table_content'][$field] as $id => &$row) {
+      if(!is_numeric($id)) {
+        continue;
+      }
+      $data = array('name', 'function', 'params', 'selected', 'weight');
+      foreach($data as &$d) {
+        if(isset($row[$d]['#checked'])) {
+          $row[$d]['#checked'] = FALSE;
         }
-        drupal_add_tabledrag('table_' . $field, 'order', 'sibling', 'weight');
-        $form['container_' . $field]['table_content'][$field] = NULL;
-        $form['container_' . $field]['table_content'][$field]['#markup'] = theme('table', array(
-                                                                                'header' => $header,
-                                                                                'rows' => $rows,
-                                                                                'attributes' => array('id' => 'table_' . $field),
-                                                                              )
-                                                                      );
+        $row[$d]['#value'] = $row[$d]['#default_value'];
+        $d = drupal_render($row[$d]);
+      }
+      $rows[] = array('data' => $data, 'class' => array('draggable'));
     }
-    return drupal_render_children($form);
+    drupal_add_tabledrag('table_' . $field, 'order', 'sibling', 'weight');
+    $form['container_' . $field]['table_content'][$field] = NULL;
+    $table = array(
+      'header' => $header,
+      'rows' => $rows,
+      'attributes' => array('id' => 'table_' . $field),
+    );
+    $form['container_' . $field]['table_content'][$field]['#markup'] = theme('table', $table);
+  }
+  return drupal_render_children($form);
 }
-
-
-
-/**eof**/
