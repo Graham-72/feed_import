@@ -7,7 +7,7 @@
       $('#edit-add-new-item').bind('click', function(e) {
           setTimeout(function() {
             $('#edit-add-new-item-field option:selected').remove();
-            if($('#edit-add-new-item-field option').length == 0) {
+            if ($('#edit-add-new-item-field option').length == 0) {
               $('#edit-add-new-item').unbind('click');
             }
           }, 1000);

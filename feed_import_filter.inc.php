@@ -17,8 +17,8 @@ class FeedImportFilter {
    *   String/Array of strings with no CDATA
    */
   public static function removeCDATA($field) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         $f = self::removeCDATA($f);
       }
       return $field;
@@ -36,13 +36,13 @@ class FeedImportFilter {
    *   Trimmed string/array of strings with no double whitespaces
    */
   public static function removeDoubleSpaces($field) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         $f = self::removeDoubleSpaces($f);
       }
       return $field;
     }
-    while(strpos($field, '  ') !== FALSE) {
+    while (strpos($field, '  ') !== FALSE) {
       $field = str_replace('  ', ' ', $field);
     }
     return trim($field);
@@ -59,8 +59,8 @@ class FeedImportFilter {
    *   An array containing splitted string
    */
   public static function getLines($field, $glue = PHP_EOL) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         self::getLines($field, $glue);
       }
       return $field;
@@ -79,8 +79,8 @@ class FeedImportFilter {
    *   Joined string
    */
   public static function glueLines($field, $glue = PHP_EOL) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         self::glueLines($field, $glue);
       }
       return $field;
@@ -99,8 +99,8 @@ class FeedImportFilter {
    *   A string or an array of strings with text appended
    */
   public static function append($field, $text) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         $f = self::append($f, $text);
       }
       return $field;
@@ -119,8 +119,8 @@ class FeedImportFilter {
    *   A string or an array of strings with text prepended
    */
   public static function prepend($field, $text) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         $f = self::prepend($f, $text);
       }
       return $field;
@@ -139,8 +139,8 @@ class FeedImportFilter {
    *   Trimmed string or array of strings
    */
   public static function trim($field, $chars = NULL) {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         $f = trim($f, $chars);
       }
       return $field;
@@ -161,8 +161,8 @@ class FeedImportFilter {
    *   Encoded string or array of strings
    */
   public static function convertEncoding($field, $to = 'UTF-8', $from = 'ISO-8859-1// TRANSLIT') {
-    if(is_array($field)) {
-      foreach($field as &$f) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
         $f = self::convertEncoding($f, $to, $from);
       }
       return $field;
