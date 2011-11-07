@@ -171,7 +171,7 @@ class FeedImport {
    *   Feed info array
    */
   public static function processFeed(array $feed) {
-    // reset report
+    // Reset report
     self::$report = array(
       'rescheduled' => 0,
       'updated' => 0,
@@ -180,15 +180,15 @@ class FeedImport {
       'start' => time(),
       'parse' => 0,
     );
-    // give import time (for large imports)
+    // Give import time (for large imports)
     set_time_limit(0);
     $func = @$feed['xpath']['#process_function'];
     if (!$func || !method_exists(__CLASS__, $func)) {
       $func = reset(self::$processFunctions);
     }
-    // call process function
+    // Call process function
     self::$func($feed);
-    // set total time report
+    // Set total time report
     self::$report['time'] = time() - self::$report['start'];
     self::$report['parse'] -= self::$report['start'];
   }
@@ -207,7 +207,7 @@ class FeedImport {
     $conditions = &$q_delete->conditions();
     foreach ($ids as &$id) {
       $q_delete->condition('entity_id', $id, 'IN')->execute();
-      // remove last IN condition
+      // Remove last IN condition
       array_pop($conditions);
       $id = NULL;
     }
@@ -396,25 +396,25 @@ class FeedImport {
    *   Created Entity
    */
   protected static function createEntity(&$feed, &$item) {
-    // create new object to hold fields values
+    // Create new object to hold fields values
     $entity = new stdClass();
-    // check if item already exists
+    // Check if item already exists
     $uniq = self::getXpathValue($item, $feed['xpath']['#uniq']);
-    // create a hash to identify this item in bd
+    // Create a hash to identify this item in bd
     $entity->{self::$tempHash} = self::createHash($uniq, $feed['id']);
     // add to hashes array
     self::$generatedHashes[] = $entity->{self::$tempHash};
-    // set default language, this can be changed by language item
+    // Set default language, this can be changed by language item
     $entity->language = LANGUAGE_NONE;
-    // get all fields
+    // Get all fields
     foreach ($feed['xpath']['#items'] as &$field) {
       $i = 0;
       $aux = '';
       $count = count($field['#xpath']);
-      // check ONCE if we have to filter or prefilter field
+      // Check ONCE if we have to filter or prefilter field
       $prefilter = !empty($field['#pre_filter']);
       $filter = !empty($field['#filter']);
-      // loop through xpaths until we have data, otherwise use default value
+      // Loop through xpaths until we have data, otherwise use default value
       while ($i < $count) {
         if (!$field['#xpath'][$i]) {
           $i++;
@@ -423,14 +423,14 @@ class FeedImport {
         $aux = self::getXpathValue($item, $field['#xpath'][$i]);
         if ($prefilter) {
           $pfval = self::applyFilter($aux, $field['#pre_filter']);
-          // if item doesn't pass prefilter than go to next option
+          // If item doesn't pass prefilter than go to next option
           if (!self::hasContent($pfval)) {
             $i++;
             continue;
           }
           unset($pfval);
         }
-        // if filter passed prefilter then apply filter and exit while loop
+        // If filter passed prefilter then apply filter and exit while loop
         if (self::hasContent($aux)) {
           if ($filter) {
             $aux = self::applyFilter($aux, $field['#filter']);
@@ -439,11 +439,11 @@ class FeedImport {
         }
         $i++;
       }
-      // if we don't have any data we use default value
+      // If we don't have any data we use default value
       if (!self::hasContent($aux)) {
           $aux = $field['#default_value'];
       }
-      // set field value
+      // Set field value
       if ($field['#column']) {
         if (is_array($aux)) {
           $i = 0;
@@ -459,7 +459,7 @@ class FeedImport {
       else {
         $entity->{$field['#field']} = $aux;
       }
-      // no need anymore, free memory
+      // No need anymore, free memory
       unset($aux);
     }
     return $entity;
@@ -473,38 +473,38 @@ class FeedImport {
    *   An array with entities
    */
   protected static function saveEntities(&$feed, &$items) {
-    // parse report
+    // Parse report
     self::$report['parse'] = time();
-    // get existing items for update
+    // Get existing items for update
     if (!empty(self::$generatedHashes)) {
       $ids = self::getEntityIdsFromHash(self::$generatedHashes);
-      // reset all generated hashes
+      // Reset all generated hashes
       self::$generatedHashes = array();
     }
     else {
       $ids = array();
     }
-    // this sets expire timestamp
+    // This sets expire timestamp
     $feed['time'] = (int) $feed['time'];
-    // report data
+    // Report data
     self::$report['total'] = count($items);
-    // now we create real entityes or update existent
+    // Now we create real entityes or update existent
     foreach ($items as &$item) {
-      // save hash and remove from item
+      // Save hash and remove from item
       $hash = $item->{self::$tempHash};
       unset($item->{self::$tempHash});
-      // check if item is already imported
+      // Check if item is already imported
       if (isset($ids[$hash])) {
         $changed = FALSE;
-        // load entity
+        // Load entity
         $entity = @call_user_func(self::$functionLoad, $ids[$hash]->entity_id);
-        // if entity is missing then skip
+        // If entity is missing then skip
         if (empty($entity)) {
           unset($entity);
           continue;
         }
         $lang = $item->language;
-        // find if entity is different from last feed
+        // Find if entity is different from last feed
         foreach ($item as $key => &$value) {
           if (is_array($value)) {
             if (!isset($entity->{$key}[$lang]) || empty($entity->{$key}[$lang])) {
@@ -546,40 +546,40 @@ class FeedImport {
           }
         }
         $ok = TRUE;
-        // check if entity is changed and save changes
+        // Check if entity is changed and save changes
         if ($changed) {
           try {
             @call_user_func(self::$functionSave, $entity);
-            // set report about updated items
+            // Set report about updated items
             self::$report['updated']++;
           }
           catch (Exception $e) {
-            // report error?
+            // Report error?
             $ok = FALSE;
           }
         }
         else {
-          // set report about rescheduled items
+          // Set report about rescheduled items
           self::$report['rescheduled']++;
         }
 
         if ($ok) {
-          // add to update ids
+          // Add to update ids
           self::updateIds($ids[$hash]->id);
         }
-        // free some memory
+        // Free some memory
         unset($ids[$hash], $entity, $lang);
       }
       else {
-        // mark as new
+        // Mark as new
         $item->{$feed['entity_info']['#table_pk']} = NULL;
         $ok = TRUE;
         try {
-          // save imported item
+          // Save imported item
           @call_user_func(self::$functionSave, $item);
         }
         catch (Exception $e) {
-          // report error?
+          // Report error?
           $ok = FALSE;
         }
         if ($ok) {
@@ -589,24 +589,24 @@ class FeedImport {
             $hash,
             $feed['time'] ? time() + $feed['time'] : 0
           );
-          // insert into feed import hash table
+          // Insert into feed import hash table
           self::insertItem($vars);
-          // set report about new items
+          // Set report about new items
           self::$report['new']++;
         }
       }
-      // no need anymore
+      // No need anymore
       $item = NULL;
     }
-    // free some memory
+    // No need anymore
     unset($items, $ids);
-    // insert left items
+    // Insert left items
     self::insertItem(NULL);
     $vars = array(
       'expire' => $feed['time'] ? time() + $feed['time'] : 0,
       'feed_id' => $feed['id'],
     );
-    // update ids for existing items
+    // Update ids for existing items
     self::updateIds($vars);
   }
   /**
@@ -624,7 +624,7 @@ class FeedImport {
     $field_param = variable_get('feed_import_field_param_name', '[field]');
     foreach ($filters as &$filter) {
       $filter['#function'] = trim($filter['#function']);
-      // check if function exists, support static functions
+      // Check if function exists, support static functions
       if (strpos($filter['#function'], '::') !== FALSE) {
         $filter['#function'] = explode('::', $filter['#function'], 2);
         if (!method_exists(@$filter['#function'][0], @$filter['#function'][1])) {
@@ -636,10 +636,10 @@ class FeedImport {
           continue;
         }
       }
-      // set field value
+      // Set field value
       $key = array_search($field_param, $filter['#params']);
       $filter['#params'][$key] = $field;
-      // apply filter
+      // Apply filter
       $field = call_user_func_array($filter['#function'], $filter['#params']);
       $filter = NULL;
     }
@@ -677,7 +677,7 @@ class FeedImport {
                     ->fields(array('feed_id', 'entity_id', 'hash', 'expire'));
     }
     $q_insert_chunk = variable_get('feed_import_insert_hashes_chunk', 500);
-    // call execute and reset number of insert items
+    // Call execute and reset number of insert items
     if ($values == NULL) {
       if ($q_insert_items) {
         $q_insert->execute();
@@ -685,7 +685,7 @@ class FeedImport {
       }
       return;
     }
-    // set values
+    // Set values
     $q_insert->values($values);
     $q_insert_items++;
     if ($q_insert_items == $q_insert_chunk) {
@@ -710,19 +710,19 @@ class FeedImport {
                     ->fields(array('expire' => $value['expire']))
                     ->condition('feed_id', $value['feed_id'], '=');
       $conditions = &$q_update->conditions();
-      // split in chunks
+      // Split in chunks
       $update_ids = array_chunk($update_ids, variable_get('feed_import_update_ids_chunk', 1000));
       foreach ($update_ids as &$ids) {
         $q_update->condition('id', $ids, 'IN')->execute();
-        // remove last IN condition
+        // Remove last IN condition
         array_pop($conditions);
         $ids = NULL;
       }
-      // reset update ids
+      // Reset update ids
       $update_ids = array();
     }
     else {
-      // add to list
+      // Add to list
       $update_ids[] = (int) $value;
     }
   }
@@ -756,38 +756,38 @@ class FeedImport {
     if (!self::checkFunctions($feed['entity_info']['#entity'])) {
       return FALSE;
     }
-    // load xml file from url
+    // Load xml file from url
     try {
       $xml = simplexml_load_file($feed['url'], self::$simpleXMLElement, LIBXML_NOCDATA);
     }
     catch (Exception $e) {
-      // report error?
+      // Report error?
       $xml = FALSE;
     }
-    // if is empty then exit
+    // If is empty then exit
     if ($xml == FALSE) {
-      // report ?
+      // Report?
       return FALSE;
     }
-    // get items from root
+    // Get items from root
     $xml = $xml->xpath($feed['xpath']['#root']);
-    // get total number of items
+    // Get total number of items
     $count_items = count($xml);
-    // check if there are items
+    // Check if there are items
     if (!$count_items) {
-      // report ?
+      // Report?
       return FALSE;
     }
-    // this is temp name to hold hash
+    // This is temp name to hold hash
     self::$tempHash = variable_get('feed_import_hash_property', self::$tempHash);
-    // reset generated hashes
+    // Reset generated hashes
     self::$generatedHashes = array();
-    // check feed items
+    // Check feed items
     foreach ($xml as &$item) {
-      // set this item value to entity, so all entities will be in $xml at end
+      // Set this item value to entity, so all entities will be in $xml at end
       $item = self::createEntity($feed, $item);
     }
-    // save all created entities
+    // Save all created entities
     self::saveEntities($feed, $xml);
     unset($feed, $xml);
   }
@@ -801,25 +801,25 @@ class FeedImport {
     if (!self::checkFunctions($feed['entity_info']['#entity'])) {
       return FALSE;
     }
-    // this is temp name to hold hash
+    // This is temp name to hold hash
     self::$tempHash = variable_get('feed_import_hash_property', self::$tempHash);
-    // reset generated hashes
+    // Reset generated hashes
     self::$generatedHashes = array();
-    // this will hold all generated entities
+    // This will hold all generated entities
     $entities = array();
-    // xml head
+    // XML head
     $xml_head = '<?xml version="1.0" encoding="utf-8"?>';
-    // bytes read with fread
+    // Bytes read with fread
     $chunk_length = 8192;
     $xml_head = variable_get('feed_import_processFeedChunked_xml_head', $xml_head);
     $chunk_length = variable_get('feed_import_processFeedChunked_chunk_length', $chunk_length);
     if ($chunk_length <= 0) $chunk_length = 8192;
-    // open xml url
+    // Open xml url
     if (!($fp = fopen($feed['url'], 'rb'))) {
-      // report error?
+      // Report error?
       return;
     }
-    // preparing tags
+    // Preparing tags
     $tag = trim($feed['xpath']['#root'], '/');
     $tag = array(
       'open' => '<' . $tag,
@@ -827,19 +827,19 @@ class FeedImport {
       'length' => drupal_strlen($tag),
     );
     $tag['closelength'] = drupal_strlen($tag['close']);
-    // this holds xml content
+    // This holds xml content
     $content = '';
-    // read all content in chunks
+    // Read all content in chunks
     while (!feof($fp)) {
       $content .= fread($fp, $chunk_length);
-      // if there isn't content read again
+      // If there isn't content read again
       if (!$content) {
         continue;
       }
       while (TRUE) {
         $openpos = strpos($content, $tag['open']);
         $openposclose = $openpos+$tag['length']+1;
-        // check for open tag
+        // Check for open tag
         if ($openpos === FALSE || !isset($content[$openposclose]) || (@$content[$openposclose] != ' ' && @$content[$openposclose] != '>')) {
           break;
         }
@@ -847,39 +847,39 @@ class FeedImport {
         if ($closepos === FALSE) {
           break;
         }
-        // we have data
+        // We have data
         $closepos += $tag['closelength'];
         
         // I use substr() instead of drupal_substr() for performance reasons
         
-        // create xml string
+        // Create xml string
         $item = $xml_head . substr($content, $openpos, $closepos - $openpos);
-        // new content
+        // New content
         $content = substr($content, $closepos-1);
-        // create xml object
+        // Create xml object
         try {
           $item = simplexml_load_string($item, self::$simpleXMLElement, LIBXML_NOCDATA);
         }
         catch (Exception $e) {
-          // report error?
+          // Report error?
           continue;
         }
-        // parse item
+        // Parse item
         $item = reset($item->xpath($feed['xpath']['#root']));
         if (empty($item)) {
           continue;
         }
-        // create entity
+        // Create entity
         $item = self::createEntity($feed, $item);
-        // put in entities array
+        // Put in entities array
         $entities[] = $item;
-        // no need anymore
+        // No need anymore
         unset($item);
       }
     }
-    // close file
+    // Close file
     fclose($fp);
-    // save all created entities
+    // Save all created entities
     self::saveEntities($feed, $entities);
     unset($feed, $entities);
   }
