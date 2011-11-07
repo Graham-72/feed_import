@@ -157,7 +157,7 @@ function feed_import_menu() {
 }
 
 /**
- * Implements hook_entity_delete()
+ * Implements hook_entity_delete().
  */
 function feed_import_entity_delete($entity, $type) {
   $info = FeedImport::getEntityInfo($type);
@@ -196,7 +196,7 @@ function feed_import_add_to_delete($id = NULL) {
 }
 
 /**
- * Implements hook_cron()
+ * Implements hook_cron().
  */
 function feed_import_cron() {
   // check if cron import is enabled
@@ -961,7 +961,7 @@ function feed_import_generate_xpath_item($pos = 0, $values = NULL, $collapsed = 
   );
   $container['remove_container_' . $pos] = array(
     '#type' => 'button',
-    '#value' => t('Remove field @field', array('@field' => strtoupper($container['#title']))),
+    '#value' => t('Remove field @field', array('@field' => drupal_strtoupper($container['#title']))),
     '#ajax' => array(
       'event' => 'click',
       'wrapper' => 'item_container_' . $pos,
@@ -1039,7 +1039,7 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
       }
       $form['container_' . $field] = array(
         '#type' => 'fieldset',
-        '#title' => $field,
+        '#title' => check_plain($field),
         '#collapsible' => TRUE,
         '#collapsed' => ($field != $form_state['#add_filter']) && ($field != $form_state['#delete_filter']),
         'table_content' => array('#tree' => TRUE) + $filters,
@@ -1063,7 +1063,7 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
       }
       $form['container_' . $field] = array(
         '#type' => 'fieldset',
-        '#title' => $field,
+        '#title' => check_plain($field),
         '#collapsible' => TRUE,
         '#collapsed' => TRUE,
         'table_content' => array('#tree' => TRUE) + $filters,
@@ -1098,10 +1098,10 @@ function feed_import_edit_filter_form_validate(&$form, &$form_state) {
     }
     // delete selected
     if ($field == $delete_filter) {
-       foreach ($form_state['values']['table_content'][$field] as $key => &$filter) {
-          if ($filter['selected'])
-            unset($form_state['values']['table_content'][$field][$key]);
-       }
+      foreach ($form_state['values']['table_content'][$field] as $key => &$filter) {
+        if ($filter['selected'])
+          unset($form_state['values']['table_content'][$field][$key]);
+      }
     }
     if (!empty($form_state['values']['table_content'][$field])) {
       usort($form_state['values']['table_content'][$field], 'feed_import_sort_filter_by_weight');
@@ -1124,13 +1124,13 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
   foreach ($feed['xpath']['#items'] as $field => &$item) {
     $item[$form_state['#item_filter']] = array();
     if (!empty($values['table_content'][$field])) {
-     usort($values['table_content'][$field], 'feed_import_sort_filter_by_weight');
-     foreach ($values['table_content'][$field] as &$filter) {
+      usort($values['table_content'][$field], 'feed_import_sort_filter_by_weight');
+      foreach ($values['table_content'][$field] as &$filter) {
         if (!$filter['name'] || !$filter['function']) {
           continue;
         }
         if (!$filter['params']) {
-         $filter['params'] = array(variable_get('feed_import_field_param_name','[field]'));
+          $filter['params'] = array(variable_get('feed_import_field_param_name', '[field]'));
         }
         else {
           $filter['params'] = explode(PHP_EOL, $filter['params']);
@@ -1214,17 +1214,17 @@ function feed_import_add_filter_actions($field) {
   return array(
     ('add_new_filter_' . $field) => array(
       '#type' => 'button',
-      '#value' => t('Add new filter to @field', array('@field' => strtoupper($field))),
+      '#value' => t('Add new filter to @field', array('@field' => drupal_strtoupper($field))),
     ),
     ('delete_selected_filters_' . $field) => array(
       '#type' => 'button',
-      '#value' => t('Remove selected from @field', array('@field' => strtoupper($field))),
+      '#value' => t('Remove selected from @field', array('@field' => drupal_strtoupper($field))),
     ),
-   );
+  );
 }
 
 /**
- * Implements hook_theme()
+ * Implements hook_theme().
  */
 function feed_import_theme() {
   return array(

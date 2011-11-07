@@ -62,7 +62,7 @@ class FeedImport {
       $feed = db_select('feed_import_settings', 'f')
                 ->fields('f', array('name', 'url', 'time', 'entity_info', 'xpath', 'id', 'enabled'))
                 ->condition(((int) $id) ? 'id' : 'name', $id, '=')
-                ->range(0,1)
+                ->range(0, 1)
                 ->execute()
                 ->fetchAll();
       if ($feed) {
@@ -130,7 +130,7 @@ class FeedImport {
         $fields = $fields['fields'];
       }
       foreach ($fields as &$field) {
-        $info[$field['field_name']] = array (
+        $info[$field['field_name']] = array(
           'name' => $field['field_name'],
           'column' => key($field['columns']),
           'bundles' => array_keys($field['bundles']),
@@ -139,7 +139,7 @@ class FeedImport {
       }
       $fields = entity_get_info();
       foreach ($fields as $key => &$field) {
-        $field = array (
+        $field = array(
           'name' => $key,
           'column' => $field['entity keys']['id'],
           'columns' => $field['schema_fields_sql']['base table'],
@@ -432,10 +432,10 @@ class FeedImport {
         }
         // if filter passed prefilter then apply filter and exit while loop
         if (self::hasContent($aux)) {
-           if ($filter) {
+          if ($filter) {
             $aux = self::applyFilter($aux, $field['#filter']);
-           }
-           break;
+          }
+          break;
         }
         $i++;
       }
@@ -658,8 +658,8 @@ class FeedImport {
     self::$functionSave = $entity . '_save';
     self::$functionLoad = $entity . '_load';
     if (!function_exists(self::$functionSave) || !function_exists(self::$functionLoad)) {
-       drupal_set_message(t('Could not find @func _save()/_load() function!', array('@func' => $entity)), 'error');
-       return FALSE;
+      drupal_set_message(t('Could not find @func _save()/_load() function!', array('@func' => $entity)), 'error');
+      return FALSE;
     }
     return TRUE;
   }
@@ -713,8 +713,7 @@ class FeedImport {
       // split in chunks
       $update_ids = array_chunk($update_ids, variable_get('feed_import_update_ids_chunk', 1000));
       foreach ($update_ids as &$ids) {
-        $q_update->condition('id', $ids, 'IN')
-                 ->execute();
+        $q_update->condition('id', $ids, 'IN')->execute();
         // remove last IN condition
         array_pop($conditions);
         $ids = NULL;
@@ -825,9 +824,9 @@ class FeedImport {
     $tag = array(
       'open' => '<' . $tag,
       'close' => '</' . $tag . '>',
-      'length' => strlen($tag),
+      'length' => drupal_strlen($tag),
     );
-    $tag['closelength'] = strlen($tag['close']);
+    $tag['closelength'] = drupal_strlen($tag['close']);
     // this holds xml content
     $content = '';
     // read all content in chunks
@@ -850,6 +849,9 @@ class FeedImport {
         }
         // we have data
         $closepos += $tag['closelength'];
+        
+        // I use substr() instead of drupal_substr() for performance reasons
+        
         // create xml string
         $item = $xml_head . substr($content, $openpos, $closepos - $openpos);
         // new content
