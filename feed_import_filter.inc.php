@@ -171,31 +171,50 @@ class FeedImportFilter {
   }
   
   /**
+   * Gets vocabulary vid from name
+   *
+   * @param string $name
+   *   Vocabulary name
+   *   
+   * @return int
+   *   Vocabulary vid
+   */
+  public static function getVidFromName($name) {
+    static $vids = array();
+    $name = drupal_strtolower($name);
+    if (isset($vids[$name])) {
+      return $vids[$name];
+    }
+    $query = new EntityFieldQuery();
+    $query = $query->entityCondition('entity_type', 'taxonomy_vocabulary')
+                    ->propertyCondition('name', $name)
+                    ->execute();
+    if (empty($query)) {
+      $vids[$name] = 0;
+    }
+    else {
+      $query = reset($query['taxonomy_vocabulary']);
+      $vids[$name] = $query->vid;
+      unset($query);
+    }
+    return $vids[$name];
+  }
+  
+  /**
    * Extract tids by term name and vocabulari id
    *
    * @param mixed $name
    *   A string or an array of strings
    * @param int|string $voc
-   *   (optinally) Vocabulary id/name
+   *   (optionally) Vocabulary id/name
    *
    * @return mixed
    *   Fetched tids
    */
   public static function getTaxonomyIdByName($name, $voc = 0) {
     if (!is_numeric($voc)) {
-      // Get vocabulary vid by name.
-      $query = new EntityFieldQuery();
-      $query = $query->entityCondition('entity_type', 'taxonomy_vocabulary')
-                      ->propertyCondition('name', $voc)
-                      ->execute();
-      if (empty($query)) {
-        $voc = 0;
-      }
-      else {
-        $query = reset($query['taxonomy_vocabulary']);
-        $voc = $query->vid;
-        unset($query);
-      }
+      // Get vid from name
+      $voc = self::getVidFromName($voc);
     }
     
     // Get tids.
@@ -213,5 +232,48 @@ class FeedImportFilter {
       return array_keys($query['taxonomy_term']);
     }
   }
-  // other filters ...
+  
+  /**
+   * Save specified taxonomy terms to vocabulary
+   *
+   * @param mixed $name
+   *   A string or an array of strings
+   * @param int|string $voc
+   *   (optionally) Vocabulary id/name
+   *
+   * @return mixed
+   *   Fetched and inserted tids
+   */
+  function setTaxonomyTerms($name, $voc = 0) {
+    if (!is_numeric($voc)) {
+      $voc = self::getVidFromName($voc);
+    }
+    if (!is_array($name)) {
+      $name = array($name);
+    }
+    $tids = array();
+    $existing = self::getTaxonomyIdByName($name, $voc);
+    if (!empty($existing)) {
+      $existing = taxonomy_term_load_multiple($existing, array('vid' => $voc));
+      foreach ($existing as &$term) {
+        $tids[drupal_strtolower($term->name)] = $term->tid;
+        $term = NULL;
+      }
+    }
+    unset($existing);
+    
+    foreach ($name as &$term) {
+      if (!isset($tids[drupal_strtolower($term)])) {
+        $t = new stdClass();
+        $t->vid = $voc;
+        $t->name = $term;
+        taxonomy_term_save($t);
+        $tids[$t->name] = $t->tid;
+        $t = NULL;
+        $term = NULL;
+      }
+    }
+    return $tids;
+  }
+  // Other filters ...
 }
