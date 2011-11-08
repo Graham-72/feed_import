@@ -169,5 +169,49 @@ class FeedImportFilter {
     }
     return iconv($from, $to, $field);
   }
+  
+  /**
+   * Extract tids by term name and vocabulari id
+   *
+   * @param mixed $name
+   *   A string or an array of strings
+   * @param int|string $voc
+   *   (optinally) Vocabulary id/name
+   *
+   * @return mixed
+   *   Fetched tids
+   */
+  public static function getTaxonomyIdByName($name, $voc = 0) {
+    if (!is_numeric($voc)) {
+      // Get vocabulary vid by name.
+      $query = new EntityFieldQuery();
+      $query = $query->entityCondition('entity_type', 'taxonomy_vocabulary')
+                      ->propertyCondition('name', $voc)
+                      ->execute();
+      if (empty($query)) {
+        $voc = 0;
+      }
+      else {
+        $query = reset($query['taxonomy_vocabulary']);
+        $voc = $query->vid;
+        unset($query);
+      }
+    }
+    
+    // Get tids.
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'taxonomy_term');
+    $query->propertyCondition('name', $name);
+    if ($voc) {
+      $query->propertyCondition('vid', $voc);
+    }
+    $query = $query->execute();
+    if (empty($query)) {
+      return NULL;
+    }
+    else {
+      return array_keys($query['taxonomy_term']);
+    }
+  }
   // other filters ...
 }
