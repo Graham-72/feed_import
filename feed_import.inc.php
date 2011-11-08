@@ -507,7 +507,7 @@ class FeedImport {
         // Find if entity is different from last feed
         foreach ($item as $key => &$value) {
           if (is_array($value)) {
-            if (!isset($entity->{$key}[$lang]) || empty($entity->{$key}[$lang])) {
+            if (!isset($entity->{$key}[$lang]) || empty($entity->{$key}[$lang]) || count($entity->{$key}[$lang]) != count($value[$lang])) {
               $changed = TRUE;
               $entity->{$key} = $value;
             }
@@ -520,22 +520,16 @@ class FeedImport {
               unset($col);
             }
             else {
-              if (count($entity->{$key}[$lang]) != count($value[$lang])) {
+              $col = key($value[$lang][0]);
+              $temp = array();
+              foreach ($entity->{$key}[$lang] as &$ev) {
+                $temp[][$col] = $ev[$col];
+              }
+              if ($temp != $value[$lang]) {
                 $changed = TRUE;
                 $entity->{$key} = $value;
               }
-              else {
-                $col = key($value[$lang][0]);
-                $temp = array();
-                foreach ($entity->{$key}[$lang] as &$ev) {
-                  $temp[][$col] = $ev[$col];
-                }
-                if ($temp != $value[$lang]) {
-                  $changed = TRUE;
-                  $entity->{$key} = $value;
-                }
-                unset($temp, $col);
-              }
+              unset($temp, $col);
             }
           }
           else {
