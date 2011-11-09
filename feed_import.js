@@ -10,18 +10,23 @@
             if ($('#edit-add-new-item-field option').length == 0) {
               $('#edit-add-new-item').unbind('click');
             }
+            bindSelectElemToChange($('select[name^="default_action_"]:last'));
           }, 1000);
         }
       );
       
       $('select[name^="default_action_"]').each(
         function(index) {
-          checkElementForVisibility(this);
-          $(this).bind('change', function (){checkElementForVisibility(this);});
+          bindSelectElemToChange(this);
         }
       )
     }
   );
+  
+  function bindSelectElemToChange(elem) {
+    checkElementForVisibility(elem);
+    $(elem).bind('change', function (){checkElementForVisibility(this);});
+  }
   
   function checkElementForVisibility(elem) {
     var val = $(elem).val();
