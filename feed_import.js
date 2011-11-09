@@ -10,7 +10,9 @@
             if ($('#edit-add-new-item-field option').length == 0) {
               $('#edit-add-new-item').unbind('click');
             }
-            bindSelectElemToChange($('select[name^="default_action_"]:last'));
+            
+            tryBindSelectElemToChange($('select[name^="default_action_"]:last'), 0);
+            
           }, 1000);
         }
       );
@@ -22,6 +24,17 @@
       )
     }
   );
+  
+  function tryBindSelectElemToChange(elem, i) {
+    if (i == 10) return;
+    if (!elem || elem.onchange) {
+      i++;
+      setTimeout('tryBindSelectElemToChange', 500, elem, i);
+    }
+    else {
+      bindSelectElemToChange(elem);
+    }
+  }
   
   function bindSelectElemToChange(elem) {
     checkElementForVisibility(elem);
