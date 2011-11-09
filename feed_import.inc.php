@@ -385,6 +385,17 @@ class FeedImport {
     return TRUE;
   }
   /**
+   * Default actions when result is empty
+   */
+  public static function getDefaultActions() {
+    return array(
+      'default_value' => t('Provide a default value'),
+      'default_value_filtered' => t('Provide a filtered default value'),
+      'ignore_field' => t('Ignore this field'),
+      'skip_item' => t('Skip importing this item'),
+    );
+  }
+  /**
    * Create Entity object
    *
    * @param array &$feed
@@ -439,9 +450,28 @@ class FeedImport {
         }
         $i++;
       }
-      // If we don't have any data we use default value
+      // If we don't have any data we take default action
       if (!self::hasContent($aux)) {
-          $aux = $field['#default_value'];
+        switch ($field['#default_action']) {
+          // Provide default value
+          // This is also default action
+          case 'default_value':
+          default:
+            $aux = $field['#default_value'];
+            break;
+          // Provide default value before it was iltered
+          case 'default_value_filtered':
+            $aux = self::applyFilter($field['#default_value'], $field['#filter']);
+            break;
+          // Skip this item by returning NULL
+          case 'skip_item':
+            return NULL;
+            break;
+          // Don't add this field to entity
+          case 'ignore_field':
+            continue 2;
+            break;
+        }
       }
       // Set field value
       if ($field['#column']) {
@@ -490,6 +520,10 @@ class FeedImport {
     self::$report['total'] = count($items);
     // Now we create real entityes or update existent
     foreach ($items as &$item) {
+      // Check if item is skipped
+      if ($item == NULL) {
+        continue;
+      }
       // Save hash and remove from item
       $hash = $item->{self::$tempHash};
       unset($item->{self::$tempHash});

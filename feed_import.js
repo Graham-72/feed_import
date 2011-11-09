@@ -13,6 +13,24 @@
           }, 1000);
         }
       );
+      
+      $('select[name^="default_action_"]').each(
+        function(index) {
+          checkElementForVisibility(this);
+          $(this).bind('change', function (){checkElementForVisibility(this);});
+        }
+      )
     }
   );
-})(jQuery);
+  
+  function checkElementForVisibility(elem) {
+    var val = $(elem).val();
+    if (val == 'default_value' || val == 'default_value_filtered') {
+      $('div[rel="' + $(elem).attr('name') + '"]').show();
+    }
+    else {
+      $('div[rel="' + $(elem).attr('name') + '"]').hide();
+    }
+  }
+}
+)(jQuery);

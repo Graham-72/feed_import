@@ -61,7 +61,7 @@ class FeedImportFilter {
   public static function getLines($field, $glue = PHP_EOL) {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        self::getLines($field, $glue);
+        $f = self::getLines($f, $glue);
       }
       return $field;
     }
@@ -81,7 +81,7 @@ class FeedImportFilter {
   public static function glueLines($field, $glue = PHP_EOL) {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        self::glueLines($field, $glue);
+        $f = self::glueLines($f, $glue);
       }
       return $field;
     }
@@ -274,6 +274,32 @@ class FeedImportFilter {
       }
     }
     return $tids;
+  }
+  
+  /**
+   * Merge all array levels
+   *
+   * @param array $field
+   *   Array to merge
+   *
+   * @return array
+   *   Merged array
+   */
+  public static function mergeArray($field) {
+    if (!is_array($field)) {
+      return array($field);
+    }
+    $merged = array();
+    foreach ($field as &$f) {
+      if (is_array($f)) {
+        $f = self::mergeArray($f);
+      }
+      else {
+        $f = array($f);
+      }
+      $merged = array_merge($merged, $f);
+    }
+    return $merged;
   }
   // Other filters ...
 }

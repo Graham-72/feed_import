@@ -783,8 +783,9 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
           '#field' => $form_state['complete form']['xpath']['items']['container_' . $i]['#title'],
           '#xpath' => @implode(PHP_EOL, @$form_state['values']['xpath_' . $i]),
           '#default_value' => @$form_state['values']['default_' . $i],
+          '#default_action' => @$form_state['values']['default_action_' . $i],
         );
-        $xpaths +=  feed_import_generate_xpath_item($i, $vars);
+        $xpaths += feed_import_generate_xpath_item($i, $vars);
       }
     }
   }
@@ -884,6 +885,7 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
         '#column' => $entity['columns'][$field],
         '#xpath' => explode(PHP_EOL, $values['xpath_' . $i]),
         '#default_value' => $values['default_' . $i],
+        '#default_action' => $values['default_action_' . $i],
         '#filter' => isset($feed['xpath']['#items'][$field]['#filter']) ? $feed['xpath']['#items'][$field]['#filter'] : array(),
         '#pre_filter' => isset($feed['xpath']['#items'][$field]['#pre_filter']) ? $feed['xpath']['#items'][$field]['#pre_filter'] : array(),
       );
@@ -955,11 +957,20 @@ function feed_import_generate_xpath_item($pos = 0, $values = NULL, $collapsed = 
     '#title' => t('XPATH'),
     '#description' => t('Enter XPATH to item. You can enter multiple XPATHs (one per line) until one passes pre-filter.'),
   );
+  $container['default_action_' . $pos] = array(
+    '#type' => 'select',
+    '#options' => FeedImport::getDefaultActions(),
+    '#default_value' => isset($values['#default_action']) ? $values['#default_action'] : 'default_value',
+    '#title' => t('Action when filtered result is empty'),
+    '#description' => t('If the filter is empty you can choose what action to take next.'),
+  );
   $container['default_' . $pos] = array(
     '#type' => 'textfield',
     '#default_value' => isset($values['#default_value']) ? $values['#default_value'] : '',
     '#title' => t('Default value'),
     '#description' => t('If no XPATH passes pre-filter then use a default value.'),
+    '#prefix' => '<div style="display: none;" rel="default_action_' . $pos . '">',
+    '#suffix' => '</div>',
   );
   $container['remove_container_' . $pos] = array(
     '#type' => 'button',
