@@ -184,7 +184,7 @@ class FeedImport {
     );
     // Give import time (for large imports)
     set_time_limit(0);
-    $func = @$feed['xpath']['#process_function'];
+    $func = $feed['xpath']['#process_function'];
     if (!$func || !method_exists(__CLASS__, $func)) {
       $func = reset(self::$processFunctions);
     }
@@ -533,7 +533,7 @@ class FeedImport {
       if (isset($ids[$hash])) {
         $changed = FALSE;
         // Load entity
-        $entity = @call_user_func(self::$functionLoad, $ids[$hash]->entity_id);
+        $entity = call_user_func(self::$functionLoad, $ids[$hash]->entity_id);
         // If entity is missing then skip
         if (empty($entity)) {
           unset($entity);
@@ -606,7 +606,7 @@ class FeedImport {
         $ok = TRUE;
         try {
           // Save imported item
-          @call_user_func(self::$functionSave, $item);
+          call_user_func(self::$functionSave, $item);
         }
         catch (Exception $e) {
           // Report error?
@@ -657,7 +657,7 @@ class FeedImport {
       // Check if function exists, support static functions
       if (strpos($filter['#function'], '::') !== FALSE) {
         $filter['#function'] = explode('::', $filter['#function'], 2);
-        if (!method_exists(@$filter['#function'][0], @$filter['#function'][1])) {
+        if (!method_exists($filter['#function'][0], $filter['#function'][1])) {
           continue;
         }
       }
@@ -872,7 +872,7 @@ class FeedImport {
         $openpos = strpos($content, $tag['open']);
         $openposclose = $openpos+$tag['length']+1;
         // Check for open tag
-        if ($openpos === FALSE || !isset($content[$openposclose]) || (@$content[$openposclose] != ' ' && @$content[$openposclose] != '>')) {
+        if ($openpos === FALSE || !isset($content[$openposclose]) || ($content[$openposclose] != ' ' && $content[$openposclose] != '>')) {
           break;
         }
         $closepos = strpos($content, $tag['close'], $openposclose);
