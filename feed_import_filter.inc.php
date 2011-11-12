@@ -169,13 +169,12 @@ class FeedImportFilter {
     }
     return iconv($from, $to, $field);
   }
-  
   /**
    * Gets vocabulary vid from name
    *
    * @param string $name
    *   Vocabulary name
-   *   
+   *
    * @return int
    *   Vocabulary vid
    */
@@ -199,7 +198,7 @@ class FeedImportFilter {
     }
     return $vids[$name];
   }
-  
+
   /**
    * Extract tids by term name and vocabulari id
    *
@@ -216,7 +215,7 @@ class FeedImportFilter {
       // Get vid from name
       $voc = self::getVidFromName($voc);
     }
-    
+
     // Get tids.
     $query = new EntityFieldQuery();
     $query->entityCondition('entity_type', 'taxonomy_term');
@@ -232,7 +231,7 @@ class FeedImportFilter {
       return array_keys($query['taxonomy_term']);
     }
   }
-  
+
   /**
    * Save specified taxonomy terms to vocabulary
    *
@@ -261,7 +260,7 @@ class FeedImportFilter {
       }
     }
     unset($existing);
-    
+
     foreach ($name as &$term) {
       if (!isset($tids[drupal_strtolower($term)])) {
         $t = new stdClass();
@@ -275,7 +274,7 @@ class FeedImportFilter {
     }
     return $tids;
   }
-  
+
   /**
    * Merge all array levels
    *

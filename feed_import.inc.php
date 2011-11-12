@@ -149,7 +149,9 @@ class FeedImport {
           $f = NULL;
         }
         foreach ($info as &$f) {
-          if (!in_array($key, $f['bundles'])) continue;
+          if (!in_array($key, $f['bundles'])) {
+            continue;
+          }
           $field['columns'][$f['name']] = $f['column'];
         }
       }
@@ -615,7 +617,7 @@ class FeedImport {
             $feed['id'],
             $item->{$feed['entity_info']['#table_pk']},
             $hash,
-            $feed['time'] ? time() + $feed['time'] : 0
+            $feed['time'] ? time() + $feed['time'] : 0,
           );
           // Insert into feed import hash table
           self::insertItem($vars);
@@ -841,7 +843,9 @@ class FeedImport {
     $chunk_length = 8192;
     $xml_head = variable_get('feed_import_processFeedChunked_xml_head', $xml_head);
     $chunk_length = variable_get('feed_import_processFeedChunked_chunk_length', $chunk_length);
-    if ($chunk_length <= 0) $chunk_length = 8192;
+    if ($chunk_length <= 0) {
+      $chunk_length = 8192;
+    }
     // Open xml url
     if (!($fp = fopen($feed['url'], 'rb'))) {
       // Report error?
@@ -877,9 +881,9 @@ class FeedImport {
         }
         // We have data
         $closepos += $tag['closelength'];
-        
+
         // I use substr() instead of drupal_substr() for performance reasons
-        
+
         // Create xml string
         $item = $xml_head . substr($content, $openpos, $closepos - $openpos);
         // New content

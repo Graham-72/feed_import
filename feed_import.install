@@ -45,7 +45,7 @@ function feed_import_schema() {
         'unsigned' => TRUE,
         'default' => 0,
         'description' => 'Timestamp when item expires. 0 = never expires'
-      )
+      ),
     ),
     'primary key' => array('id'),
   );

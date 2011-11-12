@@ -616,7 +616,7 @@ function feed_import_add_new_feed_form_submit($form, &$form_state) {
   );
   // Save feed
   FeedImport::saveFeed($feed);
-  drupal_set_message(t('Feed @name was created',  array('@name' => $form_state['values']['name'])));
+  drupal_set_message(t('Feed @name was created', array('@name' => $form_state['values']['name'])));
   drupal_goto('admin/config/feed_import');
 }
 
@@ -799,7 +799,7 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
     }
   }
   $cbk = @$form_state['triggering_element']['#parents'][0];
-  switch (true) {
+  switch (TRUE) {
     case $cbk == 'add_new_item':
       $form_state['#current_item']++;
       $vars = array('#field' => $form_state['values']['add_new_item_field']);
@@ -815,8 +815,9 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   // Add new name
   $fields_options = array();
   foreach ($entities[$feed['entity_info']['#entity']]['columns'] as $f => &$v) {
-    if (!isset($feed['xpath']['#items'][$f]))
+    if (!isset($feed['xpath']['#items'][$f])) {
       $fields_options[$f] = $f;
+    }
   }
   $form['xpath']['add_new_item_field'] = array(
     '#type' => 'select',
@@ -877,7 +878,7 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
   }
   $entity = FeedImport::getEntityInfo($values['entity']);
   $items = array();
-  for ($i = 0; $i<=$form_state['#current_item']; $i++) {
+  for ($i = 0; $i <= $form_state['#current_item']; $i++) {
     $field = @$form_state['complete form']['xpath']['items']['container_' . $i]['#title'];
     if ($field && array_key_exists($field, $entity['columns'])) {
       $items[$field] = array(
@@ -1031,15 +1032,16 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
       $filters = array();
       $filter[$field]['#tree'] = TRUE;
       $pos = 0;
-      if (!empty($form_state['values']['table_content'][$field]))
-      foreach ($form_state['values']['table_content'][$field] as &$filter) {
-        $vars = array(
-          '#name' => $filter['name'],
-          '#function' => $filter['function'],
-          '#params' => explode(PHP_EOL, $filter['params']),
-        );
-        $filters[$field][$pos] = feed_import_new_filter($pos, $vars);
-        $pos++;
+      if (!empty($form_state['values']['table_content'][$field])) {
+        foreach ($form_state['values']['table_content'][$field] as &$filter) {
+          $vars = array(
+            '#name' => $filter['name'],
+            '#function' => $filter['function'],
+            '#params' => explode(PHP_EOL, $filter['params']),
+          );
+          $filters[$field][$pos] = feed_import_new_filter($pos, $vars);
+          $pos++;
+        }
       }
       // Add new field
       if ($form_state['#add_filter'] == $field) {
@@ -1096,12 +1098,14 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
  * Edit filter form validate
  */
 function feed_import_edit_filter_form_validate(&$form, &$form_state) {
-  if ($form_state['submitted']) return;
+  if ($form_state['submitted']) {
+    return;
+  }
   $delete_filter = NULL;
   $add_filter = NULL;
   foreach ($form_state['#filter_fields'] as &$field) {
     $cbk = $form_state['clicked_button']['#array_parents'];
-    switch (true) {
+    switch (TRUE) {
       case ($cbk[1] == 'actions') && preg_match('/add_new_filter_([a-zA-Z0-9_]{1,255})/', $cbk[2], $match):
         $add_filter = $match[1];
         break;
@@ -1112,8 +1116,9 @@ function feed_import_edit_filter_form_validate(&$form, &$form_state) {
     // Delete selected
     if ($field == $delete_filter) {
       foreach ($form_state['values']['table_content'][$field] as $key => &$filter) {
-        if ($filter['selected'])
+        if ($filter['selected']) {
           unset($form_state['values']['table_content'][$field][$key]);
+        }
       }
     }
     if (!empty($form_state['values']['table_content'][$field])) {
@@ -1170,7 +1175,9 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
  * usort() callback, for sorting filters by weight
  */
 function feed_import_sort_filter_by_weight($a, $b) {
-  if ($a['weight'] == $b['weight']) return 0;
+  if ($a['weight'] == $b['weight']) {
+    return 0;
+  }
   return $a['weight'] > $b['weight'] ? 1 : -1;
 }
 
@@ -1211,7 +1218,7 @@ function feed_import_new_filter($pos = 0, $values = NULL) {
       '#delta' => 15,
       '#default_value' => $pos,
       '#attributes' => array('class' => array('weight')),
-    )
+    ),
   );
 }
 
@@ -1262,20 +1269,21 @@ function theme_feed_import_edit_filter_form($form) {
   );
   foreach ($form['#filter_fields'] as &$field) {
     $rows = array();
-    if (!empty($form['container_' . $field]['table_content'][$field]))
-    foreach ($form['container_' . $field]['table_content'][$field] as $id => &$row) {
-      if (!is_numeric($id)) {
-        continue;
-      }
-      $data = array('name', 'function', 'params', 'selected', 'weight');
-      foreach ($data as &$d) {
-        if (isset($row[$d]['#checked'])) {
-          $row[$d]['#checked'] = FALSE;
+    if (!empty($form['container_' . $field]['table_content'][$field])) {
+      foreach ($form['container_' . $field]['table_content'][$field] as $id => &$row) {
+        if (!is_numeric($id)) {
+          continue;
         }
-        $row[$d]['#value'] = $row[$d]['#default_value'];
-        $d = drupal_render($row[$d]);
+        $data = array('name', 'function', 'params', 'selected', 'weight');
+        foreach ($data as &$d) {
+          if (isset($row[$d]['#checked'])) {
+            $row[$d]['#checked'] = FALSE;
+          }
+          $row[$d]['#value'] = $row[$d]['#default_value'];
+          $d = drupal_render($row[$d]);
+        }
+        $rows[] = array('data' => $data, 'class' => array('draggable'));
       }
-      $rows[] = array('data' => $data, 'class' => array('draggable'));
     }
     drupal_add_tabledrag('table_' . $field, 'order', 'sibling', 'weight');
     $form['container_' . $field]['table_content'][$field] = NULL;
