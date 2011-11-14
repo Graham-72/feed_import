@@ -548,7 +548,7 @@ class FeedImport {
               $entity->{$key} = $value;
             }
             elseif (count($value[$lang]) <= 1) {
-              $col = @key($value[$lang][0]);
+              $col = isset($value[$lang][0]) ? key($value[$lang][0]) : '';
               if ($entity->{$key}[$lang][0][$col] != $value[$lang][0][$col]) {
                 $changed = TRUE;
                 $entity->{$key} = $value;
@@ -579,7 +579,7 @@ class FeedImport {
         // Check if entity is changed and save changes
         if ($changed) {
           try {
-            @call_user_func(self::$functionSave, $entity);
+            call_user_func(self::$functionSave, $entity);
             // Set report about updated items
             self::$report['updated']++;
           }
