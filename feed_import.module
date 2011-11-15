@@ -157,6 +157,17 @@ function feed_import_menu() {
 }
 
 /**
+ * Implements hook_feed_import_process_info().
+ */
+function feed_import_feed_import_process_info() {
+  // Return default process functions located in FeedImport class
+  return array(
+    'processFeedNormal' => array('FeedImport', 'processFeedNormal'),
+    'processFeedChunked' => array('FeedImport', 'processFeedChunked'),
+  );
+}
+
+/**
  * Implements hook_entity_delete().
  */
 function feed_import_entity_delete($entity, $type) {
@@ -382,19 +393,19 @@ function feed_import_settings_form_validate($form, &$form_state) {
     'feed_import_entity_info_keep',
     'feed_import_processFeedChunked_chunk_length',
   );
-  
+
   // Checking numeric fields
   foreach ($numeric_fields as &$field) {
     if (!is_numeric($form_state['values'][$field])) {
       form_error($form[$field], t('Field value must be numeric.'));
     }
   }
-  
+
   // Checking hash property field (this must be a variable name)
   if (!preg_match("/^[A-Za-z_][A-Za-z0-9_]*$/", $form_state['values']['feed_import_hash_property'])) {
     form_error($form['feed_import_hash_property'], t('This must be a valid variable name.'));
   }
-  
+
   // Checking xml head
   if (!preg_match("/^\<\?xml (.*)\?\>$/", $form_state['values']['feed_import_processFeedChunked_xml_head'])) {
     form_error($form['feed_import_processFeedChunked_xml_head'], t('Invalid XML head.'));
@@ -492,7 +503,7 @@ function feed_import_export_feed_page($id = 0) {
   }
   // Set page title
   drupal_set_title(t('Copy and save all code below. Paste it where you want to import feed.'));
-  
+
   $feed = serialize($feed);
   $vars = array(
     'element' => array(
@@ -500,7 +511,7 @@ function feed_import_export_feed_page($id = 0) {
       '#rows' => 20,
     ),
   );
-  
+
   return theme('textarea', $vars);
 }
 
@@ -587,7 +598,8 @@ function feed_import_add_new_feed_form($form, &$form_state) {
     '#required' => TRUE,
   );
   $options = array();
-  foreach (FeedImport::$processFunctions as $f) {
+  $functions = array_keys(FeedImport::processFunctions());
+  foreach ($functions as $f) {
     $options[$f] = $f;
   }
   $form['process_function'] = array(
@@ -684,7 +696,7 @@ function feed_import_delete_feed_form($form, &$form_state, $id = 0) {
     '#type' => 'value',
     '#value' => $id,
   );
-  
+
   return confirm_form($form, t('This action cannot be undone!'), 'admin/config/feed_import');
 }
 
@@ -715,7 +727,7 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   }
   // Set page title
   drupal_set_title(t('Edit feed @name', array('@name' => $feed['name'])));
-  
+
   // Basic feed fields
   $form['id'] = array(
     '#type' => 'value',
@@ -753,7 +765,8 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
     '#required' => TRUE,
   );
   $options = array();
-  foreach (FeedImport::$processFunctions as $f) {
+  $functions = array_keys(FeedImport::processFunctions());
+  foreach ($functions as $f) {
     $options[$f] = $f;
   }
   $form['process_function'] = array(
@@ -1048,15 +1061,15 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
     '@name' => $feed['name'],
     '@filter' => $form_state['#item_filter'] == '#filter' ? t('filters') : t('pre-filters'),
   );
-  
+
   // Set page title
   drupal_set_title(t('Edit @filter for @name', $vars));
-  
+
   $form['id'] = array(
     '#type' => 'value',
     '#value' => $feed['id'],
   );
-  
+
   if (isset($form_state['values'])) {
     foreach ($form_state['#filter_fields'] as &$field) {
       $filters = array();

@@ -21,11 +21,6 @@ class FeedImport {
    */
   public static $report = array();
   /**
-   * Available functions for processing a xml file
-   * (this is temporary)
-   */
-  public static $processFunctions = array('processFeedNormal', 'processFeedChunked');
-  /**
    * Feed import load feeds settings
    *
    * @param bool $enabled
@@ -167,6 +162,32 @@ class FeedImport {
     }
   }
   /**
+   * Returns all available functions for processing a feed.
+   * All functions that implements hook_feed_import_process_info()
+   * must return an array of objects.
+   */
+  public static function processFunctions() {
+    static $functions = NULL;
+    if ($functions != NULL) {
+      return $functions;
+    }
+    $functions = module_invoke_all('feed_import_process_info');
+    // Well, check if functions really exists
+    foreach ($functions as $alias => &$func) {
+      if (is_array($func)) {
+        if (!method_exists($func[0], $func[1])) {
+          unset($functions[$alias]);
+        }
+      }
+      else {
+        if (!function_exists($func)) {
+          unset($functions[$alias]);
+        }
+      }
+    }
+    return $functions;
+  }
+  /**
    * This function is choosing process function and executes it
    *
    * @param array $feed
@@ -182,14 +203,36 @@ class FeedImport {
       'start' => time(),
       'parse' => 0,
     );
+
+    // Check if entity node/save/load functions exists
+    if (!self::checkFunctions($feed['entity_info']['#entity'])) {
+      return FALSE;
+    }
+
+    $func = $feed['xpath']['#process_function'];
+    $functions = self::processFunctions();
+    if (!$func || !isset($functions[$func])) {
+      // Get first function if there's no specified function
+      $func = reset(self::processFunctions());
+    }
+    else {
+      $func = $functions[$func];
+    }
+    unset($functions);
+
+    // Get property temp name to store hash value
+    self::$tempHash = variable_get('feed_import_hash_property', self::$tempHash);
+    // Reset generated hashes
+    self::$generatedHashes = array();
+
     // Give import time (for large imports)
     set_time_limit(0);
-    $func = $feed['xpath']['#process_function'];
-    if (!$func || !method_exists(__CLASS__, $func)) {
-      $func = reset(self::$processFunctions);
+    // Call process function to get processed items
+    $items = call_user_func($func, $feed);
+    // Save items
+    if (!empty($items)) {
+      self::saveEntities($feed, $items);
     }
-    // Call process function
-    self::$func($feed);
     // Set total time report
     self::$report['time'] = time() - self::$report['start'];
     self::$report['parse'] -= self::$report['start'];
@@ -461,7 +504,7 @@ class FeedImport {
           default:
             $aux = $field['#default_value'];
             break;
-          // Provide default value before it was iltered
+          // Provide default value before it was filtered
           case 'default_value_filtered':
             $aux = self::applyFilter($field['#default_value'], $field['#filter']);
             break;
@@ -779,13 +822,13 @@ class FeedImport {
   /**
    * Imports and process a feed normally
    *
-   * @param array &$feed
+   * @param array $feed
    *   Feed info array
+   *
+   * @return array
+   *   An array of objects
    */
-  protected static function processFeedNormal(array &$feed) {
-    if (!self::checkFunctions($feed['entity_info']['#entity'])) {
-      return FALSE;
-    }
+  protected static function processFeedNormal(array $feed) {
     // Load xml file from url
     try {
       $xml = simplexml_load_file($feed['url'], self::$simpleXMLElement, LIBXML_NOCDATA);
@@ -808,38 +851,29 @@ class FeedImport {
       // Report?
       return FALSE;
     }
-    // This is temp name to hold hash
-    self::$tempHash = variable_get('feed_import_hash_property', self::$tempHash);
-    // Reset generated hashes
-    self::$generatedHashes = array();
     // Check feed items
     foreach ($xml as &$item) {
       // Set this item value to entity, so all entities will be in $xml at end
       $item = self::createEntity($feed, $item);
     }
-    // Save all created entities
-    self::saveEntities($feed, $xml);
-    unset($feed, $xml);
+    unset($feed);
+    // Return created entities
+    return $xml;
   }
   /**
    * Imports and process a huge xml in chunks
    *
    * @param array $feed
    *   Feed info array
+   *
+   * @return array
+   *   An array of objects
    */
-  protected static function processFeedChunked(array &$feed) {
-    if (!self::checkFunctions($feed['entity_info']['#entity'])) {
-      return FALSE;
-    }
-    
+  protected static function processFeedChunked(array $feed) {
     // Get substr function
     global $multibyte;
     $substr = ($multibyte == UNICODE_MULTIBYTE) ? 'mb_substr' : 'substr';
-    
-    // This is temp name to hold hash
-    self::$tempHash = variable_get('feed_import_hash_property', self::$tempHash);
-    // Reset generated hashes
-    self::$generatedHashes = array();
+
     // This will hold all generated entities
     $entities = array();
     // XML head
@@ -914,8 +948,8 @@ class FeedImport {
     }
     // Close file
     fclose($fp);
-    // Save all created entities
-    self::saveEntities($feed, $entities);
-    unset($feed, $entities);
+    unset($feed);
+    // Return created items
+    return $entities;
   }
 }
