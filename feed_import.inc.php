@@ -163,8 +163,6 @@ class FeedImport {
   }
   /**
    * Returns all available functions for processing a feed.
-   * All functions that implements hook_feed_import_process_info()
-   * must return an array of objects.
    */
   public static function processFunctions() {
     static $functions = NULL;
