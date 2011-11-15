@@ -24,7 +24,7 @@ HELP
  */
 function feed_import_permission() {
   return array(
-    'feed_import_permission' => array(
+    'feed import permission' => array(
       'title' => t('Administer feed import settings'),
       'description' => t('Change settings for feed import'),
     ),
@@ -41,7 +41,7 @@ function feed_import_menu() {
     'description' => 'Configure feed import',
     'page callback' => 'feed_import_list_feeds',
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/config/feed_import/add'] = array(
@@ -50,7 +50,7 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_add_new_feed_form'),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 1,
   );
@@ -60,17 +60,17 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_import_feed_form'),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 2,
   );
   $items['admin/config/feed_import/export/all'] = array(
     'title' => 'Export all feeds',
     'description' => 'Exports all feeds',
-    'page callback' => 'feed_import_export_feed_form',
+    'page callback' => 'feed_import_export_feed_page',
     'page arguments' => array(4),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 3,
   );
@@ -79,24 +79,24 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_settings_form'),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 4,
   );
   $items['admin/config/feed_import/export/%'] = array(
     'title' => 'Export feeds',
     'description' => 'Export feeds',
-    'page callback' => 'feed_import_export_feed_form',
+    'page callback' => 'feed_import_export_feed_page',
     'page arguments' => array(4),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
   $items['admin/config/feed_import/process'] = array(
     'title' => 'Process feed',
     'page callback' => 'feed_import_process_feed',
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
   $items['admin/config/feed_import/enable'] = array(
@@ -104,7 +104,7 @@ function feed_import_menu() {
     'page callback' => 'feed_import_change_status',
     'page arguments' => array('enable'),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
   $items['admin/config/feed_import/disable'] = array(
@@ -112,7 +112,7 @@ function feed_import_menu() {
     'page callback' => 'feed_import_change_status',
     'page arguments' => array('disable'),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
   $items['admin/config/feed_import/delete'] = array(
@@ -120,7 +120,7 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_delete_feed_form'),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
   $items['admin/config/feed_import/edit/%/feed'] = array(
@@ -128,7 +128,7 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_edit_feed_form', 4),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_TASK,
     'tab_root' => 'admin/config/feed_import/edit/%',
     'weight' => 1,
@@ -138,7 +138,7 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_edit_filter_form', '#pre_filter', 4),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_TASK,
     'tab_root' => 'admin/config/feed_import/edit/%',
     'weight' => 2,
@@ -148,7 +148,7 @@ function feed_import_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_edit_filter_form', '#filter', 4),
     'access callback' => 'user_access',
-    'access arguments' => array('feed_import_permission'),
+    'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_TASK,
     'tab_root' => 'admin/config/feed_import/edit/%',
     'weight' => 3,
@@ -371,6 +371,38 @@ function feed_import_settings_form($form, &$form_state) {
 }
 
 /**
+ * Settings form validate
+ */
+function feed_import_settings_form_validate($form, &$form_state) {
+  $numeric_fields = array(
+    'feed_import_time_between_imports',
+    'feed_import_delete_items_per_cron',
+    'feed_import_insert_hashes_chunk',
+    'feed_import_update_ids_chunk',
+    'feed_import_entity_info_keep',
+    'feed_import_processFeedChunked_chunk_length',
+  );
+  
+  // Checking numeric fields
+  foreach ($numeric_fields as &$field) {
+    if (!is_numeric($form_state['values'][$field])) {
+      form_error($form[$field], t('Field value must be numeric.'));
+    }
+  }
+  
+  // Checking hash property field (this must be a variable name)
+  if (!preg_match("/^[A-Za-z_][A-Za-z0-9_]*$/", $form_state['values']['feed_import_hash_property'])) {
+    form_error($form['feed_import_hash_property'], t('This must be a valid variable name.'));
+  }
+  
+  // Checking xml head
+  if (!preg_match("/^\<\?xml (.*)\?\>$/", $form_state['values']['feed_import_processFeedChunked_xml_head'])) {
+    form_error($form['feed_import_processFeedChunked_xml_head'], t('Invalid XML head.'));
+  }
+}
+
+
+/**
  * List all feeds
  *
  * @return string
@@ -448,30 +480,28 @@ function feed_import_process_feed($id = 0) {
  * @return string
  *   A textarea containing serialized feed code
  */
-function feed_import_export_feed_form($id = 0) {
+function feed_import_export_feed_page($id = 0) {
   if ($id == 'all') {
     $feed = FeedImport::loadFeeds(FALSE);
   }
   else {
     $feed = FeedImport::loadFeeds(FALSE, $id);
     if (!$feed) {
-      drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-      drupal_goto('admin/config/feed_import');
-      return;
+      return MENU_NOT_FOUND;
     }
   }
+  // Set page title
+  drupal_set_title(t('Copy and save all code below. Paste it where you want to import feed.'));
+  
   $feed = serialize($feed);
-  $output = '<h2>';
-  $output .= t('Copy and save all code below. Paste it where you want to import feed.');
-  $output .= '</h2>';
   $vars = array(
     'element' => array(
       '#value' => $feed,
       '#rows' => 20,
     ),
   );
-  $output .= theme('textarea', $vars);
-  return $output;
+  
+  return theme('textarea', $vars);
 }
 
 /**
@@ -494,9 +524,10 @@ function feed_import_import_feed_form($form, &$form_state) {
  * Feed import form validate
  */
 function feed_import_import_feed_form_validate($form, &$form_state) {
-  $ok = unserialize(trim($form_state['values']['code']));
+  // This is to silence unserialize warning
+  $ok = @unserialize(trim($form_state['values']['code']));
   if (!$ok) {
-    form_error($form['code'], t('Code couldn\'t be imported!'));
+    form_error($form['code'], t("Code couldn't be imported!"));
   }
 }
 
@@ -504,7 +535,8 @@ function feed_import_import_feed_form_validate($form, &$form_state) {
  * Feed import form submit
  */
 function feed_import_import_feed_form_submit($form, &$form_state) {
-  $feeds = unserialize($form_state['values']['code']);
+  // Silence unserialize warning
+  $feeds = @unserialize($form_state['values']['code']);
   // There is only one feed
   if (isset($feeds['xpath']['#root'])) {
     $feeds['enabled'] = 0;
@@ -649,16 +681,11 @@ function feed_import_delete_feed_form($form, &$form_state, $id = 0) {
     return;
   }
   $form['id'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $id,
   );
-  $form['submit'] = array(
-    '#prefix' => t('This action cannot be undone! Proceed?'),
-    '#type' => 'submit',
-    '#value' => t('Delete feed and all its contents'),
-  );
-  $form['submit']['#prefix'] .= '<br />' . l(t('Cancel'), 'admin/config/feed_import') . ' ';
-  return $form;
+  
+  return confirm_form($form, t('This action cannot be undone!'), 'admin/config/feed_import');
 }
 
 /**
@@ -680,19 +707,18 @@ function feed_import_delete_feed_form_submit($form, &$form_state) {
  */
 function feed_import_edit_feed_form($form, &$form_state, $id) {
   // Get feed
+  $id = (int) $id;
   $feed = FeedImport::loadFeeds(FALSE, $id);
   if (!$feed) {
-    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+    drupal_set_message(t("Feed doesn't exist!"), 'error');
     return;
   }
-  $form['info'] = array(
-    '#prefix' => '<h2>',
-    '#suffix' => '</h2>',
-    '#markup' => t('Edit feed @name', array('@name' => $feed['name'])),
-  );
+  // Set page title
+  drupal_set_title(t('Edit feed @name', array('@name' => $feed['name'])));
+  
   // Basic feed fields
   $form['id'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $feed['id'],
   );
   $form['name'] = array(
@@ -739,7 +765,7 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   $form['time'] = array(
     '#type' => 'textfield',
     '#title' => t('Keep imported items (seconds)'),
-    '#description' => t('This is used to delete items after expiration. 0 means item don\'t expire.'),
+    '#description' => t("This is used to delete items after expiration. 0 means item don't expire."),
     '#default_value' => $feed['time'],
     '#required' => TRUE,
   );
@@ -759,14 +785,14 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
     '#type' => 'textfield',
     '#default_value' => isset($feed['xpath']['#root']) ? $feed['xpath']['#root'] : '',
     '#title' => t('Enter xpath item parent'),
-    '#description' => t('Usualy this starts with "//" and it\'s base query (context for all items).'),
+    '#description' => t("Usualy this starts with // and it's base query (context for all items)."),
     '#required' => TRUE,
   );
   $form['xpath']['uniq'] = array(
     '#type' => 'textfield',
     '#default_value' => isset($feed['xpath']['#uniq']) ? $feed['xpath']['#uniq'] : '',
     '#title' => t('Enter xpath to a unique identifier of item'),
-    '#description' => t('This is unique per item. Usually it\'s an ID.'),
+    '#description' => t("This is unique per item. Usually it's an ID."),
     '#required' => TRUE,
   );
   // XPATH items
@@ -875,10 +901,6 @@ function feed_import_edit_feed_form_validate($form, &$form_state) {
 function feed_import_edit_feed_form_submit($form, &$form_state) {
   $values = &$form_state['values'];
   $feed = FeedImport::loadFeeds(FALSE, $values['id']);
-  if (!$feed) {
-    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-    return;
-  }
   $entity = FeedImport::getEntityInfo($values['entity']);
   $items = array();
   for ($i = 0; $i <= $form_state['#current_item']; $i++) {
@@ -1001,7 +1023,7 @@ function feed_import_generate_xpath_item($pos = 0, $values = NULL, $collapsed = 
 function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id = 0) {
   $feed = FeedImport::loadFeeds(FALSE, $id);
   if (!$feed) {
-    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
+    drupal_set_message(t("Feed doesn't exist!"), 'error');
     return;
   }
   if (!isset($form_state['#item_filter'])) {
@@ -1026,15 +1048,15 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
     '@name' => $feed['name'],
     '@filter' => $form_state['#item_filter'] == '#filter' ? t('filters') : t('pre-filters'),
   );
-  $form['info'] = array(
-    '#prefix' => '<h2>',
-    '#suffix' => '</h2>' . $help,
-    '#markup' => t('Edit @filter for @name', $vars),
-  );
+  
+  // Set page title
+  drupal_set_title(t('Edit @filter for @name', $vars));
+  
   $form['id'] = array(
-    '#type' => 'hidden',
+    '#type' => 'value',
     '#value' => $feed['id'],
   );
+  
   if (isset($form_state['values'])) {
     foreach ($form_state['#filter_fields'] as &$field) {
       $filters = array();
@@ -1144,10 +1166,6 @@ function feed_import_edit_filter_form_validate(&$form, &$form_state) {
 function feed_import_edit_filter_form_submit($form, &$form_state) {
   $values = &$form_state['values'];
   $feed = FeedImport::loadFeeds(FALSE, $values['id']);
-  if (!$feed) {
-    drupal_set_message(t('Feed doesn\'t exist!'), 'error');
-    return;
-  }
   foreach ($feed['xpath']['#items'] as $field => &$item) {
     $item[$form_state['#item_filter']] = array();
     if (!empty($values['table_content'][$field])) {

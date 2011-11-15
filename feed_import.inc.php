@@ -831,6 +831,11 @@ class FeedImport {
     if (!self::checkFunctions($feed['entity_info']['#entity'])) {
       return FALSE;
     }
+    
+    // Get substr function
+    global $multibyte;
+    $substr = ($multibyte == UNICODE_MULTIBYTE) ? 'mb_substr' : 'substr';
+    
     // This is temp name to hold hash
     self::$tempHash = variable_get('feed_import_hash_property', self::$tempHash);
     // Reset generated hashes
@@ -882,12 +887,10 @@ class FeedImport {
         // We have data
         $closepos += $tag['closelength'];
 
-        // I use substr() instead of drupal_substr() for performance reasons
-
         // Create xml string
-        $item = $xml_head . substr($content, $openpos, $closepos - $openpos);
+        $item = $xml_head . $substr($content, $openpos, $closepos - $openpos);
         // New content
-        $content = substr($content, $closepos-1);
+        $content = $substr($content, $closepos-1);
         // Create xml object
         try {
           $item = simplexml_load_string($item, self::$simpleXMLElement, LIBXML_NOCDATA);
