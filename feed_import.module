@@ -183,7 +183,7 @@ function feed_import_entity_delete($entity, $type) {
   $info = FeedImport::getEntityInfo($type);
   $id = $entity->{$info['column']};
   if ($id && is_numeric($id)) {
-    feed_import_add_to_delete($id);
+    feed_import_add_to_delete($id, $type);
   }
 }
 
@@ -191,8 +191,10 @@ function feed_import_entity_delete($entity, $type) {
  * Schedule an item for removing from feed import items at the end of the script
  * @param int $id
  *   Entity id
+ * @param string $type
+ *   Entity name
  */
-function feed_import_add_to_delete($id = NULL) {
+function feed_import_add_to_delete($id = NULL, $type = NULL) {
   // ids to delete
   static $ids = array();
   // if delete function is registered at shutdown
@@ -210,8 +212,8 @@ function feed_import_add_to_delete($id = NULL) {
     $ids = array();
   }
   else {
-    // Just add to array an integer id
-    $ids[] = (int) $id;
+    // Just add to entities array an integer id
+    $ids[$type][] = (int) $id;
   }
 }
 
@@ -220,40 +222,40 @@ function feed_import_add_to_delete($id = NULL) {
  */
 function feed_import_cron() {
   // Check if cron import is enabled
-  if (!variable_get('feed_import_use_cron', FALSE)) {
-    return;
-  }
-  // Check if there is an already running import or there are no feeds because
-  // overlapping an import for the same entity is bad
-  if (!variable_get('feed_import_import_running', FALSE)) {
-    $last_executed = variable_get('feed_import_last_executed_import', 0);
-    $time_between = variable_get('feed_import_time_between_imports', 3600);
-    // Check if time between imports elapsed
-    if ($last_executed + $time_between < REQUEST_TIME) {
-      $feeds = FeedImport::loadFeeds(TRUE);
-      if (!empty($feeds)) {
-        $feed_names = array_keys($feeds);
-        $last_feed = variable_get('feed_import_last_imported_feed', '');
-        if ($last_feed == '') {
-          $last_feed = 0;
+  if (variable_get('feed_import_use_cron', FALSE)) {
+    // Check if there is an already running import or there are no feeds because
+    // overlapping an import for the same entity is bad
+    if (!variable_get('feed_import_import_running', FALSE)) {
+      $last_executed = variable_get('feed_import_last_executed_import', 0);
+      $time_between = variable_get('feed_import_time_between_imports', 3600);
+      // Check if time between imports elapsed
+      if ($last_executed + $time_between < REQUEST_TIME) {
+        $feeds = FeedImport::loadFeeds(TRUE);
+        if (!empty($feeds)) {
+          $feed_names = array_keys($feeds);
+          $last_feed = variable_get('feed_import_last_imported_feed', '');
+          if ($last_feed == '') {
+            $last_feed = 0;
+          }
+          else {
+            $last_feed = (array_search($last_feed, $feed_names)+1) % count($feed_names);
+          }
+          $last_feed = $feed_names[$last_feed];
+          $feeds = $feeds[$last_feed];
+          variable_set('feed_import_last_imported_feed', $last_feed);
+          variable_set('feed_import_last_executed_import', REQUEST_TIME);
+          // Mark import as running
+          variable_set('feed_import_import_running', TRUE);
+          // Process feed
+          feed_import_import_items($feeds);
+          // Change running status
+          variable_set('feed_import_import_running', FALSE);
+          unset($feeds, $feed_names, $last_feed);
         }
-        else {
-          $last_feed = (array_search($last_feed, $feed_names)+1) % count($feed_names);
-        }
-        $last_feed = $feed_names[$last_feed];
-        $feeds = $feeds[$last_feed];
-        variable_set('feed_import_last_imported_feed', $last_feed);
-        variable_set('feed_import_last_executed_import', REQUEST_TIME);
-        // Mark import as running
-        variable_set('feed_import_import_running', TRUE);
-        // Process feed
-        feed_import_import_items($feeds);
-        // Change running status
-        variable_set('feed_import_import_running', FALSE);
-        unset($feeds, $feed_names, $last_feed);
       }
     }
   }
+
   // Delete expired items
   $ids = FeedImport::getExpiredItems(variable_get('feed_import_delete_items_per_cron', 300));
   feed_import_delete_items($ids);
@@ -303,11 +305,11 @@ function feed_import_import_items(&$feed) {
     '!errors' => '<br />' . $report['errors'],
   );
 
-  watchdog('feed_import_cron_info', $msg, $info);
+  watchdog('feed_import_info', $msg, $info);
 }
 
 /**
- * Delete feed and set report
+ * Delete feed items and set report
  * @param array &$items
  *   Array of entity ids keyed by entity type
  */
@@ -317,24 +319,33 @@ function feed_import_delete_items(&$items) {
   // Get deleted ids
   foreach ($items as $type => &$value) {
     $value = FeedImport::entityDelete($type, $value);
-    $ids += $value;
+    if (!isset($ids[$type])) {
+      $ids[$type] = $value;
+    }
+    else {
+      $ids[$type] += $value;
+    }
     $value = NULL;
   }
   unset($items);
+  if (empty($ids)) {
+    return;
+  }
   // Delete items from feed_import_hashes
   FeedImport::deleteItemsbyEntityId($ids);
-  $count = count($ids);
-  unset($ids);
-  // Set report message only if we deleted items
-  if ($count) {
-    $msg = 'Deleted %count items. Started %started, duration %time';
-    $info = array(
-      '%count' => $count,
-      '%started' => date('d/m/Y H:i:s', $start),
-      '%time' => gmdate('H:i:s', time() - $start),
-    );
-    watchdog('feed_import_cron_info', $msg, $info);
+  // Count deleted items for each entity
+  foreach ($ids as $type => &$id) {
+    $id = count($id) . ' ' . $type . ' ' . t('items');
   }
+  $ids = implode(', ', $ids);
+  // Set report message only if we deleted items
+  $msg = 'Deleted %items. Started %started, duration %time';
+  $info = array(
+    '%items' => $ids,
+    '%started' => date('d/m/Y H:i:s', $start),
+    '%time' => gmdate('H:i:s', time() - $start),
+  );
+  watchdog('feed_import_info', $msg, $info);
 }
 
 /**
@@ -748,7 +759,7 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
     return;
   }
   // Set page title
-  drupal_set_title(t('Edit feed @name', array('@name' => $feed['name'])));
+  drupal_set_title(t('Edit feed @name', array('@name' => $feed['name'])), PASS_THROUGH);
 
   // Basic feed fields
   $form['id'] = array(

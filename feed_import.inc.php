@@ -264,21 +264,28 @@ class FeedImport {
   /**
    * Deletes items by entity id
    *
-   * @param array $ids
-   *   Entity ids
+   * @param array $eids
+   *   Entity ids keyed by entity name
    */
-  public static function deleteItemsbyEntityId(array $ids) {
-    if (empty($ids)) {
+  public static function deleteItemsbyEntityId(array $eids) {
+    if (empty($eids)) {
       return;
     }
-    $ids = array_chunk($ids, variable_get('feed_import_update_ids_chunk', 1000));
+    $chunk = variable_get('feed_import_update_ids_chunk', 1000);
     $q_delete = db_delete('feed_import_hashes');
     $conditions = &$q_delete->conditions();
-    foreach ($ids as &$id) {
-      $q_delete->condition('entity_id', $id, 'IN')->execute();
-      // Remove last IN condition
+    foreach ($eids as $entity => &$ids) {
+      $q_delete->condition('entity', $entity, '=');
+      $ids = array_chunk($ids, $chunk);
+      foreach ($ids as &$id) {
+        $q_delete->condition('entity_id', $id, 'IN')->execute();
+        // Remove last IN condition
+        array_pop($conditions);
+        $id = NULL;
+      }
+      $ids = NULL;
+      // Remove entity condition
       array_pop($conditions);
-      $id = NULL;
     }
   }
   /**
@@ -327,11 +334,11 @@ class FeedImport {
    *   Limit the number of returned items
    *
    * @return array
-   *   Array keyed with item ids and value entity_ids
+   *   Array keyed with entity names and value entity_ids
    */
   public static function getExpiredItems($limit = 99999999) {
     $results = db_select('feed_import_hashes', 'f')
-                ->fields('f', array('feed_id', 'entity_id'))
+                ->fields('f', array('feed_id', 'entity', 'entity_id'))
                 ->condition('expire', array(1, REQUEST_TIME), 'BETWEEN')
                 ->range(0, $limit)
                 ->execute()
@@ -339,19 +346,12 @@ class FeedImport {
     if (empty($results)) {
       return $results;
     }
-    $temp = array();
-    $feeds = self::loadFeeds();
-    foreach ($feeds as &$feed) {
-      $temp[$feed['id']] = $feed['entity_info']['#entity'];
-      $feed = NULL;
-    }
-    unset($feed);
     $res = array();
     foreach ($results as &$result) {
-      $res[$temp[$result->feed_id]][] = $result->entity_id;
+      $res[$result->entity][] = $result->entity_id;
       $result = NULL;
     }
-    unset($results, $temp);
+    unset($results);
     return $res;
   }
   /**
@@ -408,14 +408,16 @@ class FeedImport {
    *
    * @param string $uniq
    *   Unique item
-   * @param string $feed_name
+   * @param int $feed_id
    *   Feed id
+   * @param string $entity
+   *   Entity name
    *
    * @return string
    *   Hash value
    */
-  protected static function createHash($uniq, $feed_id) {
-    return md5($uniq . '-|-' . $feed_id);
+  protected static function createHash($uniq, $feed_id, $entity) {
+    return md5($uniq . '-|-' . $feed_id . '-|-' . $entity);
   }
   /**
    * Gets entity ids from a hashes
@@ -428,7 +430,7 @@ class FeedImport {
    */
   protected static function getEntityIdsFromHash(array &$hashes) {
     return db_select('feed_import_hashes', 'f')
-            ->fields('f', array('hash', 'id', 'entity_id'))
+            ->fields('f', array('hash', 'entity', 'id', 'entity_id'))
             ->condition('hash', $hashes, 'IN')
             ->execute()
             ->fetchAllAssoc('hash');
@@ -481,7 +483,7 @@ class FeedImport {
     // Check if item already exists
     $uniq = self::getXpathValue($item, $feed['xpath']['#uniq']);
     // Create a hash to identify this item in bd
-    $entity->{self::$tempHash} = self::createHash($uniq, $feed['id']);
+    $entity->{self::$tempHash} = self::createHash($uniq, $feed['id'], $feed['entity_info']['#entity']);
     // add to hashes array
     self::$generatedHashes[] = $entity->{self::$tempHash};
     // Set default language, this can be changed by language item
@@ -678,6 +680,7 @@ class FeedImport {
         if ($ok) {
           $vars = array(
             $feed['id'],
+            $feed['entity_info']['#entity'],
             $item->{$feed['entity_info']['#table_pk']},
             $hash,
             $feed['time'] ? time() + $feed['time'] : 0,
@@ -767,7 +770,7 @@ class FeedImport {
     static $q_insert_items = 0;
     if ($q_insert == NULL) {
       $q_insert = db_insert('feed_import_hashes')
-                    ->fields(array('feed_id', 'entity_id', 'hash', 'expire'));
+                    ->fields(array('feed_id', 'entity', 'entity_id', 'hash', 'expire'));
     }
     $q_insert_chunk = variable_get('feed_import_insert_hashes_chunk', 500);
     // Call execute and reset number of insert items

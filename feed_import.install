@@ -26,6 +26,13 @@ function feed_import_schema() {
         'description' => 'Feed id',
       ),
 
+      'entity' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Entity name',
+      ),
+
       'entity_id' => array(
         'type' => 'int',
         'not null' => TRUE,
