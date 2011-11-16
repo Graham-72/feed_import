@@ -223,7 +223,7 @@ Now you can go to edit your feed and select for processing your new function.
 Feed info structure
 ------------------------------
 
-Feed info is an array containing all info about a feeds: name, url, xpath keyed
+Feed info is an array containing all info about feeds: name, url, xpath keyed
 by feed name.
 A feed is an array containing the following keys:
 
@@ -272,6 +272,7 @@ xpath => This is an array containing xpath info and fields
 
       #xpath => This is an array containig xpaths for this field. Xpaths are
                 used from first to last until one passes pre-filter functions.
+		All xpaths are relative to #root.
 
       #default_value => This is default value for field if none of xpaths passes
                         pre-filter functions. This is used only for
@@ -305,3 +306,4 @@ Real example
 ------------------------------
 
 Please check project page for an example.
+http://drupal.org/sandbox/SorinSarca/1331632
