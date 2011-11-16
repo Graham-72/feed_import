@@ -192,7 +192,6 @@ class FeedImport {
    */
   public static function errorHandler($errno, $errmsg, $file, $line) {
     // Add error to reports
-    print_r(func_get_args());
     self::$report['errors'][] = array(
       'error' => $errmsg,
       'error number' => $errno,
