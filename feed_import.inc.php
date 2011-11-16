@@ -259,6 +259,8 @@ class FeedImport {
     // Set total time report
     self::$report['time'] = time() - self::$report['start'];
     self::$report['parse'] -= self::$report['start'];
+    // Restore error handler
+    restore_error_handler();
   }
   /**
    * Deletes items by entity id
