@@ -125,6 +125,7 @@ If you want, you can use your own function to parse content. To do that you have
 to implement hook_feed_import_process_info() which returns an array keyed by
 function alias and with value of function name. If function is a static member
 of a class then value is an array containing class name and function name.
+Please note that in process function EVERY possible exception MUST BE CAUGHT!
 Example:
 
 function hook_feed_import_process_info() {
@@ -185,6 +186,7 @@ function test_module_feed_import_process_info() {
  *   An array containing objects
  */
 function test_module_process_function(array $feed) {
+  // Every possible warning or error must be caught!!!
   // Load xml file from url
   try {
     $xml = simplexml_load_file($feed['url'], FeedImport::$simpleXMLElement,
@@ -192,18 +194,21 @@ function test_module_process_function(array $feed) {
   }
   catch (Exception $e) {
     // Error in xml file
-    return FALSE;
+    return NULL;
   }
-
+  // If there is no SimpleXMLElement object
+  if (!($xml instanceof self::$simpleXMLElement)) {
+    return NULL;
+  }
+  // Now we are sure that $xml is an SimpleXMLElement object
   // Get items from root
   $xml = $xml->xpath($feed['xpath']['#root']);
-
   // Get total number of items
   $count_items = count($xml);
 
   // Check if there are items
   if (!$count_items) {
-    return FALSE;
+    return NULL;
   }
 
   // Check feed items
@@ -272,7 +277,7 @@ xpath => This is an array containing xpath info and fields
 
       #xpath => This is an array containig xpaths for this field. Xpaths are
                 used from first to last until one passes pre-filter functions.
-		All xpaths are relative to #root.
+                All xpaths are relative to #root.
 
       #default_value => This is default value for field if none of xpaths passes
                         pre-filter functions. This is used only for

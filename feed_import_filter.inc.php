@@ -243,7 +243,7 @@ class FeedImportFilter {
    * @return mixed
    *   Fetched and inserted tids
    */
-  function setTaxonomyTerms($name, $voc = 0) {
+  public static function setTaxonomyTerms($name, $voc = 0) {
     if (!is_numeric($voc)) {
       $voc = self::getVidFromName($voc);
     }

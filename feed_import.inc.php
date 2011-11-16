@@ -18,6 +18,7 @@ class FeedImport {
    * -total
    * -time
    * -download
+   * -errors
    */
   public static $report = array();
   /**
@@ -186,6 +187,22 @@ class FeedImport {
     return $functions;
   }
   /**
+   * Error handler callback
+   * This is setted with set_error_handling()
+   */
+  public static function errorHandler($errno, $errmsg, $file, $line) {
+    // Add error to reports
+    print_r(func_get_args());
+    self::$report['errors'][] = array(
+      'error' => $errmsg,
+      'error number' => $errno,
+      'line' => $line,
+      'file' => $file,
+    );
+    //Throw an exception to be caught by try-catch
+    throw new Exception(t('Uncaught Feed Import Exception'));
+  }
+  /**
    * This function is choosing process function and executes it
    *
    * @param array $feed
@@ -199,7 +216,9 @@ class FeedImport {
       'new' => 0,
       'total' => 0,
       'start' => time(),
+      'time' => 0,
       'parse' => 0,
+      'errors' => array(),
     );
 
     // Check if entity node/save/load functions exists
@@ -207,11 +226,15 @@ class FeedImport {
       return FALSE;
     }
 
+    // Set error handler
+    set_error_handler(array(__CLASS__, 'errorHandler'));
+
     $func = $feed['xpath']['#process_function'];
     $functions = self::processFunctions();
     if (!$func || !isset($functions[$func])) {
       // Get first function if there's no specified function
-      $func = reset(self::processFunctions());
+      $func = self::processFunctions();
+      $func = reset($func);
     }
     else {
       $func = $functions[$func];
@@ -227,6 +250,8 @@ class FeedImport {
     set_time_limit(0);
     // Call process function to get processed items
     $items = call_user_func($func, $feed);
+    // Parse report
+    self::$report['parse'] = time();
     // Save items
     if (!empty($items)) {
       self::saveEntities($feed, $items);
@@ -546,8 +571,6 @@ class FeedImport {
    *   An array with entities
    */
   protected static function saveEntities(&$feed, &$items) {
-    // Parse report
-    self::$report['parse'] = time();
     // Get existing items for update
     if (!empty(self::$generatedHashes)) {
       $ids = self::getEntityIdsFromHash(self::$generatedHashes);
@@ -625,7 +648,6 @@ class FeedImport {
             self::$report['updated']++;
           }
           catch (Exception $e) {
-            // Report error?
             $ok = FALSE;
           }
         }
@@ -650,7 +672,6 @@ class FeedImport {
           call_user_func(self::$functionSave, $item);
         }
         catch (Exception $e) {
-          // Report error?
           $ok = FALSE;
         }
         if ($ok) {
@@ -832,13 +853,11 @@ class FeedImport {
       $xml = simplexml_load_file($feed['url'], self::$simpleXMLElement, LIBXML_NOCDATA);
     }
     catch (Exception $e) {
-      // Report error?
-      $xml = FALSE;
+      return NULL;
     }
-    // If is empty then exit
-    if ($xml == FALSE) {
-      // Report?
-      return FALSE;
+    // If there is no SimpleXMLElement object
+    if (!($xml instanceof self::$simpleXMLElement)) {
+      return NULL;
     }
     // Get items from root
     $xml = $xml->xpath($feed['xpath']['#root']);
@@ -846,8 +865,7 @@ class FeedImport {
     $count_items = count($xml);
     // Check if there are items
     if (!$count_items) {
-      // Report?
-      return FALSE;
+      return NULL;
     }
     // Check feed items
     foreach ($xml as &$item) {
@@ -871,7 +889,6 @@ class FeedImport {
     // Get substr function
     global $multibyte;
     $substr = ($multibyte == UNICODE_MULTIBYTE) ? 'mb_substr' : 'substr';
-
     // This will hold all generated entities
     $entities = array();
     // XML head
@@ -884,9 +901,11 @@ class FeedImport {
       $chunk_length = 8192;
     }
     // Open xml url
-    if (!($fp = fopen($feed['url'], 'rb'))) {
-      // Report error?
-      return;
+    try {
+      $fp = fopen($feed['url'], 'rb');
+    }
+    catch (Exception $e) {
+      return NULL;
     }
     // Preparing tags
     $tag = trim($feed['xpath']['#root'], '/');
@@ -928,11 +947,11 @@ class FeedImport {
           $item = simplexml_load_string($item, self::$simpleXMLElement, LIBXML_NOCDATA);
         }
         catch (Exception $e) {
-          // Report error?
           continue;
         }
         // Parse item
-        $item = reset($item->xpath($feed['xpath']['#root']));
+        $item = $item->xpath($feed['xpath']['#root']);
+        $item = reset($item);
         if (empty($item)) {
           continue;
         }
@@ -945,7 +964,13 @@ class FeedImport {
       }
     }
     // Close file
-    fclose($fp);
+    // If fp is not a resurce then catch warning
+    // Minimum chances for this to happen
+    try {
+      fclose($fp);
+    }
+    catch (Exception $e) {
+    }
     unset($feed);
     // Return created items
     return $entities;

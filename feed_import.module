@@ -268,7 +268,18 @@ function feed_import_import_items(&$feed) {
           Started %started, file downloaded & parsed %parse,
           processing items %process, total duration %time,
           total feed items %total, rescheduled %rescheduled,
-          updated %updated, new %new.';
+          updated %updated, new %new, not imported %skipped.
+          !errors';
+  if (!empty($report['errors'])) {
+    $report['errors'] = array(
+      'rows' => $report['errors'],
+      'header' => array(t('Error'), t('Error number'), t('Line'), t('File')),
+    );
+    $report['errors'] = theme('table', $report['errors']);
+  }
+  else {
+    $report['errors'] = '';
+  }
   $info = array(
     '%feed' => $feed['name'],
     '%started' => date('d/m/Y H:i:s', $report['start']),
@@ -279,7 +290,10 @@ function feed_import_import_items(&$feed) {
     '%rescheduled' => $report['rescheduled'],
     '%updated' => $report['updated'],
     '%new' => $report['new'],
+    '%skipped' => $report['total'] - ($report['updated'] + $report['rescheduled'] + $report['new']),
+    '!errors' => '<br />' . $report['errors'],
   );
+
   watchdog('feed_import_cron_info', $msg, $info);
 }
 
@@ -818,8 +832,10 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   if (isset($form_state['#current_item'])) {
     for ($i = 0; $i <= $form_state['#current_item']; $i++) {
       if (isset($form_state['values']['xpath_' . $i])) {
-        $default_val = isset($form_state['values']['xpath_' . $i]) ? $form_state['values']['xpath_' . $i] : array();
-        $default_val = implode(PHP_EOL, $default_val);
+        $default_val = isset($form_state['values']['xpath_' . $i]) ? $form_state['values']['xpath_' . $i] : '';
+        if (is_array($default_val)) {
+          $default_val = implode(PHP_EOL, $default_val);
+        }
         $vars = array(
           '#field' => $form_state['complete form']['xpath']['items']['container_' . $i]['#title'],
           '#xpath' => $default_val,
@@ -891,7 +907,6 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   $form['#attached'] = array(
     'js' => array(
       'data' => drupal_get_path('module', 'feed_import') . '/feed_import.js',
-      'type' => 'file',
     ),
   );
   return $form;
@@ -995,9 +1010,13 @@ function feed_import_generate_xpath_item($pos = 0, $values = NULL, $collapsed = 
     '#attributes' => array('id' => 'item_container_' . $pos),
   );
   $container = &$item[$container];
+  $values['#xpath'] = isset($values['#xpath']) ? $values['#xpath'] : '';
+  if (is_array($values['#xpath'])) {
+    $values['#xpath'] = implode(PHP_EOL, $values['#xpath']);
+  }
   $container['xpath_' . $pos] = array(
     '#type' => 'textarea',
-    '#default_value' => isset($values['#xpath']) ? implode(PHP_EOL, $values['#xpath']) : '',
+    '#default_value' => $values['#xpath'],
     '#title' => t('XPATH'),
     '#description' => t('Enter XPATH to item. You can enter multiple XPATHs (one per line) until one passes pre-filter.'),
   );
@@ -1232,6 +1251,10 @@ function feed_import_sort_filter_by_weight($a, $b) {
  *    Array containing filter html forms
  */
 function feed_import_new_filter($pos = 0, $values = NULL) {
+  $values['#params'] = isset($values['#params']) ? $values['#params'] : '';
+  if (is_array($values['#params'])) {
+    $values['#params'] = implode(PHP_EOL, $values['#params']);
+  }
   return array(
     'name' => array(
       '#type' => 'textfield',
@@ -1245,7 +1268,7 @@ function feed_import_new_filter($pos = 0, $values = NULL) {
     ),
    'params' => array(
       '#type' => 'textarea',
-      '#default_value' => isset($values['#params']) ? implode(PHP_EOL, $values['#params']) : '',
+      '#default_value' => $values['#params'],
       '#rows' => 2,
     ),
     'selected' => array(
