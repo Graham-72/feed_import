@@ -342,7 +342,7 @@ function feed_import_settings_form($form, &$form_state) {
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_time_between_imports', 3600),
     '#title' => t('Time between two imports at cron (seconds)'),
-    '#description' => t('Time betwwen two cron imports.'),
+    '#description' => t('Time betwen two cron imports.'),
   );
   $form['feed_import_delete_items_per_cron'] = array(
     '#type' => 'textfield',
