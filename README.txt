@@ -197,7 +197,7 @@ function test_module_process_function(array $feed) {
     return NULL;
   }
   // If there is no SimpleXMLElement object
-  if (!($xml instanceof self::$simpleXMLElement)) {
+  if (!($xml instanceof FeedImport::$simpleXMLElement)) {
     return NULL;
   }
   // Now we are sure that $xml is an SimpleXMLElement object
