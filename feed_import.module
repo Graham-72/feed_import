@@ -1,21 +1,27 @@
 <?php
-
 /**
  * @file
  * User interface, cron functions for feed_import module
  */
 
 /**
+ * This is path to feed import UI
+ */
+define('FEED_IMPORT_PATH', 'admin/config/services/feed_import');
+
+/**
  * Implements hook_help().
  */
 function feed_import_help($path, $arg) {
   if ($path == 'admin/help#feed_import') {
-    return t(<<<HELP
-    Allows content to be added from xml files.
-    While project is in sandbox
-    read documentation from http:// drupal.org/sandbox/SorinSarca/1331632
-HELP
+    $vars = array(
+      '!file' => l('README.txt', drupal_get_path('module', 'feed_import') . '/README.txt'),
+      '!project_page' => l('Feed Import', 'http://drupal.org/sandbox/SorinSarca/1331632'),
     );
+    $help  = t('Import content into entities from XML files using XPATH.');
+    $help .= '<br />';
+    $help .=t('For more info please read !file file or go to !project_page.', $vars);
+    return $help;
   }
 }
 
@@ -35,8 +41,11 @@ function feed_import_permission() {
  * Implements hook_menu().
  */
 function feed_import_menu() {
+  // FEED_IMPORT_PATH is defined at the top of this file
+  // This is used for arguments to know the position
+  $submenus = substr_count(FEED_IMPORT_PATH, '/');
   $items = array();
-  $items['admin/config/feed_import'] = array(
+  $items[FEED_IMPORT_PATH] = array(
     'title' => 'Feed Import',
     'description' => 'Configure feed import',
     'page callback' => 'feed_import_list_feeds',
@@ -44,7 +53,7 @@ function feed_import_menu() {
     'access arguments' => array('feed import permission'),
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/config/feed_import/add'] = array(
+  $items[FEED_IMPORT_PATH . '/add'] = array(
     'title' => 'Add new feed',
     'description' => 'Add a new feed',
     'page callback' => 'drupal_get_form',
@@ -54,7 +63,7 @@ function feed_import_menu() {
     'type' => MENU_LOCAL_ACTION,
     'weight' => 1,
   );
-  $items['admin/config/feed_import/import'] = array(
+  $items[FEED_IMPORT_PATH . '/import'] = array(
     'title' => 'Import feed',
     'description' => 'Import an existing feed',
     'page callback' => 'drupal_get_form',
@@ -64,17 +73,17 @@ function feed_import_menu() {
     'type' => MENU_LOCAL_ACTION,
     'weight' => 2,
   );
-  $items['admin/config/feed_import/export/all'] = array(
+  $items[FEED_IMPORT_PATH . '/export/all'] = array(
     'title' => 'Export all feeds',
     'description' => 'Exports all feeds',
     'page callback' => 'feed_import_export_feed_page',
-    'page arguments' => array(4),
+    'page arguments' => array($submenus + 2),
     'access callback' => 'user_access',
     'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 3,
   );
-  $items['admin/config/feed_import/settings'] = array(
+  $items[FEED_IMPORT_PATH . '/settings'] = array(
     'title' => 'Settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_settings_form'),
@@ -83,23 +92,23 @@ function feed_import_menu() {
     'type' => MENU_LOCAL_ACTION,
     'weight' => 4,
   );
-  $items['admin/config/feed_import/export/%'] = array(
+  $items[FEED_IMPORT_PATH . '/export/%'] = array(
     'title' => 'Export feeds',
     'description' => 'Export feeds',
     'page callback' => 'feed_import_export_feed_page',
-    'page arguments' => array(4),
+    'page arguments' => array($submenus + 2),
     'access callback' => 'user_access',
     'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/config/feed_import/process'] = array(
+  $items[FEED_IMPORT_PATH . '/process'] = array(
     'title' => 'Process feed',
     'page callback' => 'feed_import_process_feed',
     'access callback' => 'user_access',
     'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/config/feed_import/enable'] = array(
+  $items[FEED_IMPORT_PATH . '/enable'] = array(
     'title' => 'Enable feed',
     'page callback' => 'feed_import_change_status',
     'page arguments' => array('enable'),
@@ -107,7 +116,7 @@ function feed_import_menu() {
     'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/config/feed_import/disable'] = array(
+  $items[FEED_IMPORT_PATH . '/disable'] = array(
     'title' => 'Disable feed',
     'page callback' => 'feed_import_change_status',
     'page arguments' => array('disable'),
@@ -115,7 +124,7 @@ function feed_import_menu() {
     'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/config/feed_import/delete'] = array(
+  $items[FEED_IMPORT_PATH . '/delete'] = array(
     'title' => 'Delete feed',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feed_import_delete_feed_form'),
@@ -123,34 +132,34 @@ function feed_import_menu() {
     'access arguments' => array('feed import permission'),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/config/feed_import/edit/%/feed'] = array(
+  $items[FEED_IMPORT_PATH . '/edit/%/feed'] = array(
     'title' => 'Edit feed',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('feed_import_edit_feed_form', 4),
+    'page arguments' => array('feed_import_edit_feed_form', $submenus + 2),
     'access callback' => 'user_access',
     'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_TASK,
-    'tab_root' => 'admin/config/feed_import/edit/%',
+    'tab_root' => FEED_IMPORT_PATH . '/edit/%',
     'weight' => 1,
   );
-  $items['admin/config/feed_import/edit/%/pre-filter'] = array(
+  $items[FEED_IMPORT_PATH . '/edit/%/pre-filter'] = array(
     'title' => 'Edit pre-filters',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('feed_import_edit_filter_form', '#pre_filter', 4),
+    'page arguments' => array('feed_import_edit_filter_form', '#pre_filter', $submenus + 2),
     'access callback' => 'user_access',
     'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_TASK,
-    'tab_root' => 'admin/config/feed_import/edit/%',
+    'tab_root' => FEED_IMPORT_PATH . '/edit/%',
     'weight' => 2,
   );
-  $items['admin/config/feed_import/edit/%/filter'] = array(
+  $items[FEED_IMPORT_PATH . '/edit/%/filter'] = array(
     'title' => 'Edit filters',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('feed_import_edit_filter_form', '#filter', 4),
+    'page arguments' => array('feed_import_edit_filter_form', '#filter', $submenus + 2),
     'access callback' => 'user_access',
     'access arguments' => array('feed import permission'),
     'type' => MENU_LOCAL_TASK,
-    'tab_root' => 'admin/config/feed_import/edit/%',
+    'tab_root' => FEED_IMPORT_PATH . '/edit/%',
     'weight' => 3,
   );
   return $items;
@@ -434,26 +443,25 @@ function feed_import_settings_form_validate($form, &$form_state) {
  *   A formatted table containing all feeds
  */
 function feed_import_list_feeds() {
-  $path = 'admin/config/feed_import';
   // Load all feeds
   $feeds = FeedImport::loadFeeds();
   $rows = array();
   foreach ($feeds as &$feed) {
-    $feed['name'] = l($feed['name'], $path . '/edit/' . $feed['id'] . '/feed');
+    $feed['name'] = l($feed['name'], FEED_IMPORT_PATH . '/edit/' . $feed['id'] . '/feed');
     $feed['url'] = l($feed['url'], $feed['url'], array('attributes' => array('target' => '_new')));
     if ($feed['enabled']) {
       $enabled = TRUE;
-      $feed['enabled'] = t('Yes') . ' ' . l('Disable', $path . '/disable/' . $feed['id']);
+      $feed['enabled'] = t('Yes') . ' ' . l('Disable', FEED_IMPORT_PATH . '/disable/' . $feed['id']);
     }
     else {
       $enabled = FALSE;
-      $feed['enabled'] = t('No') . ' ' . l('Enable', $path . '/enable/' . $feed['id']);
+      $feed['enabled'] = t('No') . ' ' . l('Enable', FEED_IMPORT_PATH . '/enable/' . $feed['id']);
     }
     // Add operations
-    $feed['operations'][] = l(t('Edit'), $path . '/edit/' . $feed['id'] . '/feed');
-    $feed['operations'][] = l(t('Process'), $path . '/process/' . $feed['id']);
-    $feed['operations'][] = l(t('Export'), $path . '/export/' . $feed['id']);
-    $feed['operations'][] = l(t('Delete'), $path . '/delete/' . $feed['id']);
+    $feed['operations'][] = l(t('Edit'), FEED_IMPORT_PATH . '/edit/' . $feed['id'] . '/feed');
+    $feed['operations'][] = l(t('Process'), FEED_IMPORT_PATH . '/process/' . $feed['id']);
+    $feed['operations'][] = l(t('Export'), FEED_IMPORT_PATH . '/export/' . $feed['id']);
+    $feed['operations'][] = l(t('Delete'), FEED_IMPORT_PATH . '/delete/' . $feed['id']);
     $feed['operations'] = implode(' ', $feed['operations']);
     $rows[] = array(
       'data' => array($feed['name'], $feed['url'], $feed['enabled'], $feed['operations']),
@@ -493,7 +501,7 @@ function feed_import_process_feed($id = 0) {
   if ($err) {
     drupal_set_message(t('Feed cannot be processed!'), 'error');
   }
-  drupal_goto('admin/config/feed_import');
+  drupal_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -579,7 +587,7 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
     $names = implode(', ', $names);
     drupal_set_message(t('Feeds @names were imported and disabled', array('@names' => $names)));
   }
-  drupal_goto('admin/config/feed_import');
+  drupal_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -675,7 +683,7 @@ function feed_import_add_new_feed_form_submit($form, &$form_state) {
   // Save feed
   FeedImport::saveFeed($feed);
   drupal_set_message(t('Feed @name was created', array('@name' => $form_state['values']['name'])));
-  drupal_goto('admin/config/feed_import');
+  drupal_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -695,7 +703,7 @@ function feed_import_change_status($how, $id = 0) {
       ->execute();
     drupal_set_message($how ? t('Feed enabled') : t('Feed disabled'));
   }
-  drupal_goto('admin/config/feed_import');
+  drupal_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -703,7 +711,7 @@ function feed_import_change_status($how, $id = 0) {
  */
 function feed_import_delete_feed_form($form, &$form_state, $id = 0) {
   if (!$id) {
-    drupal_goto('admin/config/feed_import');
+    drupal_goto(FEED_IMPORT_PATH);
     return;
   }
   $form['id'] = array(
@@ -711,7 +719,7 @@ function feed_import_delete_feed_form($form, &$form_state, $id = 0) {
     '#value' => $id,
   );
 
-  return confirm_form($form, t('This action cannot be undone!'), 'admin/config/feed_import');
+  return confirm_form($form, t('This action cannot be undone!'), FEED_IMPORT_PATH);
 }
 
 /**
@@ -725,7 +733,7 @@ function feed_import_delete_feed_form_submit($form, &$form_state) {
     ->condition('feed_id', $form_state['values']['id'], '=')
     ->execute();
   drupal_set_message(t('Feed deleted!'));
-  drupal_goto('admin/config/feed_import');
+  drupal_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -919,7 +927,7 @@ function feed_import_edit_feed_form_validate($form, &$form_state) {
   // Cancel button pressed
   $but = isset($form_state['clicked_button']['#parents'][0]) ? $form_state['clicked_button']['#parents'][0] : '';
   if ($but == 'cancel') {
-    drupal_goto('admin/config/feed_import');
+    drupal_goto(FEED_IMPORT_PATH);
   }
 }
 

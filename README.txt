@@ -94,7 +94,7 @@ query for X items at once to update or insert.
 Using Feed Import UI
 ------------------------------
 
-First, navigate to admin/config/feed_import. You can change global settings
+First, navigate to admin/config/services/feed_import. You can change global settings
 using "Settings" link. To add a new feed click "Add new feed" link and fill the
 form with desired data. After you saved feed click "Edit" link from operations
 column. Now at the bottom is a fieldset with XPATH settings. Add XPATH for
