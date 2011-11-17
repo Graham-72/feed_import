@@ -400,6 +400,9 @@ class FeedImport {
           unset($xpath[$key], $x);
         }
       }
+      if (count($xpath) == 1) {
+        $xpath = reset($xpath);
+      }
     }
     return $xpath;
   }
@@ -600,7 +603,12 @@ class FeedImport {
       if (isset($ids[$hash])) {
         $changed = FALSE;
         // Load entity
-        $entity = call_user_func(self::$functionLoad, $ids[$hash]->entity_id);
+        try {
+          $entity = call_user_func(self::$functionLoad, $ids[$hash]->entity_id);
+        }
+        catch (Exception $e) {
+          continue;
+        }
         // If entity is missing then skip
         if (empty($entity)) {
           unset($entity);
@@ -736,7 +744,12 @@ class FeedImport {
       $key = array_search($field_param, $filter['#params']);
       $filter['#params'][$key] = $field;
       // Apply filter
-      $field = call_user_func_array($filter['#function'], $filter['#params']);
+      try {
+        $field = call_user_func_array($filter['#function'], $filter['#params']);
+      }
+      catch (Exception $e) {
+        // Just report this error. Nothing to handle.
+      }
       $filter = NULL;
     }
     return $field;
@@ -890,9 +903,6 @@ class FeedImport {
    *   An array of objects
    */
   protected static function processFeedChunked(array $feed) {
-    // Get substr function
-    global $multibyte;
-    $substr = ($multibyte == UNICODE_MULTIBYTE) ? 'mb_substr' : 'substr';
     // This will hold all generated entities
     $entities = array();
     // XML head
@@ -943,9 +953,9 @@ class FeedImport {
         $closepos += $tag['closelength'];
 
         // Create xml string
-        $item = $xml_head . $substr($content, $openpos, $closepos - $openpos);
+        $item = $xml_head . substr($content, $openpos, $closepos - $openpos);
         // New content
-        $content = $substr($content, $closepos-1);
+        $content = substr($content, $closepos-1);
         // Create xml object
         try {
           $item = simplexml_load_string($item, self::$simpleXMLElement, LIBXML_NOCDATA);
