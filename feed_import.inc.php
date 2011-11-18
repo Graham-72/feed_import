@@ -191,13 +191,18 @@ class FeedImport {
    * This is setted with set_error_handling()
    */
   public static function errorHandler($errno, $errmsg, $file, $line) {
+    // How many errors to display
+    static $errors_left = 100;
     // Add error to reports
-    self::$report['errors'][] = array(
-      'error' => $errmsg,
-      'error number' => $errno,
-      'line' => $line,
-      'file' => $file,
-    );
+    if ($errors_left > 0) {
+      self::$report['errors'][] = array(
+        'error' => $errmsg,
+        'error number' => $errno,
+        'line' => $line,
+        'file' => $file,
+      );
+      $errors_left--;
+    }
     //Throw an exception to be caught by try-catch
     throw new Exception(t('Uncaught Feed Import Exception'));
   }

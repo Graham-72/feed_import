@@ -312,7 +312,7 @@ class FeedImportFilter {
    * @return mixed
    *   Result without tags
    */
-  public static function stripTags($field, $tags) {
+  public static function stripTags($field, $tags = '') {
     if (is_array($field)) {
       foreach ($field as &$f) {
         $f = self::stripTags($field, $tags);
