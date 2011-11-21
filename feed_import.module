@@ -469,23 +469,38 @@ function feed_import_list_feeds() {
       $feed['enabled'] = t('No') . ' ' . l('Enable', FEED_IMPORT_PATH . '/enable/' . $feed['id']);
     }
     // Add operations
-    $feed['operations'][] = l(t('Edit'), FEED_IMPORT_PATH . '/edit/' . $feed['id'] . '/feed');
-    $feed['operations'][] = l(t('Process'), FEED_IMPORT_PATH . '/process/' . $feed['id']);
-    $feed['operations'][] = l(t('Export'), FEED_IMPORT_PATH . '/export/' . $feed['id']);
-    $feed['operations'][] = l(t('Delete'), FEED_IMPORT_PATH . '/delete/' . $feed['id']);
-    $feed['operations'] = implode(' ', $feed['operations']);
+    $feed['operations']['edit'] = l(t('Edit'), FEED_IMPORT_PATH . '/edit/' . $feed['id'] . '/feed');
+    $feed['operations']['process'] = l(t('Process'), FEED_IMPORT_PATH . '/process/' . $feed['id']);
+    $feed['operations']['export'] = l(t('Export'), FEED_IMPORT_PATH . '/export/' . $feed['id']);
+    $feed['operations']['delete'] = l(t('Delete'), FEED_IMPORT_PATH . '/delete/' . $feed['id']);
+
     $rows[] = array(
-      'data' => array($feed['name'], $feed['url'], $feed['enabled'], $feed['operations']),
+      'data' => array(
+        $feed['name'],
+        $feed['url'],
+        $feed['enabled'],
+        $feed['operations']['edit'],
+        $feed['operations']['process'],
+        $feed['operations']['export'],
+        $feed['operations']['delete'],
+      ),
       'class' => array($enabled ? 'enabled-feed' : 'disabled-feed'),
     );
   }
+  // Path to CSS file
   $path = drupal_get_path('module', 'feed_import') . '/feed_import.css';
-  drupal_add_css($path, array('type' => 'file'));
-  $rows = array(
-    'header' => array(t('Name'), t('Url'), t('Enabled'), t('Operations')),
-    'rows' => $rows,
+
+  return array(
+    '#theme' => 'table',
+    '#header' => array(t('Name'), t('Url'), t('Enabled'), array('data' => t('Operations'), 'colspan' => 4)),
+    '#rows' => $rows,
+    '#empty' => t('There are no feeds.'),
+    '#attached' => array(
+      'css' => array(
+        $path => array('type' => 'file'),
+      ),
+    ),
   );
-  return theme('table', $rows);
 }
 
 /**
@@ -538,14 +553,12 @@ function feed_import_export_feed_page($id = 0) {
   drupal_set_title(t('Copy and save all code below. Paste it where you want to import feed.'));
 
   $feed = serialize($feed);
-  $vars = array(
-    'element' => array(
-      '#value' => $feed,
-      '#rows' => 20,
-    ),
-  );
 
-  return theme('textarea', $vars);
+  return array(
+    '#theme' => 'textarea',
+    '#value' => $feed,
+    '#rows' => 20,
+  );
 }
 
 /**
@@ -926,7 +939,9 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   // Add js
   $form['#attached'] = array(
     'js' => array(
-      'data' => drupal_get_path('module', 'feed_import') . '/feed_import.js',
+      drupal_get_path('module', 'feed_import') . '/feed_import.js' => array(
+        'type' => 'file',
+      ),
     ),
   );
   return $form;
@@ -1096,18 +1111,23 @@ function feed_import_edit_filter_form($form, &$form_state, $f = '#filter', $id =
                 array('@param_field' => $param_field)) . ' ';
   $help[3]  = t('Filtered value is the resulted string of all function calls from top to bottom.');
   $help = implode('<br />', $help);
+  $form['help'] = array(
+    '#markup' => $help,
+  );
+
   $vars = array(
     '@name' => $feed['name'],
     '@filter' => $form_state['#item_filter'] == '#filter' ? t('filters') : t('pre-filters'),
   );
 
   // Set page title
-  drupal_set_title(t('Edit @filter for @name', $vars));
+  drupal_set_title(t('Edit @filter for @name', $vars), PASS_THROUGH);
 
   $form['id'] = array(
     '#type' => 'value',
     '#value' => $feed['id'],
   );
+
 
   if (isset($form_state['values'])) {
     foreach ($form_state['#filter_fields'] as &$field) {
@@ -1231,9 +1251,10 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
         }
         else {
           $filter['params'] = explode(PHP_EOL, $filter['params']);
+          $filter['params'] = array_map('trim', $filter['params']);
         }
         $item[$form_state['#item_filter']][$filter['name']] = array(
-          '#function' => $filter['function'],
+          '#function' => trim($filter['function']),
           '#params' => $filter['params'],
         );
         $filter = NULL;
@@ -1349,6 +1370,7 @@ function theme_feed_import_edit_filter_form($form) {
     t('Select'),
     t('Weight'),
   );
+
   foreach ($form['#filter_fields'] as &$field) {
     $rows = array();
     if (!empty($form['container_' . $field]['table_content'][$field])) {
@@ -1356,6 +1378,7 @@ function theme_feed_import_edit_filter_form($form) {
         if (!is_numeric($id)) {
           continue;
         }
+        // Table columns
         $data = array('name', 'function', 'params', 'selected', 'weight');
         foreach ($data as &$d) {
           if (isset($row[$d]['#checked'])) {
@@ -1368,13 +1391,15 @@ function theme_feed_import_edit_filter_form($form) {
       }
     }
     drupal_add_tabledrag('table_' . $field, 'order', 'sibling', 'weight');
-    $form['container_' . $field]['table_content'][$field] = NULL;
-    $table = array(
-      'header' => $header,
-      'rows' => $rows,
-      'attributes' => array('id' => 'table_' . $field),
+
+    $form['container_' . $field]['table_content'][$field] = array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+      '#attributes' => array('id' => 'table_' . $field),
+      '#empty' => t('There are no filters.'),
     );
-    $form['container_' . $field]['table_content'][$field]['#markup'] = theme('table', $table);
   }
+
   return drupal_render_children($form);
 }
