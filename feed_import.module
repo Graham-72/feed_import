@@ -722,6 +722,7 @@ function feed_import_change_status($how, $id = 0) {
  */
 function feed_import_delete_feed_form($form, &$form_state, $id = 0) {
   if (!$id) {
+    drupal_set_message(t("Feed doesn't exist!"), 'error');
     drupal_goto(FEED_IMPORT_PATH);
     return;
   }
