@@ -305,7 +305,7 @@ function feed_import_import_items(&$feed) {
     '!errors' => '<br />' . $report['errors'],
   );
 
-  watchdog('feed_import_info', $msg, $info);
+  watchdog('feed_import_info', $msg, $info, $report['errors'] ? WATCHDOG_WARNING : WATCHDOG_NOTICE);
 }
 
 /**
