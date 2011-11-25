@@ -936,6 +936,8 @@ class FeedImport {
     $tag['closelength'] = drupal_strlen($tag['close']);
     // This holds xml content
     $content = '';
+    // Used to avoid problems with tags having same name start
+    $continue_from = 0;
     // Read all content in chunks
     while (!feof($fp)) {
       $content .= fread($fp, $chunk_length);
@@ -944,12 +946,17 @@ class FeedImport {
         continue;
       }
       while (TRUE) {
-        $openpos = strpos($content, $tag['open']);
-        $openposclose = $openpos+$tag['length']+1;
+        $openpos = strpos($content, $tag['open'], $continue_from);
+        $openposclose = $openpos + $tag['length'] + 1;
         // Check for open tag
-        if ($openpos === FALSE || !isset($content[$openposclose]) || ($content[$openposclose] != ' ' && $content[$openposclose] != '>')) {
+        if ($openpos === FALSE || !isset($content[$openposclose])) {
           break;
         }
+        elseif ($content[$openposclose] != ' ' && $content[$openposclose] != '>') {
+          $continue_from = $openpos + 1;
+          break;
+        }
+        $continue_from = 0;
         $closepos = strpos($content, $tag['close'], $openposclose);
         if ($closepos === FALSE) {
           break;
