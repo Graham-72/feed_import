@@ -949,10 +949,7 @@ class FeedImport {
         $openpos = strpos($content, $tag['open'], $continue_from);
         $openposclose = $openpos + $tag['length'] + 1;
         // Check for open tag
-        if ($openpos === FALSE || !isset($content[$openposclose])) {
-          break;
-        }
-        elseif ($content[$openposclose] != ' ' && $content[$openposclose] != '>') {
+        if ($openpos === FALSE || !isset($content[$openposclose]) || ($content[$openposclose] != ' ' && $content[$openposclose] != '>')) {
           $continue_from = $openpos + 1;
           break;
         }
