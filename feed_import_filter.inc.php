@@ -305,7 +305,7 @@ class FeedImportFilter {
    * Strips tags
    *
    * @param mixed $field
-   *   A string or an array of strins
+   *   A string or an array of strings
    * @param string $tags
    *   Allowed tags
    *
@@ -320,6 +320,33 @@ class FeedImportFilter {
       return $field;
     }
     return strip_tags($field, $tags);
+  }
+
+  /**
+   * Remove tags
+   *
+   * @param mixed $field
+   *   A string or an array of strings
+   * @param string $tags
+   *   A string containing tags to remove separated by space or array of tags
+   *
+   * @return mixed
+   *   Result without tags
+   */
+  public static function removeTags($field, $tags) {
+    if (!is_array($tags)) {
+      $tags = explode(' ', trim($tags));
+    }
+    if (is_array($field)) {
+      foreach ($field as &$f) {
+        $f = self::removeTags($field, $tags);
+      }
+      return $field;
+    }
+    foreach ($tags as &$tag) {
+      $field = preg_replace('@<' . $tag . '( |>).*?</' . $tag . '>@si', '', $field);
+    }
+    return $field;
   }
   // Other filters ...
 }
