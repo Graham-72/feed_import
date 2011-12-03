@@ -1,6 +1,7 @@
 FEED IMPORT
 
-Project page: http://drupal.org/sandbox/SorinSarca/1331632
+Project page: http://drupal.org/project/feed_import
+Examples: http://drupal.org/node/1360374
 
 ------------------------------
 Features
@@ -16,21 +17,36 @@ Features
   -import/export feed configuration
   -reports
   -add taxonomy terms to field (can add new terms)
+  -process HTML pages
+  -process CSV files
+  -add image to field (used as filter)
+  -custom settings on each feed process function
+  -do not save info about imported items (usually used for one-time import)
 
 ------------------------------
 About Feed Import
 ------------------------------
 
-Feed Import module allows you to import content from XML files into entities
-like (node, user, ...) using XPATH to fetch whatever you need.
-You can create a new feed using php code in you module or you can use the
+Feed Import module allows you to import content from XML/HTML/CSV files into
+entities (like node, user, ...) using XPATH to fetch whatever you need.
+You can create a new feed using php code in your module or you can use the
 provided UI (recommended). If you have regular imports you can enable import
-to run at cron. Now Feed Import provides two methods to process XML file:
-    Normal  - loads the xml file with simplexml_load_file() and parses
+to run at cron. Now Feed Import provides four methods to process files:
+    Normal  - loads the XML file with simplexml_load_file() and parses
               it's content. This method isn't good for huge files because
               needs very much memory.
-    Chunked - gets chunks from xml file and recompose each item. This is a good
-              method to import huge xml files.
+    Chunked - gets chunks from XML file and recompose each item. This is a good
+              method to import huge xml files. This cannot be used if parent
+              xpath is based on properties. You cannot use parent xpath like
+              //category[@type="new"]/items
+              or
+              //category/items[@posted="today"]
+              but you can use xpaths like
+              //category/items.
+              Fields xpaths are normally.
+    HTML    - converts HTML document to xml and then is imported like a normal
+              xml file.
+    CSV     - loads content line by line and imports it.
 
 ------------------------------
 How Feed Import works
@@ -38,13 +54,17 @@ How Feed Import works
 
 Step 1: Downloading xml file and creating items
 
-  -if we selected processFeedNormal function for processing this feed then all
+  -if we selected processXML function for processing this feed then all
    xml file is loaded. We apply parent xpath, we create entity objects and we
    should have all items in an array.
-  -if we selected processFeedChunked function for processing then xml file is
+  -if we selected processXMLChunked function for processing then xml file is
    read in chunks. When we have an item we create the SimpleXMLElement object
    and we create entity object. We delete from memory content read so far and we
    repeat process until all xml content is processed.
+  -if we selected processHTMLPage function then HTML is converted to XML and
+   imported like processXML.
+  -if we selected processCSV function then file is read line by line and
+   imported.
   -if we selected another process function then we should take a look at that
    function
 
@@ -79,11 +99,15 @@ For each object filled with data earlier we check the hash:
    to save changes or just to update the expire time.
   -if hash isn't in list then we create a new entity and hash needs to be
    inserted in database.
+If is a one-time import then none of the items info is saved. This can produce
+duplicate content.
 
 Feed Import can add multiple values to fields which support this. For example
 above we need only one xpath:
 Friends/Friend
 and both Tom and Jerry will be inserted in field values, which is great.
+Now you can specify not only the column value but the entire array of values by
+returning an object from filter functions.
 
 Expire time is used to automatically delete entities (at cron) if they are
 missing from feed for more than X seconds.
@@ -94,15 +118,15 @@ query for X items at once to update or insert.
 Using Feed Import UI
 ------------------------------
 
-First, navigate to admin/config/services/feed_import. You can change global settings
-using "Settings" link. To add a new feed click "Add new feed" link and fill the
-form with desired data. After you saved feed click "Edit" link from operations
-column. Now at the bottom is a fieldset with XPATH settings. Add XPATH for
-required item parent and unique id (you can now save feed). To add a new field
-choose one from "Add new field" select and click "Add selected field" button.
-A fieldset with field settings appeared and you can enter xpath(s) and default
-action/value. If you wish you can add another field and when you are done click
-"Save feed" submit button.
+First, navigate to admin/config/services/feed_import. You can change global
+settings using "Settings" link. To add a new feed click "Add new feed" link and
+fill the form with desired data. After you saved feed click "Edit" link from
+operations column. Now at the bottom is a fieldset with XPATH settings. Add
+XPATH for required item parent and unique id (you can now save feed). To add a
+new field choose one from "Add new field" select and click "Add selected field"
+button. A fieldset with field settings appeared and you can enter xpath(s) and
+default action/value. If you wish you can add another field and when you are
+done click "Save feed" submit button.
 Check if all fields are ok. If you want to (pre)filter values select
 "Edit (pre)filter" tab. You can see a fieldset for each selected field. Click
 "Add new filter" button for desired field to add a new filter. Enter unique
@@ -123,15 +147,48 @@ Feed Import API
 
 If you want, you can use your own function to parse content. To do that you have
 to implement hook_feed_import_process_info() which returns an array keyed by
-function alias and with value of function name. If function is a static member
-of a class then value is an array containing class name and function name.
-Please note that in process function EVERY possible exception MUST BE CAUGHT!
-Example:
+function alias and with value of another array containing following keys:
+  function => Function name for processing. If function is a static member of a
+              class then value is an array containing class name and function
+              name. This function gets as parameter an array with feed info.
+  settings => An array containing settings for process function keyed by setting
+              name. A setting is an array with following keys and values:
+                title       =>  This is displayed like textfield title.
+                description =>  This is displayed as textfield description.
+                default     =>  This is default SCALAR value for setting.
+              If function doesn't need user settings then this is must be an
+              empty array.
+  validate => A function name (like "function" key above) which will validate
+              all settings. Function gets as parameters: setting name, value and
+              default value. If setting value isn't valid then function must
+              return default value else return value. This function is called
+              for every setting so you may have to use a switch statement.
+              If you don't want to use this set it to NULL.
+  info     => Some text describing process function, settings and others.
 
+Please note that in process function EVERY possible exception MUST BE CAUGHT!
+
+Example:
 function hook_feed_import_process_info() {
   return array(
-    'processFeedSuperFast' => 'php_process_function_name',
-    'processFeedByMyClass' => array('MyClassName', 'myProcessFunction'),
+    'processFeedSuperFast' => array(
+      'function' => 'php_process_function_name',
+      'settings' => array(
+        'my_setting' => array(
+          'title' => t('Setting title'),
+          'description' => t('My setting description'),
+          'default' => 128,
+        ),
+        'other_setting' => array(
+          'title' => t('The other setting'),
+          'description' => t('Description for setting'),
+          'default' => 'abcd',
+        ),
+        // Other settings...
+      ),
+      'validate' => 'php_process_function_validate',
+      'info' => t('About this process function.'),
+    ),
     // Other functions ...
   );
 }
@@ -139,90 +196,44 @@ function hook_feed_import_process_info() {
 Every function is called with a parameter containing feed info and must return
 an array of objects (stdClass). For example above we will have:
 
+/**
+ * Process feed function.
+ */
 function php_process_function_name(array $feed) {
   $items = array();
+  // We can use settings like this:
+  $my_setting = $feed['xpath']['settings']['my_setting'];
+  $other_setting = $feed['xpath']['settings']['other_setting'];
+
   // ...
-  // Here process feed items
+  // Here process feed items.
   // ...
   return $items;
 }
 
-For the static function:
-
-class MyClassName {
-  // Class stuff
-  // ...
-
-  public static function myProcessFunction(array $feed) {
-    $items = array();
-    // ...
-    // Here process feed items
-    // ...
-    return $items;
-  }
-
-  // Other class stuff
-}
-
-Concrete example (we assume that the module name is test_module):
-
 /**
- * Implements hook_feed_import_process_info().
+ * Callback for validate.
  */
-function test_module_feed_import_process_info() {
-  return array(
-    'Test module process function' => 'test_module_process_function',
-  );
+function php_process_function_validate($name, $value, $default) {
+  switch ($name) {
+    case 'my_setting':
+      if ($value < 10) {
+        // Well, if you want you can use drupal_set_message('msg', 'warning') to
+        // tell user that his value isn't valid
+        drupal_set_message(t('Value must be at least 10!'), 'warning');
+        return $default;
+      }
+      break;
+    case 'other_setting':
+      if ($value = 'xyz') {
+        $value = 'test';
+      }
+      break;
+  }
+  return $value;
 }
 
-
-/**
- * This function simulates FeedImport::processFeedNormal function
- *
- * @param array
- *   An array containing feed info
- *
- * @return array
- *   An array containing objects
- */
-function test_module_process_function(array $feed) {
-  // Every possible warning or error must be caught!!!
-  // Load xml file from url
-  try {
-    $xml = simplexml_load_file($feed['url'], FeedImport::$simpleXMLElement,
-                                LIBXML_NOCDATA);
-  }
-  catch (Exception $e) {
-    // Error in xml file
-    return NULL;
-  }
-  // If there is no SimpleXMLElement object
-  if (!($xml instanceof FeedImport::$simpleXMLElement)) {
-    return NULL;
-  }
-  // Now we are sure that $xml is an SimpleXMLElement object
-  // Get items from root
-  $xml = $xml->xpath($feed['xpath']['#root']);
-  // Get total number of items
-  $count_items = count($xml);
-
-  // Check if there are items
-  if (!$count_items) {
-    return NULL;
-  }
-
-  // Check feed items
-  foreach ($xml as &$item) {
-    // Set this item value to entity, so all entities will be in $xml at end
-    // You must use FeedImport::createEntity to get an object which will turn
-    // into an entity at the end of import process
-    $item = FeedImport::createEntity($feed, $item);
-  }
-  // Return created entities
-  return $xml;
-}
-
-Now you can go to edit your feed and select for processing your new function.
+Please check source code for a good example.
 
 ------------------------------
 Feed info structure
@@ -232,9 +243,11 @@ Feed info is an array containing all info about feeds: name, url, xpath keyed
 by feed name.
 A feed is an array containing the following keys:
 
-name => This is feed name
-
 id => This is feed unique id
+
+machine_name => This is feed unique machine name
+
+name => This is feed name
 
 enabled => Shows if feed is enabled or not. Enabled feeds are processed at cron
            if import at cron option is activated from settings page.
@@ -264,6 +277,9 @@ xpath => This is an array containing xpath info and fields
 
   #process_function => This is function alias used to process xml file.
                        See documentation above about process functions.
+
+  #settings => This is an array containing settings for process function keyed
+               by setting name.
 
   #items => This is an array containing xpath for fields and filters keyed by
             field name.
@@ -306,9 +322,5 @@ code below to print its structure:
 $feeds = FeedImport::loadFeeds();
 drupal_set_message('<pre>' . print_r($feeds, TRUE) . '</pre>');
 
-------------------------------
-Real example
-------------------------------
-
-Please check project page for an example.
-http://drupal.org/sandbox/SorinSarca/1331632
+If you want to modify feed just before import process you can implement
+hook_feed_import_feed_info_alter(&$feed) hook.

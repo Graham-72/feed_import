@@ -1,5 +1,5 @@
 name = Feed Import
-description = Imports content from XML files using XPATH
+description = Imports content from various file types (like XML, HTML, CSV) using XPATH
 package = Feeds
 core = 7.x
 files[] = feed_import.inc.php

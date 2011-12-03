@@ -19,11 +19,11 @@ function feed_import_schema() {
         'description' => 'Primary key',
       ),
 
-      'feed_id' => array(
-        'type' => 'int',
+      'feed_machine_name' => array(
+        'type' => 'varchar',
+        'length' => 255,
         'not null' => TRUE,
-        'unsigned' => TRUE,
-        'description' => 'Feed id',
+        'description' => 'Feed machine name',
       ),
 
       'entity' => array(
@@ -81,6 +81,13 @@ function feed_import_schema() {
         'description' => 'Feed name',
       ),
 
+      'machine_name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Unique machine name',
+      ),
+
       'url' => array(
         'type' => 'varchar',
         'length' => 255,
@@ -109,6 +116,9 @@ function feed_import_schema() {
       ),
     ),
     'primary key' => array('id'),
+    'unique keys' => array(
+      'machine_name' => array('machine_name'),
+    ),
   );
 
   return $schema;
@@ -117,18 +127,11 @@ function feed_import_schema() {
  * Implements hook_uninstall().
  */
 function feed_import_uninstall() {
-  db_drop_table('feed_import_hashes');
-  db_drop_table('feed_import_settings');
   $vars = array(
     'feed_import_field_param_name',
-    'feed_import_entity_info',
-    'feed_import_entity_info_expire',
-    'feed_import_entity_info_keep',
     'feed_import_insert_hashes_chunk',
     'feed_import_hash_property',
     'feed_import_update_ids_chunk',
-    'feed_import_processFeedChunked_xml_head',
-    'feed_import_processFeedChunked_chunk_length',
     'feed_import_last_executed_import',
     'feed_import_time_between_imports',
     'feed_import_last_imported_feed',
@@ -137,4 +140,6 @@ function feed_import_uninstall() {
     'feed_import_use_cron',
   );
   array_map('variable_del', $vars);
+  db_drop_table('feed_import_hashes');
+  db_drop_table('feed_import_settings');
 }

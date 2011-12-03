@@ -26,6 +26,7 @@ class FeedImportFilter {
     preg_match('/<!\[CDATA\[(.*?)\]\]>/is', $field, $matches);
     return isset($matches[1]) ? $matches[1] : $field;
   }
+
   /**
    * Removes duplicate spaces
    *
@@ -47,8 +48,9 @@ class FeedImportFilter {
     }
     return trim($field);
   }
+
   /**
-   * Get all lines from text
+   * Splits content by delimiter
    *
    * @param mixed $field
    *   A string or an array of strings
@@ -58,35 +60,95 @@ class FeedImportFilter {
    * @return array
    *   An array containing splitted string
    */
-  public static function getLines($field, $glue = PHP_EOL) {
+  public static function split($field, $glue = PHP_EOL) {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::getLines($f, $glue);
+        $f = self::split($f, $glue);
       }
       return $field;
     }
     return explode($glue, $field);
   }
+
   /**
    * Glue all lines
    *
    * @param mixed $field
-   *   A string or an array of strings
+   *   An array of strings
    * @param string $glue
    *   Delimiter
    *
    * @return string
    *   Joined string
    */
-  public static function glueLines($field, $glue = PHP_EOL) {
+  public static function join($field, $glue = PHP_EOL) {
     if (is_array($field)) {
+      return implode($glue, $field);
+    }
+    else {
+      return $field;
+    }
+  }
+
+  /**
+   * Merge all array levels
+   *
+   * @param array $field
+   *   Array to merge
+   *
+   * @return array
+   *   Merged array
+   */
+  public static function merge($field) {
+    if (!is_array($field)) {
+      return array($field);
+    }
+    $merged = array();
+    foreach ($field as &$f) {
+      if (is_array($f)) {
+        $f = self::merge($f);
+      }
+      else {
+        $f = array($f);
+      }
+      $merged = array_merge($merged, $f);
+    }
+    return $merged;
+  }
+
+  /**
+   * Replace content
+   *
+   * @param mixed $field
+   *   Content to replace
+   * @paream string $what
+   *   String to replace
+   * @param string $with
+   *   Replace string with
+   * @param bool $insensitive
+   *   Case insensitive replace
+   *
+   * @return mixed
+   *   Replaced content
+   */
+  public static function replace($field, $what='', $with = '', $insensitive = FALSE) {
+    if ($what == $with) {
+      return $field;
+    }
+    elseif (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::glueLines($f, $glue);
+        $f = self::replace($f, $what, $with);
       }
       return $field;
     }
-    return implode($glue, $field);
+    if ($insensitive) {
+      return str_ireplace($what, $with, $field);
+    }
+    else {
+      return str_replace($what, $with, $field);
+    }
   }
+
   /**
    * Append text
    *
@@ -107,6 +169,7 @@ class FeedImportFilter {
     }
     return $field . $text;
   }
+
   /**
    * Prepend text
    *
@@ -127,6 +190,7 @@ class FeedImportFilter {
     }
     return $text . $field;
   }
+
   /**
    * Trims a string or an array of strings
    *
@@ -147,6 +211,7 @@ class FeedImportFilter {
     }
     return $chars ? trim($field, $chars) : trim($field);
   }
+
   /**
    * Convert encodings
    *
@@ -169,6 +234,7 @@ class FeedImportFilter {
     }
     return iconv($from, $to, $field);
   }
+
   /**
    * Gets vocabulary vid from name
    *
@@ -212,7 +278,7 @@ class FeedImportFilter {
    */
   public static function getTaxonomyIdByName($name, $voc = 0) {
     if (!is_numeric($voc)) {
-      // Get vid from name
+      // Get vid from name.
       $voc = self::getVidFromName($voc);
     }
 
@@ -276,32 +342,6 @@ class FeedImportFilter {
   }
 
   /**
-   * Merge all array levels
-   *
-   * @param array $field
-   *   Array to merge
-   *
-   * @return array
-   *   Merged array
-   */
-  public static function mergeArray($field) {
-    if (!is_array($field)) {
-      return array($field);
-    }
-    $merged = array();
-    foreach ($field as &$f) {
-      if (is_array($f)) {
-        $f = self::mergeArray($f);
-      }
-      else {
-        $f = array($f);
-      }
-      $merged = array_merge($merged, $f);
-    }
-    return $merged;
-  }
-
-  /**
    * Strips tags
    *
    * @param mixed $field
@@ -347,6 +387,71 @@ class FeedImportFilter {
       $field = preg_replace('@<' . $tag . '( |>).*?</' . $tag . '>@si', '', $field);
     }
     return $field;
+  }
+
+  /**
+   * Downloads and saves an image in a field
+   *
+   * @param mixed $field
+   *   A string or an array of strings
+   * @param string $path
+   *   Where to save image. Default is public://
+   *
+   * @return mixed
+   *   An object or an array of objects containing image info
+   */
+  public static function saveImage($field, $path = 'public://') {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
+        $f = self::saveImage($field, $path);
+      }
+      return $field;
+    }
+    // Get image data.
+    $image = file_get_contents($field);
+    $field = trim($field, '/');
+    $field = drupal_substr($field, strrpos($field, '/') + 1);
+    return file_save_data($image, $path . $field, FILE_EXISTS_RENAME);
+  }
+
+  /**
+   * Get property
+   *
+   * @param mixed $field
+   *   Array or object to get property
+   *
+   * @return mixed
+   *   Fetched property
+   */
+  public static function getProperty($field, $property = NULL) {
+    if (is_array($field)) {
+      return array_key_exists($property, $field) ? $field[$property] : NULL;
+    }
+    elseif (is_object($field)) {
+      return isset($field->{$property}) ? $field->{$property} : NULL;
+    }
+    else {
+      return $field;
+    }
+  }
+  /**
+   * This function hashes an user password
+   *
+   * @param mixed $field
+   *   A string or an array of strings
+   *
+   * @return mixed
+   *   Resulted hashes
+   */
+  public static function userHashPassword($field) {
+    require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+    if (is_array($field)) {
+      foreach ($field as &$f) {
+        $f = self::userHashPassword($field);
+      }
+      return $field;
+    }
+    return user_hash_password($field);
   }
   // Other filters ...
 }
