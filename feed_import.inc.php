@@ -635,7 +635,7 @@ class FeedImport {
     // This sets expire timestamp.
     $feed['time'] = (int) $feed['time'];
     // Report data.
-    self::$report['total'] = count($items);
+    self::$report['total'] += count($items);
     // Now we create real entityes or update existent.
     foreach ($items as &$item) {
       // Check if item is skipped.
@@ -968,6 +968,9 @@ class FeedImport {
     $xml_head = $feed['xpath']['#settings']['xml_properties'];
     // Bytes read with fread.
     $chunk_length = $feed['xpath']['#settings']['chunk_size'];
+    // Items count.
+    $items_count = $feed['xpath']['#settings']['items_count'];
+    $current = 0;
     // Open xml url.
     try {
       $fp = fopen($feed['url'], 'rb');
@@ -1032,6 +1035,16 @@ class FeedImport {
         $item = self::createEntity($feed, $item);
         // Put in entities array.
         $entities[] = $item;
+        $current++;
+        // Check if we have to save imported entities.
+        if ($current == $items_count) {
+          // Save entities.
+          self::saveEntities($feed, $entities);
+          // Delete imported items so far to save memory.
+          $entities = array();
+          // Reset counter.
+          $current = 0;
+        }
         // No need anymore.
         unset($item);
       }
@@ -1043,10 +1056,16 @@ class FeedImport {
       fclose($fp);
     }
     catch (Exception $e) {
+      // Nothing to handle here. Used for reporting error.
     }
+    if (!empty($entities)) {
+      // Save left entities.
+      self::saveEntities($feed, $entities);
+    }
+    // Delete feed info.
     unset($feed);
-    // Return created items.
-    return $entities;
+    // Return NULL because we saved all entities.
+    return NULL;
   }
   /**
    * Callback for validating processXMLChunked settings

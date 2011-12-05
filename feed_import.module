@@ -181,6 +181,11 @@ function feed_import_feed_import_process_info() {
       'info' => t('Set xml properties and chunk size.'),
       'function' => array('FeedImport', 'processXMLChunked'),
       'settings' => array(
+        'items_count' => array(
+          'title' => t('Save entities when this number of imported items is reached'),
+          'description' => t('This is used to keep memory in a stable range and not exceed it.'),
+          'default' => 1000,
+        ),
         'xml_properties' => array(
           'title' => t('XML properties'),
           'description' => t('Change xml properties like encoding.'),
