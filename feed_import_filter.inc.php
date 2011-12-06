@@ -390,28 +390,40 @@ class FeedImportFilter {
   }
 
   /**
-   * Downloads and saves an image in a field
+   * Downloads and saves a file in a field
    *
    * @param mixed $field
    *   A string or an array of strings
    * @param string $path
-   *   Where to save image. Default is public://
+   *   Where to save file. Default is public://
    *
    * @return mixed
-   *   An object or an array of objects containing image info
+   *   An object or an array of objects containing file info
    */
-  public static function saveImage($field, $path = 'public://') {
+  public static function saveFile($field, $path = 'public://') {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::saveImage($field, $path);
+        $f = self::saveFile($field, $path);
       }
       return $field;
     }
-    // Get image data.
-    $image = file_get_contents($field);
+    // Get file data.
+    try {
+      $image = file_get_contents($field);
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
     $field = trim($field, '/');
     $field = drupal_substr($field, strrpos($field, '/') + 1);
     return file_save_data($image, $path . $field, FILE_EXISTS_RENAME);
+  }
+
+  /**
+   * This is an alis for saveFile() function.
+   */
+  public static function saveImage($field, $path = 'public://') {
+    return self::saveFile($field, $path);
   }
 
   /**
@@ -423,15 +435,34 @@ class FeedImportFilter {
    * @return mixed
    *   Fetched property
    */
-  public static function getProperty($field, $property = NULL) {
+  public static function getProperty($field) {
+    // Get all properties.
+    $params = func_get_args();
+    // Remove $field.
+    array_shift($params);
+    // Check for params.
+    if (empty($params) || is_scalar($field)) {
+      return $field;
+    }
+    $properties = array();
     if (is_array($field)) {
-      return array_key_exists($property, $field) ? $field[$property] : NULL;
+      foreach ($params as &$param) {
+        $properties[$param] = array_key_exists($param, $field) ? $field[$param] : NULL;
+      }
     }
     elseif (is_object($field)) {
-      return isset($field->{$property}) ? $field->{$property} : NULL;
+      foreach ($params as &$param) {
+        $properties[$param] = isset($field->{$param}) ? $field->{$param} : NULL;
+      }
     }
     else {
       return $field;
+    }
+    if (count($properties) == 1) {
+      return reset($properties);
+    }
+    else {
+      return $properties;
     }
   }
   /**
