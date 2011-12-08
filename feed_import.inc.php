@@ -937,6 +937,27 @@ class FeedImport {
     if (!($xml instanceof self::$simpleXMLElement)) {
       return NULL;
     }
+    $namespaces = &$feed['xpath']['#settings'];
+
+    // Check for namespace settings.
+    if (!empty($namespaces)) {
+      foreach ($namespaces as $key => &$namespace) {
+        if (!$namespace) {
+          unset($namespaces[$key]);
+          continue;
+        }
+        $namespace = explode(' ', $namespace, 2);
+        if (count($namespace) != 2 || empty($namespace[0]) || empty($namespace[1])) {
+          unset($namespaces[$key]);
+          continue;
+        }
+        // Set namespace.
+        $xml->registerXPathNamespace($namespace[0], $namespace[1]);
+      }
+    }
+    else {
+      $namespaces = array();
+    }
     // Get items from root.
     $xml = $xml->xpath($feed['xpath']['#root']);
     // Get total number of items.
@@ -945,14 +966,37 @@ class FeedImport {
     if (!$count_items) {
       return NULL;
     }
+
     // Check feed items.
-    foreach ($xml as &$item) {
-      // Set this item value to entity, so all entities will be in $xml at end!
-      $item = self::createEntity($feed, $item);
+    if (empty($namespaces)) {
+      foreach ($xml as &$item) {
+        // Set this item value to entity, so all entities will be in $xml at end!
+        $item = self::createEntity($feed, $item);
+      }
+    }
+    else {
+      foreach ($xml as &$item) {
+        // Register namespaces.
+        foreach ($namespaces as &$namespace) {
+          $item->registerXPathNamespace($namespace[0], $namespace[1]);
+        }
+        // Set this item value to entity, so all entities will be in $xml at end!
+        $item = self::createEntity($feed, $item);
+      }
     }
     unset($feed);
     // Return created entities.
     return $xml;
+  }
+
+  /**
+   *  Callback for validating processXML settings
+   */
+  public static function processXMLValidate($field, $value, $default) {
+    if (strpos($field, ' ') === FALSE) {
+      return $default;
+    }
+    return $value;
   }
 
   /**

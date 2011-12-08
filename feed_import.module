@@ -170,12 +170,20 @@ function feed_import_menu() {
  */
 function feed_import_feed_import_process_info() {
   // Return default process functions located in FeedImport class.
+  $processXmlSettings = array();
+  for ($i = 0; $i < 5; $i++) {
+    $processXmlSettings['namespace_' . $i] = array(
+      'title' => t('Namespace') . ' ' . ($i + 1),
+      'description' => '',
+      'default' => '',
+    );
+  }
   return array(
     'processXML' => array(
-      'info' => NULL,
+      'info' => t('Set namespaces with format: name http://example.com/namespace. This may slow down import.'),
       'function' => array('FeedImport', 'processXML'),
-      'settings' => array(),
-      'validate' => NULL,
+      'settings' => $processXmlSettings,
+      'validate' => array('FeedImportFilter', 'processXMLValidate'),
     ),
     'processXMLChunked' => array(
       'info' => t('Set xml properties and chunk size.'),
