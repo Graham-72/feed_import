@@ -116,6 +116,124 @@ class FeedImportFilter {
     return $merged;
   }
 
+/**
+   * Set property to array or object
+   *
+   * @param array|object $field
+   *   Where to set property
+   *
+   * @parem string $property
+   *   Property name
+   *
+   * @param mixed $value
+   *   Value of property
+   *
+   * @return mixed
+   *   The field with property set
+   */
+  public static function setProperty($field, $property = NULL, $value = NULL) {
+    if (!empty($property) && (is_array($field) || is_object($field))) {
+      $field[$property] = $value;
+    }
+    return $field;
+  }
+
+  /**
+   * Removes a property
+   *
+   * @param mixed $field
+   *   The field where to remove
+   * @param string $property
+   *   Property to remove
+   *
+   * @return mixed
+   *   Field without property
+   */
+  public static function removeProperty($field, $property = NULL) {
+    if ($property) {
+      if (is_array($field)) {
+        unset($field[$property]);
+      }
+      elseif (is_object($field)) {
+        unset($field->{$property});
+      }
+    }
+    return $field;
+  }
+
+  /**
+   * Json replace encode
+   *
+   * @param mixed $field
+   *   Value to set in json
+   *
+   * @return mixed
+   *   The decoded json
+   */
+  public static function json($field) {
+    $json = func_get_args();
+    // Remove field.
+    array_shift($json);
+    $json = implode('', $json);
+    $field_token = variable_get('feed_import_field_param_name', '[field]');
+    if (!is_scalar($field)) {
+      $field = json_encode($field);
+    }
+    $json = str_replace($field_token, $field, $json);
+    return json_decode($json);
+  }
+  /**
+   * Call object method
+   *
+   * @param object $field
+   *   Object context
+   * @param string $method
+   *   Function to call
+   *
+   * @return mixed
+   *   Result of called function
+   */
+  public static function callMethod($field, $method) {
+    $args = func_get_args();
+    // Remove $field.
+    array_shift($args);
+    // Remove $method.
+    array_shift($args);
+    return call_user_func_array(array($field, $method), $args);
+  }
+
+  /**
+   * Cast to array.
+   *
+   * @param mixed $field
+   *   What to cast
+   *
+   * @return array
+   *   Resulted array
+   */
+  public static function toArray($field) {
+    if (is_scalar($field)) {
+      return array($field);
+    }
+    else {
+      return (array) $field;
+    }
+  }
+
+  /**
+   * Cast to object an array
+   *
+   * @param array $field
+   *   The array to cast
+   *
+   * @return object
+   *   Resulted object
+   */
+  public static function toObject($field) {
+    return (object) $field;
+  }
+
+
   /**
    * Replace content
    *

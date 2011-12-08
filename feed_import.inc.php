@@ -786,6 +786,9 @@ class FeedImport {
       // Check if function exists, support static functions.
       if (strpos($filter['#function'], '::') !== FALSE) {
         $filter['#function'] = explode('::', $filter['#function'], 2);
+        if ($filter['#function'][0] == '') {
+          $filter['#function'][0] = 'FeedImportFilter';
+        }
         if (!method_exists($filter['#function'][0], $filter['#function'][1])) {
           continue;
         }
