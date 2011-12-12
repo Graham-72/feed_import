@@ -1400,6 +1400,8 @@ class FeedImport {
         $item = simplexml_import_dom($doc, self::$simpleXMLElement);
       }
       catch (Exception $e) {
+        $doc->removeChild($node);
+        $item = $node = NULL;
         // Skip this item if xml is invalid.
         continue;
       }
