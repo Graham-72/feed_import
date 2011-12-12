@@ -1297,4 +1297,162 @@ class FeedImport {
     }
     return $value;
   }
+
+  /**
+   * Process large xml file with XmlReader
+   *
+   * @param array $feed
+   *   Feed info array
+   *
+   * @return NULL
+   *   Returns NULL because items are already processed
+   */
+  public static function processXMLReader(array $feed) {
+    // Parse parent xpath.
+    $feed['xpath']['#root'] = trim(trim($feed['xpath']['#root'], '/'));
+    if (!preg_match('/(\w+)(?:\[@(\w+)[\s+]?(?:=[\s+]?["\']?(.*)?["\'])?\])?/', $feed['xpath']['#root'], $match)) {
+      // If not a valid one then exit.
+      return NULL;
+    }
+    // Create the xmlreader resource.
+    $xml = new XMLReader();
+    // Open XML file.
+    try {
+      if (!$xml->open($feed['url'], 'utf-8', (1 << 19) | LIBXML_NOCDATA)) {
+        // If failed to open then exit.
+        return NULL;
+      }
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
+    // Get items count from settings.
+    $items_count = $feed['xpath']['#settings']['items_count'];
+    // This will hold created items.
+    $entities = array();
+    $current = 0;
+    // Jump to first node.
+    switch (count($match)) {
+      case 2:
+        $tag_name = $match[1];
+        $attribute = $attribute_value = NULL;
+        while ($xml->read() && $xml->name != $tag_name);
+        break;
+      case 3:
+        $tag_name = $match[1];
+        $attribute = $match[2];
+        $attribute_value = NULL;
+        while ($xml->read() && ($xml->name != $tag_name || $xml->getAttribute($attribute) === NULL));
+        break;
+      case 4:
+        $tag_name = $match[1];
+        $attribute = $match[2];
+        $attribute_value = $match[3];
+        while ($xml->read() && ($xml->name != $tag_name || $xml->getAttribute($attribute) != $attribute_value));
+        break;
+      default:
+        // Close xml doc.
+        try {
+          $xml->close();
+        }
+        catch (Exception $e) {
+          // Handle possible errors.
+        }
+        // Stop import.
+        return NULL;
+        break;
+    }
+    // No need anymore.
+    unset($match);
+    // Create the DomDocument used to convert to SimplexXmlElement.
+    $doc = new DOMDocument();
+    // Loop through all items.
+    do {
+      // Check for attribute.
+      if ($attribute) {
+        if ($attribute_value) {
+          if ($xml->getAttribute($attribute) != $attribute_value) {
+            continue;
+          }
+        }
+        else {
+          if ($xml->getAttribute($attribute) === NULL) {
+            continue;
+          }
+        }
+      }
+      // Get dom node.
+      try {
+        $node = $xml->expand();
+      }
+      catch (Exception $e) {
+        break;
+      }
+      if (!$node) {
+        break;
+      }
+      // Create the xml node.
+      $node = $doc->importNode($node, TRUE);
+      // Add it to document.
+      $doc->appendChild($node);
+      // Convert it to simplexml.
+      try {
+        $item = simplexml_import_dom($doc, self::$simpleXMLElement);
+      }
+      catch (Exception $e) {
+        // Skip this item if xml is invalid.
+        continue;
+      }
+      // Create entity object.
+      $item = self::createEntity($feed, $item);
+      // Remove from document and free memory.
+      $doc->removeChild($node);
+      $node = NULL;
+      // Check if empty.
+      if (empty($item)) {
+        continue;
+      }
+      // Add to entities.
+      $entities[] = $item;
+      $current++;
+      if ($current == $items_count) {
+        // Save entities.
+        self::saveEntities($feed, $entities);
+        // Delete imported items so far to save memory.
+        $entities = array();
+        // Reset counter.
+        $current = 0;
+      }
+      unset($item);
+    }
+    while ($xml->next($tag_name));
+    // close xml file.
+    try {
+      $xml->close();
+    }
+    catch (Exception $e) {
+      // Just report any possible errors.
+    }
+    // No need anymore.
+    unset($xml, $doc, $node);
+    // Save left entities.
+    if (!empty($entities)) {
+      self::saveEntities($feed, $entities);
+    }
+    // Delete feed info.
+    unset($feed, $entities);
+    // We processed all entities so we return null.
+    return NULL;
+  }
+
+  /**
+   * Callback for validating processXmlReader settings
+   */
+  public static function processXMLReaderValidate($field, $value, $default = NULL) {
+    $value = (int) $value;
+    if ($value <= 0) {
+      return $default;
+    }
+    return $value;
+  }
 }

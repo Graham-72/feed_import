@@ -44,6 +44,9 @@ to run at cron. Now Feed Import provides four methods to process files:
               but you can use xpaths like
               //category/items.
               Fields xpaths are normally.
+    Reader  - reades xml file node by node and imports it. The parent xpath is
+              limited to one attribute (the complex is something like
+              //tagname[@attribute="value for this attribute"]).
     HTML    - converts HTML document to xml and then is imported like a normal
               xml file.
     CSV     - loads content line by line and imports it.
@@ -61,6 +64,7 @@ Step 1: Downloading xml file and creating items
    read in chunks. When we have an item we create the SimpleXMLElement object
    and we create entity object. We delete from memory content read so far and we
    repeat process until all xml content is processed.
+  -if we selected processXmlReader then xml is read node by node and imported.
   -if we selected processHTMLPage function then HTML is converted to XML and
    imported like processXML.
   -if we selected processCSV function then file is read line by line and

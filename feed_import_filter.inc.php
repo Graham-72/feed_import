@@ -23,7 +23,9 @@ class FeedImportFilter {
       }
       return $field;
     }
-    preg_match('/<!\[CDATA\[(.*?)\]\]>/is', $field, $matches);
+    if (!preg_match('/<!\[CDATA\[(.*?)\]\]>/is', $field, $matches)) {
+      return $field;
+    }
     return isset($matches[1]) ? $matches[1] : $field;
   }
 

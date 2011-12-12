@@ -254,6 +254,18 @@ function feed_import_feed_import_process_info() {
       ),
       'validate' => array('FeedImport', 'processCSVValidate'),
     ),
+    'processXmlReader' => array(
+      'function' => array('FeedImport', 'processXmlReader'),
+      'info' => t('Process xml using XmlReader.'),
+      'settings' => array(
+        'items_count' => array(
+          'title' => t('Save entities when this number of imported items is reached'),
+          'description' => t('This is used to keep memory in a stable range and not exceed it.'),
+          'default' => 500,
+        ),
+      ),
+      'validate' => array('FeedImport', 'processXmlReaderValidate'),
+    ),
   );
 }
 
