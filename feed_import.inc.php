@@ -1310,7 +1310,7 @@ class FeedImport {
   public static function processXMLReader(array $feed) {
     // Parse parent xpath.
     $feed['xpath']['#root'] = trim(trim($feed['xpath']['#root'], '/'));
-    if (!preg_match('/(\w+)(?:\[@(\w+)[\s+]?(?:=[\s+]?["\']?(.*)?["\'])?\])?/', $feed['xpath']['#root'], $match)) {
+    if (!preg_match('/([a-zA-Z\:]?)(?:\[@(\w+)[\s+]?(?:=[\s+]?["\']?(.*)?["\'])?\])?/', $feed['xpath']['#root'], $match)) {
       // If not a valid one then exit.
       return NULL;
     }
