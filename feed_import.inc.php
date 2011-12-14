@@ -232,6 +232,10 @@ class FeedImport {
     if (self::checkFunctions($feed['entity_info']['#entity'])) {
       // Alter feed info before process.
       drupal_alter('feed_import_feed_info', $feed);
+      // Set language as first element.
+      if (isset($feed['xpath']['#items']['language'])) {
+        $feed['xpath']['#items'] = array_merge(array('language' => NULL), $feed['xpath']['#items']);
+      }
       // Set error handler.
       set_error_handler(array(__CLASS__, 'errorHandler'));
 
