@@ -405,13 +405,20 @@ class FeedImport {
       return NULL;
     }
     if (count($xpath) == 1) {
-      $xpath = (array) reset($xpath);
-      $xpath = isset($xpath[0]) ? $xpath[0] : reset($xpath);
+      // Convert to array.
+      $xpath = self::SimpleXmlToArray(reset($xpath));
+      if (count($xpath) == 1) {
+        $xpath = isset($xpath[0]) ? $xpath[0] : reset($xpath);
+      }
     }
     else {
+      // Get multi-values.
       foreach ($xpath as $key => &$x) {
-        $x = (array) $x;
-        $x = isset($x[0]) ? $x[0] : reset($x);
+        // Convert to array.
+        $x = self::SimpleXmlToArray($x);
+        if (count($x) == 1) {
+          $x = isset($x[0]) ? $x[0] : reset($x);
+        }
         if (empty($x)) {
           unset($xpath[$key], $x);
         }
@@ -421,6 +428,64 @@ class FeedImport {
       }
     }
     return $xpath;
+  }
+
+  /**
+   * Converts SimpleXml objects to array
+   *
+   * @param SimpleXmlElement $xml
+   *   Object to convert.
+   *
+   * @return array
+   *   Converted result
+   */
+  public static function SimpleXmlToArray($xml) {
+    $xml = (array) $xml;
+    // Remove comments.
+    self::RemoveComment($xml);
+    if (isset($xml['comment']) && empty($xml['comment'])) {
+      unset($xml['comment']);
+    }
+    foreach ($xml as &$item) {
+      if (!is_scalar($item)) {
+        $item = self::SimpleXmlToArray($item);
+        // Remove comments.
+        self::RemoveComment($item);
+      }
+    }
+    return $xml;
+  }
+
+  /**
+   * Removes comment tags from xml array
+   *
+   * @param array &$xml
+   *   Array where to remove comment
+   */
+  public static function RemoveComment(array &$xml) {
+    if (isset($xml['comment'])) {
+      if (empty($xml['comment'])) {
+        unset($xml['comment']);
+      }
+      else {
+        foreach ($xml['comment'] as $key => &$com) {
+          if (empty($com)) {
+            unset($xml['comment'][$key]);
+          }
+        }
+        switch (count($xml['comment'])) {
+          case 0:
+            unset($xml['comment']);
+            break;
+          case 1:
+            $xml['comment'] = reset($xml['comment']);
+            break;
+          default:
+            $xml['comment'] = array_values($xml['comment']);
+            break;
+        }
+      }
+    }
   }
 
   /**
