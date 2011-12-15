@@ -465,11 +465,8 @@ class FeedImport {
         unset($xml['comment']);
       }
       else {
-        foreach ($xml['comment'] as $key => &$com) {
-          if (empty($com)) {
-            unset($xml['comment'][$key]);
-          }
-        }
+        // Remove empty values.
+        $xml['comment'] = array_filter($xml['comment'], 'count');
         switch (count($xml['comment'])) {
           case 0:
             unset($xml['comment']);
