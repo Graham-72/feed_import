@@ -443,9 +443,6 @@ class FeedImport {
     $xml = (array) $xml;
     // Remove comments.
     self::RemoveComment($xml);
-    if (isset($xml['comment']) && empty($xml['comment'])) {
-      unset($xml['comment']);
-    }
     foreach ($xml as &$item) {
       if (!is_scalar($item)) {
         $item = self::SimpleXmlToArray($item);
