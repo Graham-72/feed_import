@@ -356,6 +356,25 @@ class FeedImportFilter {
   }
 
   /**
+   * Decode html entities
+   *
+   * @param mixed $field
+   *   A string or an array of strings
+   *
+   * @return mixed
+   *   Decoded text
+   */
+  public static function decodeEntities($field) {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
+        $f = self::decodeEntities($field);
+      }
+      return $field;
+    }
+    return decode_entities($field);
+  }
+
+  /**
    * Gets vocabulary vid from name
    *
    * @param string $name

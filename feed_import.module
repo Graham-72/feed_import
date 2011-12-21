@@ -1043,7 +1043,6 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
     '#default_value' => isset($feed['xpath']['#root']) ? $feed['xpath']['#root'] : '',
     '#title' => t('Enter parent item xpath'),
     '#description' => t("Usualy this starts with // and it's base query (context for all items)."),
-    '#required' => TRUE,
   );
   $form['xpath']['uniq'] = array(
     '#type' => 'textfield',
@@ -1087,9 +1086,25 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
   $cbk = isset($form_state['triggering_element']['#parents'][0]) ? $form_state['triggering_element']['#parents'][0] : '';
   switch (TRUE) {
     case $cbk == 'add_new_item':
+      $form_state['#field_added'] = FALSE;
+      $vars = $form_state['values']['add_new_item_mode'] ? 'add_new_item_field' : 'add_new_item_manual';
+      $vars = drupal_strtolower($form_state['values'][$vars]);
+      if (empty($vars)) {
+        break;
+      }
+      else {
+        $i = 0;
+        while (isset($form_state['complete form']['xpath']['items']['container_' . $i])) {
+          if ($form_state['complete form']['xpath']['items']['container_' . $i]['#title'] == $vars) {
+            break 2;
+          }
+          $i++;
+        }
+        unset($i);
+      }
+      $form_state['#field_added'] = TRUE;
       $form_state['#current_item']++;
-      $vars = array('#field' => $form_state['values']['add_new_item_field']);
-      $xpaths += feed_import_generate_xpath_item($form_state['#current_item'], $vars);
+      $xpaths += feed_import_generate_xpath_item($form_state['#current_item'], array('#field' => $vars));
       break;
     case preg_match('/remove_container_([0-9]{1,9})/', $cbk, $match):
       // Delete container.
@@ -1105,16 +1120,36 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
       $fields_options[$f] = $f;
     }
   }
+  $form['xpath']['add_new_item_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use defined fields'),
+    '#default_value' => TRUE,
+  );
   $form['xpath']['add_new_item_field'] = array(
     '#type' => 'select',
     '#options' => $fields_options,
-    '#title' => t('Add new field'),
-    '#description' => t('Select field name and click "' . t('Add selected field') . '" button'),
+    '#title' => t('Select defined field'),
+    '#description' => t('Select field name and click "' . t('Add field') . '" button'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name=add_new_item_mode]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['xpath']['add_new_item_manual'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Enter field name'),
+    '#description' => t('Write field name and click "' . t('Add field') . '" button'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name=add_new_item_mode]' => array('checked' => FALSE),
+      ),
+    ),
   );
   // Add new item button.
   $form['xpath']['add_new_item'] = array(
     '#type' => 'button',
-    '#value' => t('Add selected field'),
+    '#value' => t('Add field'),
     '#inline' => TRUE,
     '#ajax' => array(
       'event' => 'click',
@@ -1199,10 +1234,10 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
     else {
       continue;
     }
-    if ($field && array_key_exists($field, $entity['columns'])) {
+    if ($field) {
       $items[$field] = array(
         '#field' => $field,
-        '#column' => $entity['columns'][$field],
+        '#column' => array_key_exists($field, $entity['columns']) ? $entity['columns'][$field] : $field,
         '#xpath' => explode(PHP_EOL, $values['xpath_' . $i]),
         '#default_value' => $values['default_' . $i],
         '#default_action' => $values['default_action_' . $i],
@@ -1239,7 +1274,12 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
  * Ajax callback to add a new item
  */
 function feed_import_ajax_add_new_item($form, &$form_state) {
-  return $form['xpath']['items']['container_' . $form_state['#current_item']];
+  if ($form_state['#field_added']) {
+    return $form['xpath']['items']['container_' . $form_state['#current_item']];
+  }
+  else {
+    return NULL;
+  }
 }
 
 /**

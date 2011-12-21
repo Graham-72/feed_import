@@ -1,53 +1,44 @@
-(function ($){
-  $(document).ready(
-    function() {
-      // jQuery can't change it! why?
-      document.getElementById('edit-add-new-item').type = 'button';
-
-      $('#edit-add-new-item').bind('click', function(e) {
-          setTimeout(function() {
+(function ($) {
+  Drupal.behaviors.feed_import = {
+    attach: function (context, settings) {
+      var fsets = $('fieldset[id^="item_container_"]', context);
+      var addevent = false;
+      if (context == document) {
+        // jQuery can't change it!
+        //document.getElementById('edit-add-new-item').type = 'button';
+        $('#edit-add-new-item').bind('click', function () {
+          if ($('#edit-add-new-item-mode').attr('checked')) {
             $('#edit-add-new-item-field option:selected').remove();
-            if ($('#edit-add-new-item-field option').length == 0) {
-              $('#edit-add-new-item').unbind('click');
-            }
-
-            tryBindSelectElemToChange($('select[name^="default_action_"]:last'), 0);
-
-          }, 1000);
-        }
-      );
-
-      $('select[name^="default_action_"]').each(
-        function(index) {
-          bindSelectElemToChange(this);
-        }
-      )
-    }
-  );
-
-  function tryBindSelectElemToChange(elem, i) {
-    if (i == 10) return;
-    if (!elem || elem.onchange) {
-      i++;
-      setTimeout('tryBindSelectElemToChange', 500, elem, i);
-    }
-    else {
-      bindSelectElemToChange(elem);
-    }
-  }
-
-  function bindSelectElemToChange(elem) {
-    checkElementForVisibility(elem);
-    $(elem).bind('change', function (){checkElementForVisibility(this);});
-  }
-
-  function checkElementForVisibility(elem) {
-    var val = $(elem).val();
-    if (val == 'default_value' || val == 'default_value_filtered') {
-      $('div[rel="' + $(elem).attr('name') + '"]').show();
-    }
-    else {
-      $('div[rel="' + $(elem).attr('name') + '"]').hide();
+          }
+          else {
+            var val = $('#edit-add-new-item-manual').val();
+            $('#edit-add-new-item-field option[value="' + val + '"]').remove();
+          }
+          $('#edit-add-new-item-manual').val('');
+        });
+        addevent = true;
+      }
+      else if (fsets.length == 1) {
+        addevent = true;
+      }
+      if (addevent) {
+        // Get selects.
+        $('select[name^="default_action_"]', fsets).each(function () {
+          Drupal.behaviors.feed_import.checkSelectVisibility(this);
+          $(this).bind('change', function() {
+            Drupal.behaviors.feed_import.checkSelectVisibility(this);
+          });
+        });
+      }
+    },
+    checkSelectVisibility: function (elem) {
+      var val = $(elem).val();
+      if (val == 'default_value' || val == 'default_value_filtered') {
+        $('div[rel="' + $(elem).attr('name') + '"]').show();
+      }
+      else {
+        $('div[rel="' + $(elem).attr('name') + '"]').hide();
+      }
     }
   }
 }
