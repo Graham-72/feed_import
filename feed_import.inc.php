@@ -396,7 +396,7 @@ class FeedImport {
    * @return mixed
    *   A string or array of strings as a result of xpath function
    */
-  protected static function getXpathValue(&$item, $xpath) {
+  public static function getXpathValue(&$item, $xpath) {
     // Handle invalid xpaths.
     try {
       $xpath = $item->xpath($xpath);
@@ -525,7 +525,7 @@ class FeedImport {
    * @return bool
    *   TRUE if there is content FALSE otherwise
    */
-  protected static function hasContent(&$var) {
+  public static function hasContent(&$var) {
     if (is_scalar($var)) {
       if ((string) $var === '') {
         return FALSE;
@@ -685,7 +685,7 @@ class FeedImport {
    * @param array &$items
    *   An array with entities
    */
-  protected static function saveEntities(&$feed, &$items) {
+  public static function saveEntities(&$feed, &$items) {
     // Get existing items for update.
     if (!empty(self::$generatedHashes)) {
       $ids = self::getEntityIdsFromHash(self::$generatedHashes);
