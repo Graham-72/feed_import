@@ -963,9 +963,9 @@ class FeedImport {
    */
 
   // Save function name (_save)
-  protected static $functionSave;
+  public static $functionSave;
   // Load function name (_load)
-  protected static $functionLoad;
+  public static $functionLoad;
   // SimpleXMLElement class, you can use a class that extends default
   public static $simpleXMLElement = 'SimpleXMLElement';
   // Temporary property name for hash

@@ -367,7 +367,7 @@ class FeedImportFilter {
   public static function decodeEntities($field) {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::decodeEntities($field);
+        $f = self::decodeEntities($f);
       }
       return $field;
     }
@@ -518,7 +518,7 @@ class FeedImportFilter {
     }
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::removeTags($field, $tags);
+        $f = self::removeTags($f, $tags);
       }
       return $field;
     }
@@ -542,7 +542,7 @@ class FeedImportFilter {
   public static function saveFile($field, $path = 'public://') {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::saveFile($field, $path);
+        $f = self::saveFile($f, $path);
       }
       return $field;
     }
@@ -617,7 +617,7 @@ class FeedImportFilter {
     require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::userHashPassword($field);
+        $f = self::userHashPassword($f);
       }
       return $field;
     }
