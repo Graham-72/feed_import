@@ -494,7 +494,7 @@ class FeedImportFilter {
   public static function stripTags($field, $tags = '') {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::stripTags($field, $tags);
+        $f = self::stripTags($f, $tags);
       }
       return $field;
     }

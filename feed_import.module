@@ -318,11 +318,28 @@ function feed_import_cron() {
   if (variable_get('feed_import_use_cron', FALSE)) {
     // Check if there is an already running import or there are no feeds because
     // overlapping an import for the same entity is bad.
-    if (!variable_get('feed_import_import_running', FALSE)) {
-      $last_executed = variable_get('feed_import_last_executed_import', 0);
-      $time_between = variable_get('feed_import_time_between_imports', 3600);
-      // Check if time between imports elapsed.
-      if ($last_executed + $time_between < REQUEST_TIME) {
+    if (!variable_get('feed_import_import_running', FALSE) || variable_get('feed_import_let_overlap', FALSE)) {
+      $can_import = FALSE;
+      $time_settings = variable_get('feed_import_time_settings', 0);
+      if ($time_settings == 1) {
+        // Specified interval.
+        $time1 = $time2 = 0;
+        list($h, $m) = explode(':', variable_get('feed_import_interval_start', '00:00'));
+        $time1 = mktime($h, $m);
+        list($h, $m) = explode(':', variable_get('feed_import_interval_stop', '00:00'));
+        $time2 = mktime($h, $m);
+        if ($time1 < $time2) {
+          $can_import = ($time1 <= REQUEST_TIME) && (REQUEST_TIME <= $time2);
+        }
+        unset($time1, $time2, $h, $m);
+      }
+      else {
+        $last_executed = variable_get('feed_import_last_executed_import', 0);
+        $time_between = variable_get('feed_import_time_between_imports', 3600);
+        $can_import = ($last_executed + $time_between) < REQUEST_TIME;
+      }
+      // Check if we can import.
+      if ($can_import) {
         $feeds = FeedImport::loadFeeds(TRUE);
         if (!empty($feeds)) {
           $feed_names = array_keys($feeds);
@@ -453,11 +470,56 @@ function feed_import_settings_form($form, &$form_state) {
     '#title' => t('Cron import'),
     '#description' => t('Run import for enabled feeds at cron'),
   );
-  $form['feed_import_time_between_imports'] = array(
+  $form['container'] = array(
+    '#type' => 'fieldset',
+    '#states' => array(
+      'invisible' => array(
+        'input[name="feed_import_use_cron"]' => array('checked' => FALSE),
+      ),
+    ),
+  );
+  $form['container']['feed_import_let_overlap'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('feed_import_let_overlap', 0),
+    '#title' => t('Allow import overlap'),
+    '#description' => t('This is not indicated'),
+  );
+  $form['container']['feed_import_time_settings'] = array(
+    '#type' => 'radios',
+    '#options' => array(t('From time to time'), t('Specified time interval')),
+    '#default_value' => variable_get('feed_import_time_settings', 0),
+    '#title' => t('When feeds can be imported'),
+  );
+  $form['container']['feed_import_time_between_imports'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_time_between_imports', 3600),
     '#title' => t('Time between two imports at cron (seconds)'),
-    '#description' => t('Time between two cron imports.'),
+    '#description' => t('Time betwen two cron imports.'),
+    '#states' => array(
+      'visible' => array(
+        'input[name="feed_import_time_settings"]' => array('value' => 0),
+      ),
+    ),
+  );
+  $form['container']['feed_import_interval_start'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('feed_import_interval_start', '00:00'),
+    '#title' => t('Start time'),
+    '#states' => array(
+      'visible' => array(
+        'input[name="feed_import_time_settings"]' => array('value' => 1),
+      ),
+    ),
+  );
+  $form['container']['feed_import_interval_stop'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('feed_import_interval_stop', '24:00'),
+    '#title' => t('End time'),
+    '#states' => array(
+      'visible' => array(
+        'input[name="feed_import_time_settings"]' => array('value' => 1),
+      ),
+    ),
   );
   $form['feed_import_delete_items_per_cron'] = array(
     '#type' => 'textfield',

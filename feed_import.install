@@ -138,6 +138,10 @@ function feed_import_uninstall() {
     'feed_import_delete_items_per_cron',
     'feed_import_import_running',
     'feed_import_use_cron',
+    'feed_import_let_overlap',
+    'feed_import_time_settings',
+    'feed_import_interval_start',
+    'feed_import_interval_stop',
   );
   array_map('variable_del', $vars);
   db_drop_table('feed_import_hashes');
