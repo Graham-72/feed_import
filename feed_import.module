@@ -524,7 +524,7 @@ function feed_import_settings_form($form, &$form_state) {
   $form['feed_import_delete_items_per_cron'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_delete_items_per_cron', 300),
-    '#title' => t('Expired items delete per cron (seconds)'),
+    '#title' => t('Expired items delete per cron'),
     '#description' => t('How many expired items to delete when cron runs.'),
   );
   $form['feed_import_insert_hashes_chunk'] = array(
