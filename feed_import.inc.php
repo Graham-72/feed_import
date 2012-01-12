@@ -569,7 +569,7 @@ class FeedImport {
       $uniq = self::getXpathValue($item, $feed['xpath']['#uniq']);
       // Hash item can be a property so we must extract it.
       if (is_array($uniq)) {
-        $uniq = reset($uniq);
+        $uniq = isset($uniq[0]) ? $uniq[0] : reset($uniq);
       }
       // Create a hash to identify this item in bd.
       $entity->{self::$tempHash} = self::createHash($uniq, $feed['machine_name'], $feed['entity_info']['#entity']);
