@@ -14,6 +14,7 @@ Features
   -pre-filters & filters
   -some usefull provided filters
   -auto-import/delete at cron
+  -import in specified time interval
   -import/export feed configuration
   -reports
   -add taxonomy terms to field (can add new terms)

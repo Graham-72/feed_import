@@ -325,9 +325,9 @@ function feed_import_cron() {
         // Specified interval.
         $time1 = $time2 = 0;
         list($h, $m) = explode(':', variable_get('feed_import_interval_start', '00:00'));
-        $time1 = mktime($h, $m);
+        $time1 = mktime($h, $m, 0);
         list($h, $m) = explode(':', variable_get('feed_import_interval_stop', '00:00'));
-        $time2 = mktime($h, $m);
+        $time2 = mktime($h, $m, 0);
         if ($time1 < $time2) {
           $can_import = ($time1 <= REQUEST_TIME) && (REQUEST_TIME <= $time2);
         }
@@ -482,7 +482,7 @@ function feed_import_settings_form($form, &$form_state) {
     '#type' => 'checkbox',
     '#default_value' => variable_get('feed_import_let_overlap', 0),
     '#title' => t('Allow import overlap'),
-    '#description' => t('This is not indicated'),
+    '#description' => t('This is not indicated for nodes.'),
   );
   $form['container']['feed_import_time_settings'] = array(
     '#type' => 'radios',
@@ -505,6 +505,7 @@ function feed_import_settings_form($form, &$form_state) {
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_interval_start', '00:00'),
     '#title' => t('Start time'),
+    '#description' => t('Format is hh:mm.'),
     '#states' => array(
       'visible' => array(
         'input[name="feed_import_time_settings"]' => array('value' => 1),
@@ -515,6 +516,7 @@ function feed_import_settings_form($form, &$form_state) {
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_interval_stop', '24:00'),
     '#title' => t('End time'),
+    '#description' => t('Format is hh:mm. This must be greater than start time.'),
     '#states' => array(
       'visible' => array(
         'input[name="feed_import_time_settings"]' => array('value' => 1),
@@ -573,6 +575,21 @@ function feed_import_settings_form_validate($form, &$form_state) {
   // Checking hash property field (this must be a variable name).
   if (!preg_match("/^[A-Za-z_][A-Za-z0-9_]*$/", $form_state['values']['feed_import_hash_property'])) {
     form_error($form['feed_import_hash_property'], t('This must be a valid variable name.'));
+  }
+  // Check interval.
+  $ok = TRUE;
+  if (!preg_match("/^[0-2][0-9]:[0-5][0-9]$/", $form_state['values']['feed_import_interval_start'])) {
+    form_error($form['container']['feed_import_interval_start'], t('Invalid start time.'));
+    $ok = FALSE;
+  }
+  if (!preg_match("/^[0-2][0-9]:[0-5][0-9]$/", $form_state['values']['feed_import_interval_stop'])) {
+    form_error($form['container']['feed_import_interval_stop'], t('Invalid end time.'));
+    $ok = FALSE;
+  }
+  if ($ok) {
+    if ($form_state['values']['feed_import_interval_stop'] < $form_state['values']['feed_import_interval_start']) {
+      form_error($form['container']['feed_import_interval_stop'], t('End time must be greater than start time.'));
+    }
   }
 }
 

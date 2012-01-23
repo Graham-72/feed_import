@@ -405,6 +405,10 @@ class FeedImport {
       return NULL;
     }
     if (count($xpath) == 1) {
+      $xpath = (array) reset($xpath);
+      if (isset($xpath['@attributes']) && count($xpath) > 1) {
+        unset($xpath['@attributes']);
+      }
       // Convert to array.
       $xpath = self::SimpleXmlToArray(reset($xpath));
       if (count($xpath) == 1) {
@@ -416,6 +420,9 @@ class FeedImport {
       foreach ($xpath as $key => &$x) {
         // Convert to array.
         $x = self::SimpleXmlToArray($x);
+        if (isset($x['@attributes']) && count($x) > 1) {
+          unset($x['@attributes']);
+        }
         if (count($x) == 1) {
           $x = isset($x[0]) ? $x[0] : reset($x);
         }
