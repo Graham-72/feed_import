@@ -602,7 +602,7 @@ function feed_import_settings_form_validate($form, &$form_state) {
  */
 function feed_import_list_feeds() {
   // Show a warning about safe mode if is on.
-  if (!ini_get('safe_mode')) {
+  if (ini_get('safe_mode')) {
     $msg = array('@number' => ini_get('max_execution_time'));
     $msg = t('Looks like safe mode is on, large imports can break if maximum time limit of @number seconds is exceeded.', $msg);
     drupal_set_message($msg, 'warning');
