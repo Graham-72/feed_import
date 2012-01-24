@@ -258,7 +258,10 @@ class FeedImport {
       self::$generatedHashes = array();
 
       // Give import time (for large imports).
-      set_time_limit(0);
+      // Well, if safe mode is on this cannot be done so it may break import.
+      if (!ini_get('safe_mode')) {
+        set_time_limit(0);
+      }
       // Call process function to get processed items.
       $items = call_user_func($func, $feed);
       // Parse report.
