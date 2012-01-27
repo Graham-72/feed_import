@@ -133,20 +133,20 @@ class FeedImport {
       }
       $fields = entity_get_info();
       foreach ($fields as $key => &$field) {
+        if (empty($field['schema_fields_sql']['base table']) || !is_array($field['schema_fields_sql']['base table']) || empty($field['entity keys']['id'])) {
+          unset($fields[$key]);
+          continue;
+        }
         $field = array(
           'name' => $key,
           'column' => $field['entity keys']['id'],
           'columns' => $field['schema_fields_sql']['base table'],
         );
-        $field['columns'] = array_flip($field['columns']);
-        foreach ($field['columns'] as &$f) {
-          $f = NULL;
-        }
+        $field['columns'] = array_combine($field['columns'], array_fill(0, count($field['columns']), NULL));
         foreach ($info as &$f) {
-          if (!in_array($key, $f['bundles'])) {
-            continue;
+          if (in_array($key, $f['bundles'])) {
+            $field['columns'][$f['name']] = $f['column'];
           }
-          $field['columns'][$f['name']] = $f['column'];
         }
       }
       unset($info);
