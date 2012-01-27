@@ -221,7 +221,7 @@ function feed_import_feed_import_process_info() {
     ),
     'processCSV' => array(
       'info' => t('For parent xpath use //row') . '<br />' .
-                t("Use column[@index='2'] to get first column or column[@name='age'] to get column 'age' if Use column names is enabled."),
+                t("Use column[@index='1'] or column[1] to get first column and use column[@name='age'] to get column 'age' if Use column names is enabled."),
       'function' => array('FeedImport', 'processCSV'),
       'settings' => array(
         'length' => array(
