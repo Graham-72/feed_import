@@ -34,6 +34,10 @@ function feed_import_permission() {
       'title' => t('Administer feed import settings'),
       'description' => t('Change settings for feed import'),
     ),
+    'feed import process' => array(
+      'title' => t('Administer feed import settings'),
+      'description' => t('Import a feed'),
+    ),
   );
 }
 
@@ -105,7 +109,7 @@ function feed_import_menu() {
     'title' => 'Process feed',
     'page callback' => 'feed_import_process_feed',
     'access callback' => 'user_access',
-    'access arguments' => array('feed import'),
+    'access arguments' => array('feed import process'),
     'type' => MENU_CALLBACK,
   );
   $items[FEED_IMPORT_PATH . '/enable'] = array(
@@ -142,6 +146,16 @@ function feed_import_menu() {
     'tab_root' => FEED_IMPORT_PATH . '/edit/%',
     'weight' => 1,
   );
+  $items[FEED_IMPORT_PATH . '/edit/%/re-order'] = array(
+    'title' => 'Re-order fields',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('feed_import_reorder_fields_form', $submenus + 2),
+    'access callback' => 'user_access',
+    'access arguments' => array('feed import'),
+    'type' => MENU_LOCAL_TASK,
+    'tab_root' => FEED_IMPORT_PATH . '/edit/%',
+    'weight' => 2,
+  );
   $items[FEED_IMPORT_PATH . '/edit/%/pre-filter'] = array(
     'title' => 'Edit pre-filters',
     'page callback' => 'drupal_get_form',
@@ -150,7 +164,7 @@ function feed_import_menu() {
     'access arguments' => array('feed import'),
     'type' => MENU_LOCAL_TASK,
     'tab_root' => FEED_IMPORT_PATH . '/edit/%',
-    'weight' => 2,
+    'weight' => 3,
   );
   $items[FEED_IMPORT_PATH . '/edit/%/filter'] = array(
     'title' => 'Edit filters',
@@ -160,7 +174,7 @@ function feed_import_menu() {
     'access arguments' => array('feed import'),
     'type' => MENU_LOCAL_TASK,
     'tab_root' => FEED_IMPORT_PATH . '/edit/%',
-    'weight' => 3,
+    'weight' => 4,
   );
   return $items;
 }
@@ -544,7 +558,7 @@ function feed_import_settings_form($form, &$form_state) {
   $form['feed_import_hash_property'] = array(
     '#type' => 'textfield',
     '#default_value' => variable_get('feed_import_hash_property', '_feed_item_hash'),
-    '#title' => t('Tomporary property wich holds item hash'),
+    '#title' => t('Tomporary property which holds item hash'),
     '#description' => t('Change this only if you already have a property named like this.'),
   );
   $form['feed_import_field_param_name'] = array(
@@ -1716,6 +1730,9 @@ function feed_import_theme() {
     'feed_import_edit_filter_form' => array(
       'render element' => 'form',
     ),
+    'feed_import_reorder_fields_form' => array(
+      'render element' => 'form',
+    ),
   );
 }
 
@@ -1762,5 +1779,92 @@ function theme_feed_import_edit_filter_form($form) {
     );
   }
 
+  return drupal_render_children($form);
+}
+
+/**
+ * Re-order fields form.
+ */
+function feed_import_reorder_fields_form($form, &$form_state, $id = 0) {
+  $feed = FeedImport::loadFeeds(FALSE, $id);
+  if (!$feed) {
+    drupal_set_message(t("Feed doesn't exist!"), 'error');
+    return;
+  }
+  drupal_set_title(t('Reorder fields for @name', array('@name' => $feed['name'])), PASS_THROUGH);
+  $form_state['#feed'] = $feed;
+  $fields = empty($feed['xpath']['#items']) ? array() : array_keys($feed['xpath']['#items']);
+  $form['table_content'] = array(
+    '#tree' => TRUE,
+  );
+  $form['#feed_fields'] = $fields;
+  $i = 0;
+  $delta = count($fields);
+  foreach ($fields as &$field) {
+    $form['table_content'][$field] = array(
+      'field' => array('#markup' => $field),
+      'weight' => array(
+        '#type' => 'weight',
+        '#delta' => $delta,
+        '#default_value' => $i,
+        '#attributes' => array('class' => array('weight')),
+      ),
+    );
+    $i++;
+  }
+  $form['table'] = NULL;
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save order'),
+  );
+  return $form;
+}
+
+/**
+ * Re-order fields form submit.
+ */
+function feed_import_reorder_fields_form_submit($form, &$form_state) {
+  if (empty($form_state['values']['table_content'])) {
+    return;
+  }
+  $fields = $form_state['values']['table_content'];
+  uasort($fields, 'feed_import_sort_filter_by_weight');
+  foreach ($fields as &$value) {
+    $value = NULL;
+  }
+  $feed = &$form_state['#feed'];
+  $feed['xpath']['#items'] = array_merge($fields, $feed['xpath']['#items']);
+  FeedImport::saveFeed($feed, TRUE);
+  drupal_set_message(t('New order saved!'));
+}
+
+/**
+ * Theme form feed_import_edit_filter_form
+ */
+function theme_feed_import_reorder_fields_form($form) {
+  $form = $form['form'];
+  if (empty($form['#feed_fields'])) {
+    $form['#feed_fields'] = array();
+  }
+  else {
+    foreach($form['#feed_fields'] as &$field) {
+      $field = array(
+        drupal_render($form['table_content'][$field]['field']),
+        drupal_render($form['table_content'][$field]['weight']),
+      );
+      $field = array(
+        'data' => $field,
+        'class' => array('draggable'),
+      );
+    }
+  }
+  $form['table'] = array(
+      '#theme' => 'table',
+      '#header' => array_map('t', array('Field', 'Weight')),
+      '#rows' => $form['#feed_fields'],
+      '#attributes' => array('id' => 'table'),
+      '#empty' => t('There are no fields.'),
+  );
+  drupal_add_tabledrag('table', 'order', 'sibling', 'weight');
   return drupal_render_children($form);
 }
