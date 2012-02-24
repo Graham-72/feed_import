@@ -1094,6 +1094,13 @@ class FeedImport {
     $chunk_length = $feed['xpath']['#settings']['chunk_size'];
     // Items count.
     $items_count = $feed['xpath']['#settings']['items_count'];
+    // Substring function.
+    if (empty($feed['xpath']['#settings']['substr_function'])) {
+      $substr = 'substr';
+    }
+    else {
+      $substr = $feed['xpath']['#settings']['substr_function'];
+    }
     $current = 0;
     // Open xml url.
     try {
@@ -1128,7 +1135,7 @@ class FeedImport {
           break;
         }
         elseif ($content[$openposclose] != ' ' && $content[$openposclose] != '>') {
-          $content = substr($content, $openposclose);
+          $content = $substr($content, $openposclose);
           continue;
         }
         $closepos = strpos($content, $tag['close'], $openposclose);
@@ -1139,9 +1146,9 @@ class FeedImport {
         $closepos += $tag['closelength'];
 
         // Create xml string.
-        $item = $xml_head . substr($content, $openpos, $closepos - $openpos);
+        $item = $xml_head . $substr($content, $openpos, $closepos - $openpos);
         // New content.
-        $content = substr($content, $closepos - 1);
+        $content = $substr($content, $closepos - 1);
         // Create xml object.
         try {
           $item = simplexml_load_string($item, self::$simpleXMLElement, LIBXML_NOCDATA);
@@ -1205,6 +1212,11 @@ class FeedImport {
       case 'chunk_size':
         $value = (int) $value;
         if ($value <= 0) {
+          return $default;
+        }
+        break;
+      case 'substr_function':
+        if (!in_array($value, array('substr', 'mb_substr', 'drupal_substr'))) {
           return $default;
         }
         break;

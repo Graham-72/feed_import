@@ -218,6 +218,11 @@ function feed_import_feed_import_process_info() {
           'description' => t('How many bytes to read in each chunk.'),
           'default' => 8192,
         ),
+        'substr_function' => array(
+          'title' => t('Substring function'),
+          'description' => t('What function to use for substring: substr, mb_substr or drupal_substr.'),
+          'default' => 'substr',
+        ),
       ),
       'validate' => array('FeedImport', 'processXMLChunkedValidate'),
     ),
