@@ -535,14 +535,16 @@ class FeedImportFilter {
    *   A string or an array of strings
    * @param string $path
    *   Where to save file. Default is public://
+   * @param int $options
+   *   Use 0 to rename existing file or 1 to replace it.
    *
    * @return mixed
    *   An object or an array of objects containing file info
    */
-  public static function saveFile($field, $path = 'public://') {
+  public static function saveFile($field, $path = 'public://', $options = FILE_EXISTS_RENAME) {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = self::saveFile($f, $path);
+        $f = self::saveFile($f, $path, $options);
       }
       return $field;
     }
@@ -555,14 +557,17 @@ class FeedImportFilter {
     }
     $field = trim($field, '/');
     $field = drupal_substr($field, strrpos($field, '/') + 1);
-    return file_save_data($image, $path . $field, FILE_EXISTS_RENAME);
+    if (file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+      return file_save_data($image, $path . $field, (int) $options);
+    }
+    return NULL;
   }
 
   /**
    * This is an alis for saveFile() function.
    */
-  public static function saveImage($field, $path = 'public://') {
-    return self::saveFile($field, $path);
+  public static function saveImage($field, $path = 'public://', $options = FILE_EXISTS_RENAME) {
+    return self::saveFile($field, $path, $options);
   }
 
   /**
