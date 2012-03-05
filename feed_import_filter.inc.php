@@ -134,8 +134,13 @@ class FeedImportFilter {
    *   The field with property set
    */
   public static function setProperty($field, $property = NULL, $value = NULL) {
-    if (!empty($property) && (is_array($field) || is_object($field))) {
-      $field[$property] = $value;
+    if (!empty($property)) {
+      if (is_array($field)) {
+        $field[$property] = $value;
+      }
+      elseif (is_object($field)) {
+        $field->$property = $value;
+      }
     }
     return $field;
   }
@@ -235,6 +240,49 @@ class FeedImportFilter {
     return (object) $field;
   }
 
+  /**
+   * Create an object property.
+   *
+   * @param mixed $field
+   *   Value of property.
+   * @param string $property
+   *   Property name.
+   *
+   * @return object
+   *   Object with specified property.
+   */
+  public static function toProperty($field, $property = NULL) {
+    if ($property) {
+      return (object) array(
+        $property => $field,
+      );
+    }
+    return $field;
+  }
+
+  /**
+   * Sets body format.
+   *
+   * @param mixed $field
+   *   Values to set format on.
+   * @param string $format
+   *   What format to use.
+   *
+   * @return mixed
+   *   Formatted result.
+   */
+  public static function setTextFormat($field, $format = 'full_html') {
+    if (is_array($field)) {
+      foreach ($field as &$f) {
+        $f = self::setTextFormat($f, $format);
+      }
+      return $field;
+    }
+    return (object) array(
+      'value' => $field,
+      'format' => $format,
+    );
+  }
 
   /**
    * Replace content
@@ -467,12 +515,13 @@ class FeedImportFilter {
     unset($existing);
 
     foreach ($name as &$term) {
-      if (!isset($tids[drupal_strtolower($term)])) {
+      $lterm = drupal_strtolower($term);
+      if (!isset($tids[$lterm])) {
         $t = new stdClass();
         $t->vid = $voc;
         $t->name = $term;
         taxonomy_term_save($t);
-        $tids[$t->name] = $t->tid;
+        $tids[$lterm] = $t->tid;
         $t = NULL;
         $term = NULL;
       }
