@@ -373,7 +373,7 @@ class FeedImportFilter {
   public static function trim($field, $chars = NULL) {
     if (is_array($field)) {
       foreach ($field as &$f) {
-        $f = trim($f, $chars);
+        $f = self::trim($f, $chars);
       }
       return $field;
     }
