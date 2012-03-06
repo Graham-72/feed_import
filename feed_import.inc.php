@@ -1546,4 +1546,84 @@ class FeedImport {
     }
     return $value;
   }
+
+  /**
+   * Process JSON.
+   *
+   * @param array $feed
+   *   Feed info array
+   *
+   * @return array
+   *   An array of objects
+   */
+  public static function processJSON(array $feed) {
+    try {
+      $json = json_decode(file_get_contents($feed['url']));
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
+    if (empty($json)) {
+      return NULL;
+    }
+    $xml = new simpleXMLElement($feed['xpath']['#settings']['xml_properties']);
+    // Convert object to xml.
+    self::json2xml($json, $xml);
+    unset($json);
+    $xml = $xml->xpath($feed['xpath']['#root']);
+    if (empty($xml)) {
+      return NULL;
+    }
+    foreach ($xml as &$item) {
+      // Set this item value to entity, so all entities will be in $xml at end!
+      $item = self::createEntity($feed, $item);
+    }
+    unset($feed);
+    // Return created entities.
+    return $xml;
+  }
+
+  /**
+   * Convert json object to xml.
+   *
+   * @param object
+   *   JSON object
+   * @param SimpleXMLElement
+   *   XML parent
+   */
+  public static function json2xml(&$json, &$xml) {
+    foreach ($json as $tag => &$value) {
+      if (is_object($value)) {
+        if (!empty($value)) {
+          $child = $xml->addChild($tag);
+          self::json2xml($value, $child);
+        }
+      }
+      elseif (is_array($value)) {
+        foreach ($value as &$val) {
+          if (is_scalar($val)) {
+            $xml->addChild($tag, $val);
+          }
+          else {
+            $child = $xml->addChild($tag);
+            self::json2xml($val, $child);
+          }
+        }
+      }
+      else {
+        $xml->addChild($tag, $value);
+      }
+    }
+  }
+
+  /**
+   * Callback for validating processJSON settings
+   */
+  public static function processJSONValidate($field, $value, $default = NULL) {
+    $value = trim($value);
+    if (!preg_match("/^\<\?xml (.*)\?\>\<([a-zA-Z]+)\/\>$/", $value)) {
+      return $default;
+    }
+    return $value;
+  }
 }

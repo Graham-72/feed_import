@@ -285,6 +285,18 @@ function feed_import_feed_import_process_info() {
       ),
       'validate' => array('FeedImport', 'processXmlReaderValidate'),
     ),
+    'processJSON' => array(
+      'function' => array('FeedImport', 'processJSON'),
+      'info' => t('Process JSON string.'),
+      'settings' => array(
+        'xml_properties' => array(
+          'title' => t('XML properties'),
+          'description' => t('Change xml properties like encoding or root element.'),
+          'default' => '<?xml version="1.0" encoding="utf-8"?><root/>',
+        ),
+      ),
+      'validate' => array('FeedImport', 'processJSONValidate'),
+    ),
   );
 }
 

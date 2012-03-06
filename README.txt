@@ -20,6 +20,7 @@ Features
   -add taxonomy terms to field (can add new terms)
   -process HTML pages
   -process CSV files
+  -process JSON string
   -add image to field (used as filter)
   -custom settings on each feed process function
   -do not save info about imported items (usually used for one-time import)
@@ -32,7 +33,7 @@ Feed Import module allows you to import content from XML/HTML/CSV files into
 entities (like node, user, ...) using XPATH to fetch whatever you need.
 You can create a new feed using php code in your module or you can use the
 provided UI (recommended). If you have regular imports you can enable import
-to run at cron. Now Feed Import provides four methods to process files:
+to run at cron. Now Feed Import provides five methods to process files:
     Normal  - loads the XML file with simplexml_load_file() and parses
               it's content. This method isn't good for huge files because
               needs very much memory.
@@ -51,6 +52,7 @@ to run at cron. Now Feed Import provides four methods to process files:
     HTML    - converts HTML document to xml and then is imported like a normal
               xml file.
     CSV     - loads content line by line and imports it.
+    JSON    - converts json to xml before importing it.
 
 ------------------------------
 How Feed Import works
@@ -70,6 +72,7 @@ Step 1: Downloading xml file and creating items
    imported like processXML.
   -if we selected processCSV function then file is read line by line and
    imported.
+  -if we selected processJSON then json will be converted to xml and imported.
   -if we selected another process function then we should take a look at that
    function
 
