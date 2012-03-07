@@ -563,6 +563,9 @@ class FeedImport {
     );
   }
 
+  // Current created entity.
+  public static $current = NULL;
+
   /**
    * Create Entity object
    *
@@ -577,6 +580,8 @@ class FeedImport {
   public static function createEntity(&$feed, &$item) {
     // Create new object to hold fields values.
     $entity = new stdClass();
+    // Reference current entity.
+    self::$current = $entity;
     // Check if items must be monitorized and saved in hashes table.
     if ($feed['xpath']['#uniq']) {
       // Check if item already exists.
@@ -643,6 +648,7 @@ class FeedImport {
             break;
           // Skip this item by returning NULL.
           case 'skip_item':
+            self::$current = NULL;
             return NULL;
             break;
           // Don't add this field to entity.
@@ -688,6 +694,7 @@ class FeedImport {
       // No need anymore, free memory.
       unset($aux);
     }
+    self::$current = NULL;
     return $entity;
   }
 
