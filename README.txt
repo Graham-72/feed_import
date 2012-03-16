@@ -33,7 +33,7 @@ Feed Import module allows you to import content from XML/HTML/CSV files into
 entities (like node, user, ...) using XPATH to fetch whatever you need.
 You can create a new feed using php code in your module or you can use the
 provided UI (recommended). If you have regular imports you can enable import
-to run at cron. Now Feed Import provides five methods to process files:
+to run at cron. Now Feed Import provides six methods to process files:
     Normal  - loads the XML file with simplexml_load_file() and parses
               it's content. This method isn't good for huge files because
               needs very much memory.

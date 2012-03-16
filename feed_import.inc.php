@@ -407,6 +407,9 @@ class FeedImport {
     catch (Exception $e) {
       return NULL;
     }
+    if (!$xpath) {
+      return NULL;
+    }
     if (count($xpath) == 1) {
       $xpath = (array) reset($xpath);
       $count = count($xpath);
@@ -751,7 +754,7 @@ class FeedImport {
         // Find if entity is different from last feed.
         foreach ($item as $key => &$value) {
           if (is_array($value)) {
-            if (!isset($entity->{$key}[$lang]) || empty($entity->{$key}[$lang]) || count($entity->{$key}[$lang]) != count($value[$lang])) {
+            if (empty($entity->{$key}[$lang]) || count($entity->{$key}[$lang]) != count($value[$lang])) {
               $changed = TRUE;
               $entity->{$key} = $value;
             }
