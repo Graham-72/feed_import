@@ -1576,8 +1576,12 @@ class FeedImport {
     if (empty($json)) {
       return NULL;
     }
-    $xml = new simpleXMLElement($feed['xpath']['#settings']['xml_properties']);
+    $xml = new self::$simpleXMLElement($feed['xpath']['#settings']['xml_properties']);
     // Convert object to xml.
+    if (is_array($json)) {
+      // If the json is an array then make it object.
+      $json = (object) array('item' => $json);
+    }
     self::json2xml($json, $xml);
     unset($json);
     $xml = $xml->xpath($feed['xpath']['#root']);
@@ -1603,6 +1607,7 @@ class FeedImport {
    */
   public static function json2xml(&$json, &$xml) {
     foreach ($json as $tag => &$value) {
+      $tag = str_replace(' ', '_', $tag);
       if (is_object($value)) {
         if (!empty($value)) {
           $child = $xml->addChild($tag);
@@ -1612,7 +1617,7 @@ class FeedImport {
       elseif (is_array($value)) {
         foreach ($value as &$val) {
           if (is_scalar($val)) {
-            $xml->addChild($tag, $val);
+            $xml->addChild($tag, htmlentities($val, ENT_COMPAT, 'UTF-8', FALSE));
           }
           else {
             $child = $xml->addChild($tag);
@@ -1621,7 +1626,7 @@ class FeedImport {
         }
       }
       else {
-        $xml->addChild($tag, $value);
+        $xml->addChild($tag, htmlentities($value, ENT_COMPAT, 'UTF-8', FALSE));
       }
     }
   }
