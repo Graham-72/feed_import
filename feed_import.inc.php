@@ -734,6 +734,11 @@ class FeedImport {
       unset($item->{self::$tempHash});
       // Check if item is already imported or is not monitorized.
       if ($hash !== NULL && isset($ids[$hash])) {
+      	// Check if is used option to skip item if already imported.
+      	if (!empty($feed['skip_imported_items'])) {
+      		$item = NULL;
+      		continue;
+      	}
         $changed = FALSE;
         // Load entity.
         try {

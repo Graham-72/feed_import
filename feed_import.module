@@ -924,6 +924,7 @@ function feed_import_add_new_feed_form_submit($form, &$form_state) {
     'url' => $form_state['values']['url'],
     'time' => (int) $form_state['values']['time'],
     'enabled' => (int) $form_state['values']['enabled'],
+    'skip_imported_items' => FALSE,
     'entity_info' => array(
       '#entity' => $form_state['values']['entity'],
       '#table_pk' => $entity['column'],
@@ -1147,6 +1148,12 @@ function feed_import_edit_feed_form($form, &$form_state, $id) {
     '#default_value' => $feed['enabled'],
     '#description' => t('Check this if you want to import feed items when cron runs.'),
   );
+  $form['skip_imported_items'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Skip already imported items'),
+    '#default_value' => !empty($feed['skip_imported_items']),
+    '#description' => t('This is possible only when items are monitorized.'),
+  );
   // XPATH settings fieldset.
   $form['xpath'] = array(
     '#type' => 'fieldset',
@@ -1369,6 +1376,7 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
     'url' => $values['url'],
     'time' => (int) $values['time'],
     'enabled' => (int) $values['enabled'],
+    'skip_imported_items' => (bool) $values['skip_imported_items'],
     'entity_info' => array(
       '#entity' => $values['entity'],
       '#table_pk' => $entity['column'],
