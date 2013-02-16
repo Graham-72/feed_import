@@ -735,7 +735,7 @@ class FeedImport {
       // Check if item is already imported or is not monitorized.
       if ($hash !== NULL && isset($ids[$hash])) {
       	// Check if is used option to skip item if already imported.
-      	if (!empty($feed['skip_imported_items'])) {
+      	if (!empty($feed['xpath']['#skip_imported_items'])) {
       		$item = NULL;
       		continue;
       	}
