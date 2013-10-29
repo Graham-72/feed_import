@@ -170,18 +170,19 @@ class FeedImport {
     $functions = module_invoke_all('feed_import_process_info');
     // Well, check if functions really exists.
     foreach ($functions as $alias => &$func) {
-      if (is_array($func['function'])) {
-        if (!method_exists($func['function'][0], $func['function'][1])) {
-          unset($functions[$alias]);
-        }
-      }
-      else {
-        if (!function_exists($func['function'])) {
-          unset($functions[$alias]);
-        }
+      if (!self::callableExists($func['function']) ||
+          !self::callableExists($func['getvalue'])) {
+        unset($functions[$alias]);
       }
     }
     return $functions;
+  }
+
+  /**
+   * Check if callable function/method exists
+   */
+  public static function callableExists($cbk) {
+    return is_array($cbk) ? method_exists($cbk[0], $cbk[1]) : function_exists($cbk);
   }
 
   /**
@@ -249,6 +250,8 @@ class FeedImport {
       else {
         $func = $functions[$func];
       }
+      self::$functionGetValue = $func['getvalue'];
+
       $func = $func['function'];
       unset($functions);
 
@@ -448,6 +451,61 @@ class FeedImport {
   }
 
   /**
+   * Get value with array path
+   *
+   * @param mixed &$item
+   *   Array or object to apply path on
+   * @param array $path
+   *   Path to value
+   *
+   * @return mixed
+   *   A string or array of strings as a result of path
+   */
+  public static function getArrayPathValue(&$item, array &$path) {
+    foreach ($path as &$p) {
+      if (is_array($item)) {
+        if (isset($item[$p])) {
+          $item = &$item[$p];
+          continue;
+        }
+      }
+      elseif (is_object($item)) {
+        if (isset($item->$p)) {
+          $item = &$item->$p;
+          continue;
+        }
+      }
+      return NULL;
+    }
+    return $item;
+  }
+
+  /**
+   * Get value with key
+   *
+   * @param mixed &$item
+   *   Array or object to get key
+   * @param string $key
+   *   Key of value
+   *
+   * @return mixed
+   *   A string or array of strings as a result of key
+   */
+  public static function getKeyValue(&$item, $key) {
+    if (is_array($item)) {
+      if (isset($item[$key])) {
+        return $item[$key];
+      }
+    }
+    elseif (is_object($item)) {
+      if (isset($item->$key)) {
+        return $item->$key;
+      }
+    }
+    return NULL;
+  }
+
+  /**
    * Converts SimpleXml objects to array
    *
    * @param SimpleXmlElement $xml
@@ -585,10 +643,14 @@ class FeedImport {
     $entity = new stdClass();
     // Reference current entity.
     self::$current = $entity;
+    // Save params.
+    $params[0] = &$item;
+    //$params = array(&$item, &$param_path);
     // Check if items must be monitorized and saved in hashes table.
     if ($feed['xpath']['#uniq']) {
       // Check if item already exists.
-      $uniq = self::getXpathValue($item, $feed['xpath']['#uniq']);
+      $params[1] = &$feed['xpath']['#uniq'];
+      $uniq = call_user_func_array(self::$functionGetValue, $params);
       // Hash item can be a property so we must extract it.
       if (is_array($uniq)) {
         $uniq = isset($uniq[0]) ? $uniq[0] : reset($uniq);
@@ -617,7 +679,10 @@ class FeedImport {
           $i++;
           continue;
         }
-        $aux = self::getXpathValue($item, $field['#xpath'][$i]);
+
+        $params[1] = &$field['#xpath'][$i];
+        $aux = call_user_func_array(self::$functionGetValue, $params);
+
         if ($prefilter) {
           $pfval = self::applyFilter($aux, $field['#pre_filter']);
           // If item doesn't pass prefilter than go to next option.
@@ -1001,6 +1066,8 @@ class FeedImport {
   protected static $tempHash = '_feed_item_hash';
   // Generated Hashes
   protected static $generatedHashes = array();
+  // Function for getting value from path.
+  protected static $functionGetValue;
 
   /**
    * *****************************
@@ -1033,6 +1100,7 @@ class FeedImport {
 
     // Check for namespace settings.
     if (!empty($namespaces)) {
+      $nsname = $nsuri = array();
       foreach ($namespaces as $key => &$namespace) {
         if (!$namespace) {
           unset($namespaces[$key]);
@@ -1043,12 +1111,14 @@ class FeedImport {
           unset($namespaces[$key]);
           continue;
         }
+        list($nsname[], $nsuri[]) = $namespace;
         // Set namespace.
         $xml->registerXPathNamespace($namespace[0], $namespace[1]);
       }
+      unset($namespaces, $namespace);
     }
     else {
-      $namespaces = array();
+      $nsname = $nsuri = NULL;
     }
     // Get items from root.
     $xml = $xml->xpath($feed['xpath']['#root']);
@@ -1060,18 +1130,18 @@ class FeedImport {
     }
 
     // Check feed items.
-    if (empty($namespaces)) {
+    if (empty($nsname)) {
       foreach ($xml as &$item) {
         // Set this item value to entity, so all entities will be in $xml at end!
         $item = self::createEntity($feed, $item);
       }
     }
     else {
+      $func = array(NULL, 'registerXPathNamespace');
       foreach ($xml as &$item) {
         // Register namespaces.
-        foreach ($namespaces as &$namespace) {
-          $item->registerXPathNamespace($namespace[0], $namespace[1]);
-        }
+        $func[0] = &$item;
+        array_map($func, $nsname, $nsuri);
         // Set this item value to entity, so all entities will be in $xml at end!
         $item = self::createEntity($feed, $item);
       }
@@ -1320,7 +1390,7 @@ class FeedImport {
    *   An array of objects
    */
   public static function processCSV(array $feed) {
-    // Get $length, $delimiter, $enclosure, $escape and $use_column_names settings.
+    // Get $length, $delimiter, $enclosure, $escape, $use_column_names and $items_count settings.
     extract($feed['xpath']['#settings']);
     // Open CSV file.
     try {
@@ -1329,50 +1399,78 @@ class FeedImport {
     catch (Exception $e) {
       return NULL;
     }
-    // Here will be all items.
-    $entities = array();
-    // Create a single xml object to hold each row by updating row values.
-    $xml = new self::$simpleXMLElement('<' . trim($feed['xpath']['#root'], '/') . '/>');
+
     // Get first line form file.
     $line = fgetcsv($fp, $length, $delimiter, $enclosure, $escape);
     if ($line === FALSE) {
       return NULL;
     }
-    // Create child nodes.
-    if (!$use_column_names) {
-      foreach ($line as $index => &$col) {
-        $xml->addChild('column', $col)
-            ->addAttribute('index', $index + 1);
+
+    // Entities to save.
+    $entities = array();
+
+    $current = 0;
+    if ($use_column_names) {
+      // Convert names to indexes.
+      $cols = array_flip(array_map('trim', $line));
+      
+      if ($feed['xpath']['#uniq'] && isset($cols[$feed['xpath']['#uniq']])) {
+        $feed['xpath']['#uniq'] = $cols[$feed['xpath']['#uniq']];
       }
-      $entities[] = self::createEntity($feed, $xml);
+      
+      foreach ($feed['xpath']['#items'] as &$item) {
+        foreach ($item['#xpath'] as $i => &$key) {
+          if (isset($cols[$key])) {
+            $key = $cols[$key];
+          }
+          else {
+            unset($item['#xpath'][$i]);
+          }
+        }
+      }
+      unset($cols, $item);
     }
     else {
-      foreach ($line as $index => &$col) {
-        $child = $xml->addChild('column', NULL);
-        $child->addAttribute('index', $index + 1);
-        $child->addAttribute('name', $col);
+      // No header, so import item.
+      $entities[] = self::createEntity($feed, $line);
+      $current++;
+    }
+
+
+    if ($items_count) {
+      while (($line = fgetcsv($fp, 0, $delimiter, $enclosure, $escape)) !== FALSE) {
+        // Check if we have to save imported entities.
+        if ($current == $items_count) {
+          // Save entities.
+          self::saveEntities($feed, $entities);
+          // Delete imported items so far to save memory.
+          $entities = array();
+          // Reset counter.
+          $current = 0;
+        }
+        // Add entity to list.
+        $entities[] = self::createEntity($feed, $line);
+        $current++;
+      }
+      if ($entities) {
+        self::saveEntities($feed, $entities);
+      }
+      $entities = NULL;
+    }
+    else {
+      while (($line = fgetcsv($fp, 0, $delimiter, $enclosure, $escape)) !== FALSE) {
+        // Add entity to list.
+        $entities[] = self::createEntity($feed, $line);
       }
     }
-    // Read file line by line.
-    while (($line = fgetcsv($fp, 0, $delimiter, $enclosure, $escape)) !== FALSE) {
-      $i = 0;
-      // Update created xml with new values.
-      foreach ($xml->children() as $child) {
-        // Well, check if column exists before using it.
-        $child[0] = isset($line[$i]) ? $line[$i] : NULL;
-        unset($line[$i]);
-        $i++;
-      }
-      // Add to entities.
-      $entities[] = self::createEntity($feed, $xml);
-      $line = NULL;
-    }
+
     try {
       fclose($fp);
     }
     catch (Exception $e) {
       // Nothing to handle.
     }
+    
     return $entities;
   }
 
@@ -1381,7 +1479,7 @@ class FeedImport {
    */
   public static function processCSVValidate($field, $value, $default = NULL) {
     switch ($field) {
-      case 'length':
+      case 'length': case 'items_count':
         // Must be positive integer.
         if ((int) $value != $value || $value < 0) {
           return $default;
@@ -1578,28 +1676,65 @@ class FeedImport {
     catch (Exception $e) {
       return NULL;
     }
-    if (empty($json)) {
+    
+    if (empty($json) || is_scalar($json)) {
       return NULL;
     }
-    $xml = new self::$simpleXMLElement($feed['xpath']['#settings']['xml_properties']);
-    // Convert object to xml.
-    if (is_array($json)) {
-      // If the json is an array then make it object.
-      $json = (object) array('item' => $json);
+
+    if ($feed['xpath']['#root']) {
+      $feed['xpath']['#root'] = explode('.', $feed['xpath']['#root']);
+      $json = call_user_func_array(self::$functionGetValue, array(&$json, &$feed['xpath']['#root']));
+      if (empty($json) || is_scalar($json)) {
+        return NULL;
+      }
     }
-    self::json2xml($json, $xml);
-    unset($json);
-    $xml = $xml->xpath($feed['xpath']['#root']);
-    if (empty($xml)) {
-      return NULL;
+
+    // Alter paths.
+    if ($feed['xpath']['#uniq']) {
+      $feed['xpath']['#uniq'] = explode('.', $feed['xpath']['#uniq']);
     }
-    foreach ($xml as &$item) {
-      // Set this item value to entity, so all entities will be in $xml at end!
-      $item = self::createEntity($feed, $item);
+
+    foreach ($feed['xpath']['#items'] as &$item) {
+      foreach ($item['#xpath'] as $i => &$key) {
+        $key = explode('.', $key);
+      }
     }
-    unset($feed);
-    // Return created entities.
-    return $xml;
+    unset($item);
+    
+    if (is_object($json)) {
+      $json = (array) $json;
+    }
+
+
+    $entities = array();
+    
+    if ($items_count = $feed['xpath']['#settings']['items_count']) {
+      $current = 0;
+      while ($json) {
+        if ($current == $items_count) {
+          self::saveEntities($feed, $entities);
+          $entities = array();
+          $current = 0;
+        }
+        $item = array_shift($json);
+        $entities[] = self::createEntity($feed, $item);
+        $current++;
+        unset($item);
+      }
+      if ($entities) {
+        self::saveEntities($feed, $entities);
+      }
+      $entities = NULL;
+    }
+    else {
+      while ($json) {
+        $item = array_shift($json);
+        $entities[] = self::createEntity($feed, $item);
+        unset($item);
+      }
+    }
+
+    return $entities;
   }
 
   /**
@@ -1640,10 +1775,78 @@ class FeedImport {
    * Callback for validating processJSON settings
    */
   public static function processJSONValidate($field, $value, $default = NULL) {
-    $value = trim($value);
-    if (!preg_match("/^\<\?xml (.*)\?\>\<([a-zA-Z]+)\/\>$/", $value)) {
+    if ((int) $value != $value || $value < 0) {
       return $default;
     }
     return $value;
   }
+
+  /**
+   * SQL process function
+   */
+  public static function processSQL(array $feed) {
+    //TODO: Needs some tests.
+    extract($feed['xpath']['#settings']);
+    
+    if (is_scalar($params)) {
+      if (empty($params)) {
+        $params = array();
+      }
+      else {
+        $params = explode(PHP_EOL, $params);
+        $p = array();
+        foreach ($params as &$value) {
+          $value = explode('=', $value, 2);
+          if (count($value) == 2) {
+            $p[$value[0]] = $value[1];
+          }
+          else {
+            $p[] = $value[0];
+          }
+        }
+        $params = $p;
+        unset($p);
+      }
+    }
+
+    try {
+      $db = new PDO($feed['url'], $user, $pass);
+      $q = $db->prepare($query, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+      if (!$q->execute($params)) {
+        throw new Exception(implode(';', $q->errorInfo()), $q->errorCode());
+      }
+    }
+    catch (Exception $e) {
+      return NULL;
+    }
+
+    $entities = array();
+    
+    if ($items_count) {
+      $current = 0;
+      while ($r = $q->fetch(PDO::FETCH_ASSOC, PDO::FETCH_ORI_NEXT)) {
+        if ($current == $items_count) {
+          self::saveEntities($feed, $entities);
+          $entities = array();
+          $current = 0;
+        }
+        $entities[] = self::createEntity($feed, $r);
+        $current++;
+        unset($r);
+      }
+      if ($entities) {
+        self::saveEntities($feed, $entities);
+        $entities = NULL;
+      }
+    }
+    else {
+      while ($r = $q->fetch(PDO::FETCH_ASSOC)) {
+        $entities[] = self::createEntity($feed, $r);
+        unset($r);
+      }
+    }
+    unset($q, $db);
+    return $entities;
+  }
+
 }
