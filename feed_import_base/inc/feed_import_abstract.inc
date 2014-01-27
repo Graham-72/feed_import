@@ -283,21 +283,22 @@ abstract class FeedImportHashManager extends FeedImportConfigurable {
   // Expire entities.
   protected $ttl = 0;
 
+  // Generated hashes.
+  protected $generatedHashes = array();
+
   /**
    * Constructor.
    */
   abstract public function __construct($entity_name, $group, $feed_machine_name);
 
   /**
-   * Returns an array of entity keyed by hash.
-   *
-   * @param array &$hashes
-   *     Hashes array
+   * Returns an array of entity keyed by hash,
+   * using generated hashes.
    *
    * @return array
    *     An array containing entity ids keyed by hash.
    */
-  abstract public function get(array &$hashes);
+  abstract public function get();
 
   /**
    * Inserts a new hash.
@@ -335,7 +336,8 @@ abstract class FeedImportHashManager extends FeedImportConfigurable {
   abstract public function updateCommit();
 
   /**
-   * Creates a hash, based on uniq.
+   * Creates a hash, based on uniq
+   * Also adds it on generated hashes
    *
    * @param mixed $uniq
    *     Unique identifier.

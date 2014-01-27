@@ -560,6 +560,12 @@ function feed_import_feed_import_hash_manager_info() {
       'extends' => FALSE,
       'class' => 'FeedImportSQLHashes',
       'options' => array(
+        'group' => array(
+          '#type' => 'textfield',
+          '#title' => t('Group'),
+          '#description' => t('Multiple feeds can update same entities if belong to same group.'),
+          '#default_value' => '',
+        ),
         'ttl' => array(
           '#type' => 'textfield',
           '#title' => t('Keep imported items (seconds)'),
@@ -721,7 +727,6 @@ function feed_import_list_feeds() {
       'data' => array(
         $name,
         $feed->entity,
-        $feed->feed_group,
         $feed->cron_import ? t('Enabled') : t('Disabled'),
         $run,
         $op['edit'],
@@ -737,7 +742,7 @@ function feed_import_list_feeds() {
 
   return array(
     '#theme' => 'table',
-    '#header' => array(t('Name'), t('Entity'), t('Group'), t('Cron import'), t('Last run'), array(
+    '#header' => array(t('Name'), t('Entity'), t('Cron import'), t('Last run'), array(
       'data' => t('Operations'),
       'colspan' => 4,
     )),
@@ -807,15 +812,6 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
     $form['entity']['#disabled'] = !empty($feed->settings['fields']);
   }
 
-  $form['feed_group'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Feed group'),
-    '#description' => t('The group this feed belongs.'),
-    '#default_value' => $feed ? $feed->feed_group : NULL,
-    '#maxlength' => 32,
-    '#required' => TRUE,
-  );
-
   $form['cron_import'] = array(
     '#type' => 'checkbox',
     '#title' => t('Import at cron'),
@@ -872,7 +868,6 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
     $feed->machine_name = $v['machine_name'];
   }
   $feed->name = $v['name'];
-  $feed->feed_group = $v['feed_group'];
   $feed->entity = $v['entity'];
   $feed->cron_import = $v['cron_import'];
   if (FeedImport::saveFeed($feed)) {
@@ -2126,9 +2121,6 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
     $code->cron_import = 0;
     $code->last_run = 0;
     $code->last_run_duration = 0;
-    if (empty($code->feed_group)) {
-      $code->feed_group = 'default';
-    }
     unset($code->id);
     if (FeedImport::saveFeed($code)) {
       drupal_set_message(t('Feed imported'));

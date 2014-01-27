@@ -142,7 +142,7 @@ class FeedImport {
     $fi->setFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
     $fi->setPreFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
 
-    $hm = new $s['hashes']['class']($feed->entity, $feed->feed_group, $feed->machine_name);
+    $hm = new $s['hashes']['class']($feed->entity, $feed->machine_name);
     $hm->setOptions($s['hashes']['options']);
     $fi->setHashManager($hm);
 
@@ -227,7 +227,6 @@ class FeedImport {
       'name' => NULL,
       'machine_name' => NULL,
       'entity' => NULL,
-      'feed_group' => NULL,
       'cron_import' => 0,
       'last_run' => 0,
       'last_run_duration' => 0,
@@ -254,6 +253,7 @@ class FeedImport {
             'ttl' => 0,
             'insert_chunk' => 300,
             'update_chunk' => 300,
+            'group' => '',
           ),
         ),
         'filter' => array(
@@ -278,7 +278,7 @@ class FeedImport {
    */
   public static function saveFeed($feed) {
     if (empty($feed->name) || empty($feed->machine_name) ||
-        empty($feed->entity) || empty($feed->feed_group) || empty($feed->settings)) {
+        empty($feed->entity) || empty($feed->settings)) {
       return FALSE;
     }
     if (!isset($feed->cron_import)) {
@@ -287,7 +287,6 @@ class FeedImport {
     $fields = array(
       'name' => $feed->name,
       'machine_name' => $feed->machine_name,
-      'feed_group' => $feed->feed_group,
       'entity' => $feed->entity,
       'cron_import' => (int) $feed->cron_import,
       'settings' => serialize($feed->settings),
@@ -478,9 +477,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
   public $prefilteredValue;
   // Reports.
   public $report;
-
-  // List of generaed hashes.
-  protected $generatedHashes = array();
 
   // List of missing entities (as hash ids)
   protected $orphanHashes = array();
@@ -864,7 +860,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
         $uniq = isset($uniq[0]) ? $uniq[0] : reset($uniq);
       }
       // Create hash.
-      $this->generatedHashes[]   =
       $entity[static::TEMP_HASH] = $this->hashes->hash($uniq);
     }
     else {
@@ -1080,10 +1075,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
     $this->report['total'] += $total;
 
     // Get ids from hashes.
-    $ids = $this->hashes->get($this->generatedHashes);
-
-    // Not needed anymore.
-    $this->generatedHashes = array();
+    $ids = $this->hashes->get();
 
     // Entity create callback.
     $createCallback = &$this->entityInfo->createCallback;
@@ -1320,9 +1312,6 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   // Entity name.
   protected $entity;
 
-  // Group name.
-  protected $group;
-
   // Insert format.
   protected $insertFormat;
   // Update format.
@@ -1339,15 +1328,14 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   // Options
   protected $updateChunkSize = 500;
   protected $insertChunkSize = 500;
+  protected $group = '';
 
   /**
    * {@inheritdoc}
    */
-  public function __construct($entity_name, $group, $feed_machine_name) {
+  public function __construct($entity_name, $feed_machine_name) {
     $this->entity = $entity_name;
     $this->feedName = $feed_machine_name;
-    $this->group = $group;
-    $this->hashPart = $entity_name . '/' . $group . '/';
 
     // Create select object.
     $this->select = db_select('feed_import_hashes', 'f')
@@ -1368,15 +1356,6 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     $this->insert = db_insert('feed_import_hashes')
                       ->fields(array('feed_machine_name', 'feed_group', 'entity', 'entity_id', 'hash', 'expire'));
 
-    // Create insert format.
-    $this->insertFormat = array(
-      $feed_machine_name,
-      $group,
-      $entity_name,
-      0, // holds id
-      NULL, // holds hash
-      0, // holds expire
-    );
   }
 
   /**
@@ -1392,6 +1371,19 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     if (isset($options['insert_chunk']) && $options['insert_chunk'] > 0) {
       $this->insertChunkSize = (int) $options['insert_chunk'];
     }
+    if (isset($options['group'])) {
+      $this->group = $options['group'];
+    }
+    // Create insert format.
+    $this->insertFormat = array(
+      $this->feedName,
+      $this->group,
+      $this->entity,
+      0, // holds id
+      NULL, // holds hash
+      0, // holds expire
+    );
+    $this->hashPart = $this->entity . '/' . $this->group . '/';
   }
 
   /**
@@ -1411,22 +1403,24 @@ class FeedImportSQLHashes extends FeedImportHashManager {
    * {@inheritdoc}
    */
   public function hash(&$uniq) {
-    return md5($this->hashPart . $uniq);
+    return $this->generatedHashes[] = md5($this->hashPart . $uniq);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function get(array &$hashes) {
+  public function get() {
     // Get select conditions (reuse same select object).
     $cond = &$this->select->conditions();
     // Remove last condition.
     array_pop($cond);
     // Return hashes.
-    return $this->select
-        ->condition('hash', $hashes, 'IN')
+    $hashes = $this->select
+        ->condition('hash', $this->generatedHashes, 'IN')
         ->execute()
         ->fetchAllAssoc('hash');
+    $this->generatedHashes = array();
+    return $hashes;
   }
 
   // Items left to insert.
