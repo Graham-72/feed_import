@@ -8,7 +8,7 @@
 /**
  * Implements hook_schema().
  */
-function feed_import_schema() {
+function feed_import_base_schema() {
   $schema['feed_import_hashes'] = array(
     'description' => 'Feed import hashes',
     'fields' => array(
@@ -132,10 +132,12 @@ function feed_import_schema() {
 
   return $schema;
 }
+
+
 /**
  * Implements hook_uninstall().
  */
-function feed_import_uninstall() {
+function feed_import_base_uninstall() {
   $vars = array(
     'feed_import_time_between_imports',
     'feed_import_last_executed_import',
