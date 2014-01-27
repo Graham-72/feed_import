@@ -222,7 +222,58 @@ abstract class FeedImportUniVectorReader extends FeedImportReader {
 
 }
 
+/**
+ * Static methods for hash manager
+ */
+interface FeedImportStaticHashManager {
 
+  /**
+   * Deletes hashes from database.
+   *
+   * @param array $ids
+   *    Hash ids to delete
+   */
+  public static function delete(array $ids);
+
+  /**
+   * Deletes entities by type and id
+   *
+   * @param int|array $ids
+   *    Entity ids
+   * @param string $entity_type
+   *    Entity type
+   */
+  public static function deleteEntities($ids, $entity_type);
+
+  /**
+   * Deletes all hashes of specified group
+   *
+   * @param string $group
+   *    Group name
+   */
+  public static function deleteByGroup($group);
+
+  /**
+   * Deletes all hashes for specified feed name
+   *
+   * @param string $name
+   *    Feed machine name
+   */
+  public static function deleteByFeed($name);
+
+  /**
+   * Returns an array of expired entity ids keyed by entity name
+   *
+   * @param int $max
+   *    Max number of ids or 0 for all
+   * @return array
+   *    An array of expired items. Format:
+   *    entity_name:
+   *      hash_id: enity_id
+   */
+  public static function getExpired($max = 0);
+
+}
 
 /**
  * Class which provides methods to manage hashes.
@@ -293,51 +344,5 @@ abstract class FeedImportHashManager extends FeedImportConfigurable {
    *     A hash for specified identifier.
    */
   abstract public function hash(&$uniq);
-
-  /**
-   * Deletes hashes from database.
-   *
-   * @param array $ids
-   *    Hash ids to delete
-   */
-  abstract public static function delete(array $ids);
-
-  /**
-   * Deletes entities by type and id
-   *
-   * @param int|array $ids
-   *    Entity ids
-   * @param string $entity_type
-   *    Entity type
-   */
-  abstract public static function deleteEntities($ids, $entity_type);
-
-  /**
-   * Deletes all hashes of specified group
-   *
-   * @param string $group
-   *    Group name
-   */
-  abstract public static function deleteByGroup($group);
-
-  /**
-   * Deletes all hashes for specified feed name
-   *
-   * @param string $name
-   *    Feed machine name
-   */
-  abstract public static function deleteByFeed($name);
-
-  /**
-   * Returns an array of expired entity ids keyed by entity name
-   *
-   * @param int $max
-   *    Max number of ids or 0 for all
-   * @return array
-   *    An array of expired items. Format:
-   *    entity_name:
-   *      hash_id: enity_id
-   */
-  abstract public static function getExpired($max = 0);
 
 }
