@@ -4,6 +4,8 @@
  * User interface, cron functions for feed_import module
  */
 
+// Path menu settings
+define('FEED_IMPORT_PATH', 'admin/config/services/feed_import');
 
 /**
  * Implements hook_help().

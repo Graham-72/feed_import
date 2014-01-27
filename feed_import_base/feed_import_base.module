@@ -4,10 +4,6 @@
  * Basic settings for feed import base module
  */
 
-/**
- * This is path to feed import UI
- */
-define('FEED_IMPORT_PATH', 'admin/config/services/feed_import');
 
 /**
  * Implements hook_permision().
@@ -29,10 +25,10 @@ function feed_import_base_permission() {
  * Implements hook_menu().
  */
 function feed_import_base_menu() {
-  // FEED_IMPORT_PATH is defined at the top of this file.
+  // FEED_IMPORT_BASE_PATH is defined at the top of this file.
   // This is used for arguments to know the position.
   $items = array();
-  $items[FEED_IMPORT_PATH . '/settings'] = array(
+  $items['admin/config/services/feed_import/settings'] = array(
     'title' => 'Settings',
     'description' => 'Manages feed import global settings',
     'page callback' => 'drupal_get_form',
@@ -137,7 +133,7 @@ function _feed_import_base_save_report($r, $feed) {
       t('Missing entities'),
     ),
     'rows' => array(array(
-      l($feed->name, FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed'),
+      $feed->name,
       gmdate('H:i:s', $r['finished'] - $r['started']) . '<br>' . format_date($r['started']) . ' - ' . format_date($r['finished']),
       $r['total'],
       $r['new'],

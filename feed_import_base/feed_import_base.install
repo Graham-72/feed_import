@@ -133,7 +133,6 @@ function feed_import_base_schema() {
   return $schema;
 }
 
-
 /**
  * Implements hook_uninstall().
  */
