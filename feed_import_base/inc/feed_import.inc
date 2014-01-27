@@ -1160,8 +1160,11 @@ class FeedImportProcessor extends FeedImportConfigurable {
         if ($createCallback) {
           $entity = $createCallback($entity);
         }
-        else {
+        elseif (method_exists($this->entityInfo->controller, 'create')) {
           $entity = $this->entityInfo->controller->create($entity);
+        }
+        else {
+          $entity = (object) $entity;
         }
         // Save entity, if any.
         if (!$entity || (!$saveCallback && ($entity->save() === FALSE))) {
