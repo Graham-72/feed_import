@@ -953,16 +953,27 @@ class FeedImportProcessor extends FeedImportConfigurable {
       if ($fc) {
         // It is a field
         if (isset($new[$fn][$lang])) {
-          if (!$overwrite && isset($curr->{$fn}[$lang])) {
+          if (isset($curr->{$fn}[$lang])) {
             // Get a ref to use short names.
             $en = &$new[$fn][$lang];
             $ec = &$curr->{$fn}[$lang];
+
+            // Check if overwrite is enabled
+            if ($overwrite) {
+              if ($ec != $en) {
+                $ec = $en;
+                $changed = TRUE;
+              }
+              unset($ec, $en);
+              continue;
+            }
 
             // Check if duplicate field values are allowed.
             if ($field['update_mode'] == static::UPDATE_MERGE) {
               $ec = array_merge($ec, $en);
               // Mark as changed.
               $changed = TRUE;
+              unset($ec, $en);
               continue;
             }
 
@@ -991,7 +1002,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
             // Remove refs.
             unset($en, $ec);
           }
-          else {
+          elseif ($overwrite) {
             // Overwrite.
             $curr->{$fn}[$lang] = $new[$fn][$lang];
             // Mark as changed.
@@ -1014,7 +1025,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       else {
         // It is a property.
         if (isset($new[$fn])) {
-          if (isset($curr->{$fn}) && $curr->{$fn} == $new[$fn]) {
+          if (($c = isset($curr->{$fn})) && $curr->{$fn} == $new[$fn]) {
             // Nothing changed.
             continue;
           }
@@ -1025,7 +1036,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
           // Remove from memory.
           unset($new[$fn]);
         }
-        elseif ($overwrite && isset($curr->{$fn})) {
+        elseif ($overwrite && $c) {
           // Forced update mode is selected.
           unset($curr->{$fn});
           // Mark as changed.
