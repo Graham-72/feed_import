@@ -52,7 +52,14 @@ class FeedImport {
       'properties' => array(),
       'fields' => array(),
     );
-    unset($entity);
+
+    if (!$info->saveCallback && function_exists($entity_name . '_save')) {
+      $info->saveCallback = $entity_name . '_save';
+    }
+
+    if (!$info->deleteCallback && function_exists($entity_name . '_delete')) {
+      $info->deleteCallback = $entity_name . '_delete';
+    }
 
     // Get fields info.
     if ($fieldlist = field_info_instances($entity_name)) {
@@ -72,11 +79,19 @@ class FeedImport {
       }
     }
 
-    // Get properties info.
-    $prop_info = entity_get_property_info($entity_name);
-    if (isset($prop_info['properties'])) {
+    if (function_exists('entity_get_property_info')) {
+      // Get properties info.
+      $prop_info = entity_get_property_info($entity_name);
+      if (isset($prop_info['properties'])) {
+        $info->properties = array_diff(
+          array_keys($prop_info['properties']),
+          array_keys($info->fields)
+        );
+      }
+    }
+    elseif (isset($entity['schema_fields_sql']['base table'])) {
       $info->properties = array_diff(
-        array_keys($prop_info['properties']),
+        $entity['schema_fields_sql']['base table'],
         array_keys($info->fields)
       );
     }
@@ -284,6 +299,10 @@ class FeedImport {
         ->execute();
     }
     else {
+      $fields += array(
+        'last_run' => 0,
+        'last_run_duration' => 0,
+      );
       db_insert('feed_import_settings')
         ->fields($fields)
         ->execute();
@@ -297,8 +316,8 @@ class FeedImport {
   public static function saveFeedImportStatus($feed) {
     db_update('feed_import_settings')
       ->fields(array(
-        'last_run' => $feed->last_run,
-        'last_run_duration' => $feed->last_run_duration,
+        'last_run' => (int) $feed->last_run,
+        'last_run_duration' => (int) $feed->last_run_duration,
       ))
       ->condition('machine_name', $feed->machine_name)
       ->execute();
