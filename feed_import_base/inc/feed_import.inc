@@ -1336,26 +1336,6 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   public function __construct($entity_name, $feed_machine_name) {
     $this->entity = $entity_name;
     $this->feedName = $feed_machine_name;
-
-    // Create select object.
-    $this->select = db_select('feed_import_hashes', 'f')
-                      ->fields('f', array('hash', 'id', 'entity_id'))
-                      ->condition('feed_group', $group)
-                      ->condition('entity', $entity_name)
-                      ->condition('hash', array(), 'IN');
-
-    // Create update object.
-    $this->update = db_update('feed_import_hashes')
-                    ->condition('feed_group', $group)
-                    ->condition('entity', $entity_name);
-
-    // Create update format.
-    $this->updateFormat = array('expire' => 0);
-
-    // Create insert object.
-    $this->insert = db_insert('feed_import_hashes')
-                      ->fields(array('feed_machine_name', 'feed_group', 'entity', 'entity_id', 'hash', 'expire'));
-
   }
 
   /**
@@ -1374,6 +1354,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     if (isset($options['group'])) {
       $this->group = $options['group'];
     }
+    
     // Create insert format.
     $this->insertFormat = array(
       $this->feedName,
@@ -1384,6 +1365,25 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       0, // holds expire
     );
     $this->hashPart = $this->entity . '/' . $this->group . '/';
+
+    // Create select object.
+    $this->select = db_select('feed_import_hashes', 'f')
+                      ->fields('f', array('hash', 'id', 'entity_id'))
+                      ->condition('feed_group', $this->group)
+                      ->condition('entity', $this->entity)
+                      ->condition('hash', array(), 'IN');
+
+    // Create update object.
+    $this->update = db_update('feed_import_hashes')
+                    ->condition('feed_group', $this->group)
+                    ->condition('entity', $this->entity);
+
+    // Create update format.
+    $this->updateFormat = array('expire' => 0);
+
+    // Create insert object.
+    $this->insert = db_insert('feed_import_hashes')
+                      ->fields(array('feed_machine_name', 'feed_group', 'entity', 'entity_id', 'hash', 'expire'));
   }
 
   /**
