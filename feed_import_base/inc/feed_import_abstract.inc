@@ -68,7 +68,7 @@ abstract class FeedImportConfigurable {
 abstract class FeedImportReader extends FeedImportConfigurable {
 
   // Used to store items.
-  protected $items;
+  protected $items = array();
 
   /**
    * Constructor of reader. Constructor is final but you'll have to

@@ -330,10 +330,14 @@ class HTMLFIReader extends FeedImportSimpleXPathReader {
     // Load HTML file from url.
     try {
       if ($this->options['report_html_errors']) {
-        $dom->loadHTMLFile($this->options['url']);
+        if (!$dom->loadHTMLFile($this->options['url'])) {
+          return FALSE;
+        }
       }
       else {
-        @$dom->loadHTMLFile($this->options['url']);
+        if (!@$dom->loadHTMLFile($this->options['url'])) {
+          return FALSE;
+        }
       }
     }
     catch (Exception $e) {
@@ -357,7 +361,7 @@ class HTMLFIReader extends FeedImportSimpleXPathReader {
     }
 
     // Get items from root.
-    $this->items = $this->xpath($this->options['parent']);
+    $this->items = $xml->xpath($this->options['parent']);
 
     return TRUE;
   }

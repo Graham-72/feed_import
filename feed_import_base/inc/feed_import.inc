@@ -586,6 +586,14 @@ class FeedImportProcessor extends FeedImportConfigurable {
     }
     if ($this->reader) {
       $this->uniq = $this->reader->formatPath($uniq);
+      if (is_scalar($this->uniq)) {
+        if ((string) $this->uniq === '') {
+          $this->uniq = NULL;
+        }
+      }
+      elseif (empty($this->uniq)) {
+        $this->uniq = NULL;
+      }
       return TRUE;
     }
     return FALSE;
@@ -859,7 +867,11 @@ class FeedImportProcessor extends FeedImportConfigurable {
     // Set a ref for current entity.
     $this->current = &$entity;
     // Check for unique id of item.
-    if ($this->uniq) {
+    if ($this->uniq === NULL) {
+      // No hash, so not monitorized.
+      $entity[static::TEMP_HASH] = NULL;
+    }
+    else {
       // Get uniq.
       $uniq = $this->reader->map($item, $this->uniq);
       if (is_array($uniq)) {
@@ -867,10 +879,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
       }
       // Create hash.
       $entity[static::TEMP_HASH] = $this->hashes->hash($uniq);
-    }
-    else {
-      // No hash, so not monitorized.
-      $entity[static::TEMP_HASH] = NULL;
     }
 
     // Set entity fields.
@@ -914,6 +922,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
             break;
           // Skip this item by returning NULL.
           case static::ACTION_SKIP_ITEM:
+            $this->report['skipped']++;
             $this->current = $this->prefilteredValue = NULL;
             return $this->NULL;
           // Don't add this field to entity.
@@ -1045,7 +1054,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       else {
         // It is a property.
         if (isset($new[$fn])) {
-          if (($c = isset($curr->{$fn})) && $curr->{$fn} == $new[$fn]) {
+          if (isset($curr->{$fn}) && $curr->{$fn} == $new[$fn]) {
             // Nothing changed.
             continue;
           }
@@ -1056,7 +1065,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
           // Remove from memory.
           unset($new[$fn]);
         }
-        elseif ($overwrite && $c) {
+        elseif ($overwrite && isset($curr->{$fn})) {
           // Forced update mode is selected.
           unset($curr->{$fn});
           // Mark as changed.
@@ -1411,13 +1420,17 @@ class FeedImportSQLHashes extends FeedImportHashManager {
    * {@inheritdoc}
    */
   public function hash(&$uniq) {
-    return $this->generatedHashes[] = md5($this->hashPart . $uniq);
+    $this->generatedHashes[] = $hash = md5($this->hashPart . $uniq);
+    return $hash;
   }
 
   /**
    * {@inheritdoc}
    */
   public function get() {
+    if (!$this->generatedHashes) {
+      return array();
+    }
     // Get select conditions (reuse same select object).
     $cond = &$this->select->conditions();
     // Remove last condition.
