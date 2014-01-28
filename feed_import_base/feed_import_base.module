@@ -70,7 +70,12 @@ function feed_import_base_cron() {
     }
   }
   // Delete expired items.
-  FeedImport::deleteExpired(variable_get('feed_import_delete_items_per_cron', 300));
+  $d = FeedImport::deleteExpired(variable_get('feed_import_delete_items_per_cron', 300));
+  if ($d && variable_get('feed_import_reports', FALSE)) {
+    watchdog('Feed Import', 'Deleted @count expired items', array(
+    '@count' => $d,
+    ), WATCHDOG_NOTICE);
+  }
 }
 
 
@@ -105,7 +110,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
     variable_set('feed_import_import_running', $running);
   }
   // Save report if needed.
-  if ($report && variable_get('feed_import_reports', TRUE)) {
+  if ($report && variable_get('feed_import_reports', FALSE)) {
     $report['feed'] = $feed;
     _feed_import_base_save_report($report, $feed);
   }

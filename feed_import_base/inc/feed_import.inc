@@ -372,7 +372,13 @@ class FeedImport {
         $entity = static::getEntityInfo($e);
         // Delete entities.
         if ($entity->deleteCallback) {
-          array_map($entity->deleteCallback, $ids);
+          $f = $entity->deleteCallback . '_multiple';
+          if (function_exists($f)) {
+            $f($ids);
+          }
+          else {
+            array_map($entity->deleteCallback, $ids);
+          }
         }
         else {
           $entity->controller->delete($ids);
@@ -1128,7 +1134,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
         // Check if entity is changed and save changes.
         if ($changed) {
           // Save entity.
-          if (!$saveCallback && !@$current->save()) {
+          if (!$saveCallback && !$current->save()) {
             unset($current);
             continue;
           }
@@ -1177,6 +1183,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
         // Not needed anymore.
         unset($entity, $hash);
       }
+      // Remove entity cache.
+      $this->entityInfo->controller->resetCache();
     }
   }
 
@@ -1354,7 +1362,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     if (isset($options['group'])) {
       $this->group = $options['group'];
     }
-    
+
     // Create insert format.
     $this->insertFormat = array(
       $this->feedName,
