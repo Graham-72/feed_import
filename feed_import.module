@@ -1619,7 +1619,6 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
         }
         else {
           $filter['params'] = explode(PHP_EOL, $filter['params']);
-          $filter['params'] = array_map('trim', $filter['params']);
         }
         $item[$form_state['#item_filter']][$filter['name']] = array(
           'function' => trim($filter['function']),
