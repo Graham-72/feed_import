@@ -553,7 +553,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       $this->beforeCombine = $options['before_combine'];
     }
     if (isset($options['after_combine']) && function_exists($options['after_combine'])) {
-      $this->beforeCombine = $options['after_combine'];
+      $this->afterCombine = $options['after_combine'];
     }
   }
 
