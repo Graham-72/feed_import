@@ -86,6 +86,7 @@ function feed_import_base_cron() {
  */
 function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   $running = _feed_import_base_variable_get('feed_import_import_running', array());
+
   if ($recheck) {
     $overlap = variable_get('feed_import_let_overlap', array());
     if (!in_array($feed->entity, $overlap) &&
@@ -102,9 +103,10 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   unset($running);
   $report = FeedImport::import($feed, _feed_import_base_get_filters_dir());
   $running = _feed_import_base_variable_get('feed_import_import_running', array());
+
   if (!empty($running[$feed->entity]) &&
       ($pos = array_search($feed->machine_name, $running[$feed->entity])) !== FALSE) {
-    unset($running[$pos]);
+    unset($running[$feed->entity][$pos]);
     variable_set('feed_import_import_running', $running);
   }
   // Check for errors.

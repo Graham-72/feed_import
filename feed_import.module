@@ -1029,7 +1029,7 @@ function feed_import_class_settings_form_validate($form, &$form_state) {
 function feed_import_class_settings_form_submit($form, &$form_state) {
   $v = &$form_state['values'];
   if (!($feed = FeedImport::loadFeed($v['machine_name']))) {
-    return MENU_NOT_FOUND;
+    drupal_goto(FEED_IMPORT_PATH);
   }
   $feed->settings[$v['setting']] = array(
     'name' => $v['name'],
@@ -1307,6 +1307,8 @@ function feed_import_static_fields_form_submit($form, &$form_state) {
   if (FeedImport::saveFeed($feed)) {
     drupal_set_message(t('Feed saved'));
   }
+
+  drupal_goto(FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/fields/static');
 }
 
 /**

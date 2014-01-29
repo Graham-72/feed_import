@@ -128,10 +128,10 @@ class FeedImport {
    *     Path to extra filters dir
    *
    * @return FeedImportProcessor
-   *     An instance of FeedImportProcessor
+   *     An instance of FeedImportProcessor or FALSE on error
    */
   public static function getProcessor($feed, $filter_dir) {
-    $s = &$feed->settings;
+    $s = $feed->settings;
 
     $fi = new $s['processor']['class']($feed->machine_name);
     if (!$fi->setReader(new $s['reader']['class']($s['reader']['options']))) {
@@ -150,6 +150,20 @@ class FeedImport {
 
     $fi->setUniq($s['uniq_path']);
     $fi->setFields($s['fields'], $s['static_fields']);
+
+    // Remove the basic settings.
+    $base_settings = array(
+      'uniq_path', 'processor', 'reader', 'hashes',
+      'filter', 'fields', 'static_fields',
+    );
+    foreach ($base_settings as $f) {
+      unset($s[$f]);
+    }
+
+    // Set custom settings.
+    if (!$fi->setCustomSettings($s)) {
+      return FALSE;
+    }
 
     return $fi;
   }
@@ -772,6 +786,20 @@ class FeedImportProcessor extends FeedImportConfigurable {
       $this->baseEntity[$lk] = LANGUAGE_NONE;
     }
 
+    return TRUE;
+  }
+
+  /**
+   * Sets custom settings, after base settings were set.
+   * Can be used by child classes.
+   *
+   * @param array $settings
+   *    An array of settings.
+   *
+   * @return bool
+   *    TRUE if success. If not, the import will be stopped.
+   */
+  public function setCustomSettings(array $settings) {
     return TRUE;
   }
 

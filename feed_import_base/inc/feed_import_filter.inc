@@ -44,7 +44,7 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
     if (isset($options['include'])) {
       $options = $options['include'];
       if (!is_array($options)) {
-        $options = static::cleanLines($options);
+        $options = array_filter(static::cleanLines($options));
       }
       foreach ($options as $file) {
         if ($file[0] == '/') {
