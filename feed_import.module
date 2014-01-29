@@ -533,6 +533,14 @@ function feed_import_feed_import_processor_info() {
           '#default_value' => FALSE,
           '#description' => t('This is possible only when items are monitorized.'),
         ),
+        'reset_cache' => array(
+          '#type' => 'textfield',
+          '#title' => t('Reset entity static cache'),
+          '#description' => t('After how many cached entities to reset the in-memory cache.') . ' ' .
+                            t('This can reduce memory usage. Use 0 to ignore it.'),
+          '#default_value' => 100,
+          '#required' => TRUE,
+        ),
         'throw_exception' => array(
           '#type' => 'checkbox',
           '#title' => t('Throw exception on error'),

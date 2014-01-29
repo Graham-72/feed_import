@@ -241,6 +241,7 @@ class FeedImport {
           'options' => array(
             'items_count' => 0,
             'skip_imported' => FALSE,
+            'reset_cache' => 100,
           ),
         ),
         'reader' => array(
@@ -481,6 +482,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
   protected $prefilters;
   // After how many of entities to save.
   protected $itemsCount = 0;
+  // After how many items to reset entity static cache.
+  protected $resetStaticCache = 0;
+  // Number entities in static cache.
+  protected $staticCacheEntities = 0;
 
   // Current entities in work.
   public $current;
@@ -518,6 +523,9 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (isset($options['throw_exception'])) {
       $this->throwException = (bool) $options['throw_exception'];
     }
+    if (isset($options['reset_cache']) && $options['reset_cache'] >= 0) {
+      $this->resetStaticCache = (int) $options['reset_cache'];
+    }
   }
 
   /**
@@ -525,7 +533,9 @@ class FeedImportProcessor extends FeedImportConfigurable {
    */
   public static function validateOption($option, $value) {
     switch ($option) {
-      case 'max_reported_errors': case 'items_count':
+      case 'max_reported_errors':
+      case 'items_count':
+      case 'reset_cache':
         return $value >= 0;
     }
     return TRUE;
@@ -1141,6 +1151,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
         }
         // Get current entity value.
         $current = &$current[$loadId];
+        // Entity might be in static cache.
+        $this->staticCacheEntities++;
         // Check for diff.
         $changed = $this->combineEntities($entity, $current);
         // Not needed anymore.
@@ -1185,7 +1197,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
         else {
           $saveCallback($entity);
         }
-
+        // Entity might be added in static cache.
+        $this->staticCacheEntities++;
         // Check if is monitorized.
         if ($hash !== NULL) {
           // Insert into feed import hash table.
@@ -1198,7 +1211,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
         unset($entity, $hash);
       }
       // Remove entity cache.
-      $this->entityInfo->controller->resetCache();
+      if ($this->staticCacheEntities == $this->resetStaticCache) {
+        $this->entityInfo->controller->resetCache();
+        $this->staticCacheEntities = 0;
+      }
     }
   }
 
@@ -1271,6 +1287,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
 
     // Not needed anymore.
     unset($entities, $reader);
+
+    // Reset the static cache.
+    if ($this->staticCacheEntities && $this->resetStaticCache) {
+      $this->entityInfo->controller->resetCache();
+      $this->staticCacheEntities = 0;
+    }
 
     // Commit left over hash updates.
     $this->hashes->updateCommit();
