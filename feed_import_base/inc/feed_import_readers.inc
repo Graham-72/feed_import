@@ -159,8 +159,10 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
     $this->root = $this->options['parent'];
     $tag = explode('/', $this->options['parent']);
     unset($this->options['parent']);
-    $tag = trim(end($tag));
-
+    list($tag) = explode('[', trim(end($tag)));
+    if (!$tag || $tag == '*' || $tag[0] == '@') {
+      return FALSE;
+    }
     $this->tagOpen = "<$tag";
     $this->tagClose = "</$tag>";
     $this->tagLen = strlen($tag);
@@ -398,7 +400,7 @@ class SQLFIReader extends FeedImportUniVectorReader {
 
     // Parse params if needed.
     if (!is_array($this->options['params'])) {
-      $params = explode(PHP_EOL, $this->options['params']);
+      $params = static::cleanLines($this->options['params']);
       $this->options['params'] = array();
       foreach ($params as &$param) {
         $param = explode('=', $param, 2);

@@ -56,8 +56,7 @@ abstract class FeedImportConfigurable {
    *    An array of strings
    */
   public static function cleanLines($str) {
-    $str = array_map('trim', explode(PHP_EOL, $str));
-    return array_filter($str);
+    return preg_split('/\r?\n/',$str);
   }
 }
 

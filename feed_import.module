@@ -689,6 +689,12 @@ function feed_import_get_class_settings($setting) {
   return $ret;
 }
 
+/**
+ * Splits string by newlines.
+ */
+function _feed_import_lines($str) {
+  return preg_split('/\r?\n/',$str);
+}
 
 /**
  * List all feeds
@@ -1503,7 +1509,7 @@ function feed_import_edit_filter_form($form, &$form_state, $feed, $f) {
           $vars = array(
             'name' => $filter['name'],
             'function' => $filter['function'],
-            'params' => explode(PHP_EOL, $filter['params']),
+            'params' => _feed_import_lines($filter['params']),
           );
           $filters[$field][$pos] = feed_import_new_filter($pos, $vars);
           $pos++;
@@ -1618,7 +1624,7 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
           $filter['params'] = array($feed->settings['filter']['param']);
         }
         else {
-          $filter['params'] = explode(PHP_EOL, $filter['params']);
+          $filter['params'] = _feed_import_lines($filter['params']);
         }
         $item[$form_state['#item_filter']][$filter['name']] = array(
           'function' => trim($filter['function']),
@@ -1927,7 +1933,7 @@ function feed_import_fields_form_submit($form, &$form_state) {
     $fields[$f['field']] = array(
       'field' => $f['field'],
       'column' => isset($e->fields[$f['field']]),
-      'paths' => array_filter(array_map('trim', explode(PHP_EOL, $f['paths'])), 'strlen'),
+      'paths' => array_filter(_feed_import_lines($f['paths']), 'strlen'),
       'default_action' => (int) $f['default_action'],
       'default_value' => $f['default_value'],
       'update_mode' => (int) $f['update_mode'],
