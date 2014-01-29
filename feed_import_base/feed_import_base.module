@@ -90,7 +90,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
         !empty($running[$feed->entity]) &&
         in_array($feed->machine_name, $running[$feed->entity])
         ) {
-      return FALSE;
+      return NULL;
     }
     unset($overlap);
   }
@@ -99,22 +99,27 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   variable_set('feed_import_import_running', $running);
   unset($running);
   $report = FeedImport::import($feed, _feed_import_base_get_filters_dir());
-  $feed->last_run = $report['started'];
-  $d = $report['finished'] - $report['started'];
-  $feed->last_run_duration = $d > 0 ? $d : 0;
-  FeedImport::saveFeedImportStatus($feed);
   $running = _feed_import_base_variable_get('feed_import_import_running', array());
   if (!empty($running[$feed->entity]) &&
       ($pos = array_search($feed->machine_name, $running[$feed->entity])) !== FALSE) {
     unset($running[$pos]);
     variable_set('feed_import_import_running', $running);
   }
-  // Save report if needed.
-  if ($report && variable_get('feed_import_reports', FALSE)) {
-    $report['feed'] = $feed;
-    _feed_import_base_save_report($report, $feed);
+  // Check for errors.
+  if ($report) {
+    $feed->last_run = $report['started'];
+    $d = $report['finished'] - $report['started'];
+    $feed->last_run_duration = $d > 0 ? $d : 0;
+    FeedImport::saveFeedImportStatus($feed);
+    // Save report if needed.
+    if (variable_get('feed_import_reports', FALSE)) {
+      _feed_import_base_save_report($report, $feed);
+    }
+    return TRUE;
   }
-  return TRUE;
+  else {
+    return FALSE;
+  }
 }
 
 /**

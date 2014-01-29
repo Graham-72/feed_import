@@ -134,10 +134,12 @@ class FeedImport {
     $s = &$feed->settings;
 
     $fi = new $s['processor']['class']($feed->machine_name);
-
+    if (!$fi->setReader(new $s['reader']['class']($s['reader']['options']))) {
+      return FALSE;
+    }
     $fi->setOptions($s['processor']['options']);
     $fi->setEntityInfo(static::getEntityInfo($feed->entity));
-    $fi->setReader(new $s['reader']['class']($s['reader']['options']));
+
 
     $fi->setFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
     $fi->setPreFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
@@ -331,7 +333,10 @@ class FeedImport {
    *    Path to filters dir
    */
   public static function import($feed, $filters_dir) {
-    return static::getProcessor($feed, $filters_dir)->process();
+    if ($f = static::getProcessor($feed, $filters_dir)) {
+      return $f->process();
+    }
+    return FALSE;
   }
 
   /**

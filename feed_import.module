@@ -2144,14 +2144,14 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
  * Process a feed
  */
 function feed_import_process_feed($feed) {
-  if (_feed_import_base_process_feed($feed, FALSE)) {
-    drupal_set_message(t('Feed @name imported!', array('@name' => $feed->name)));
+  $status = _feed_import_base_process_feed($feed, TRUE);
+  if ($status) {
+    drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
   }
   else {
-    $msg = t(
-      'Cannot process feed because feed @name is running!',
-      array('@name' => $feed->name)
-    );
+    $msg = $status === NULL
+          ? t('Cannot process feed because another one is running!')
+          : t('Cannot process feed because is misconfigured!');
     drupal_set_message($msg, 'error');
   }
   drupal_goto(FEED_IMPORT_PATH);
