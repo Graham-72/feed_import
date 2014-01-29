@@ -101,14 +101,9 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   $running[$feed->entity][] = $feed->machine_name;
   variable_set('feed_import_import_running', $running);
   unset($running);
+  register_shutdown_function('_feed_import_base_remove_running', $feed);
   $report = FeedImport::import($feed, _feed_import_base_get_filters_dir());
-  $running = _feed_import_base_variable_get('feed_import_import_running', array());
-
-  if (!empty($running[$feed->entity]) &&
-      ($pos = array_search($feed->machine_name, $running[$feed->entity])) !== FALSE) {
-    unset($running[$feed->entity][$pos]);
-    variable_set('feed_import_import_running', $running);
-  }
+  $feed->skip_remove_running = TRUE;
   // Check for errors.
   if ($report) {
     $feed->last_run = $report['started'];
@@ -123,6 +118,22 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   }
   else {
     return FALSE;
+  }
+}
+
+/**
+ * Removes a feed from running array.
+ */
+function _feed_import_base_remove_running($feed) {
+  if (isset($feed->skip_remove_running)) {
+    unset($feed->skip_remove_running);
+    return;
+  }
+  $running = _feed_import_base_variable_get('feed_import_import_running', array());
+  if (!empty($running[$feed->entity]) &&
+      ($pos = array_search($feed->machine_name, $running[$feed->entity])) !== FALSE) {
+    unset($running[$feed->entity][$pos]);
+    variable_set('feed_import_import_running', $running);
   }
 }
 
