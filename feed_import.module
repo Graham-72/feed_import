@@ -554,6 +554,18 @@ function feed_import_feed_import_processor_info() {
           '#default_value' => 100,
           '#required' => TRUE,
         ),
+        'before_combine' => array(
+          '#type' => 'textfield',
+          '#title' => t('Entity before combine callback'),
+          '#description' => t('Return of this function decides if new and current entity versions will be combined, skipped or rescheduled.'),
+          '#default_value' => '',
+        ),
+        'after_combine' => array(
+          '#type' => 'textfield',
+          '#title' => t('Entity after combine callback'),
+          '#description' => t('Return of this function decides if the new entity will be updated, skipped or rescheduled.'),
+          '#default_value' => '',
+        ),
       ),
     ),
   );

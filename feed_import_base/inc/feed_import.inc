@@ -465,6 +465,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
   const ACTION_IGNORE_FIELD = 2;
   const ACTION_SKIP_ITEM = 3;
 
+  // Action before/after combine entities
+  const ENTITY_CONTINUE = 0;
+  const ENTITY_RESCHEDULE = 1;
+  const ENTITY_SKIP = 2;
+  const ENTITY_NO_COMBINE = 3;
+
   // Hash property name.
   const TEMP_HASH = '$_FI~HASH_$';
 
@@ -500,6 +506,9 @@ class FeedImportProcessor extends FeedImportConfigurable {
   protected $resetStaticCache = 0;
   // Number entities in static cache.
   protected $staticCacheEntities = 0;
+  // Callback for before combine entities
+  protected $beforeCombine = FALSE;
+  protected $afterCombine  = FALSE;
 
   // Current entities in work.
   public $current;
@@ -539,6 +548,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
     }
     if (isset($options['reset_cache']) && $options['reset_cache'] >= 0) {
       $this->resetStaticCache = (int) $options['reset_cache'];
+    }
+    if (isset($options['before_combine']) && function_exists($options['before_combine'])) {
+      $this->beforeCombine = $options['before_combine'];
+    }
+    if (isset($options['after_combine']) && function_exists($options['after_combine'])) {
+      $this->beforeCombine = $options['after_combine'];
     }
   }
 
@@ -782,7 +797,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       // No language, it means language is dynamically created.
       // Move language on top to be available for other fields.
       $this->fields = array_merge(array($lk => NULL), $this->fields);
-      // However, set it to NONE, and if used will be overwrited.
+      // However, set it to NONE, and if used will be overwritten.
       $this->baseEntity[$lk] = LANGUAGE_NONE;
     }
 
@@ -1139,6 +1154,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
     $createCallback = &$this->entityInfo->createCallback;
     // Entity save callback.
     $saveCallback = &$this->entityInfo->saveCallback;
+    // Entity before combine callback
+    $beforeCombine = &$this->beforeCombine;
+    // Entity after combine callback
+    $afterCombine = &$this->afterCombine;
 
     // Entity load id.
     $loadId = &$loadArr[0];
@@ -1181,8 +1200,37 @@ class FeedImportProcessor extends FeedImportConfigurable {
         $current = &$current[$loadId];
         // Entity might be in static cache.
         $this->staticCacheEntities++;
+
+        // Check for before combine callback.
+        if ($beforeCombine) {
+          switch ($beforeCombine($entity, $current)) {
+            case static::ENTITY_RESCHEDULE:
+              $this->report['rescheduled']++;
+              goto ADD_HASH_UPDATE;
+            case static::ENTITY_SKIP:
+              $this->report['skipped']++;
+              goto UNSET_VARS;
+            case static::ENTITY_NO_COMBINE:
+              goto COMBINE_FINISHED;
+          }
+        }
+
         // Check for diff.
         $changed = $this->combineEntities($entity, $current);
+
+        // Check for after combine callback.
+        if ($afterCombine) {
+          switch ($afterCombine($entity, $current, $changed)) {
+            case static::ENTITY_RESCHEDULE:
+              $this->report['rescheduled']++;
+              goto ADD_HASH_UPDATE;
+            case static::ENTITY_SKIP:
+              $this->report['skipped']++;
+              goto UNSET_VARS;
+          }
+        }
+
+        COMBINE_FINISHED:
         // Not needed anymore.
         unset($entity);
         // Check if entity is changed and save changes.
@@ -1202,8 +1250,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
           // Set report about rescheduled items.
           $this->report['rescheduled']++;
         }
+        ADD_HASH_UPDATE:
         // Add to update ids.
         $this->hashes->update($ids[$hash]->id);
+        UNSET_VARS:
         // Free some memory.
         unset($ids[$hash], $current, $entity, $hash);
       }

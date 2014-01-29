@@ -20,7 +20,7 @@ abstract class FeedImportConfigurable {
    * @param array $options
    *    An assoc array containig options
    * @param bool $overwrite
-   *    TRUE if the options should pe overwrited, FALSE to merge them
+   *    TRUE if the options should pe overwritten, FALSE to merge them
    */
   public function setOptions(array $options, $overwrite = FALSE) {
     if ($overwrite) {
