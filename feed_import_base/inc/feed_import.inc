@@ -954,19 +954,21 @@ class FeedImportProcessor extends FeedImportConfigurable {
             // If item doesn't pass prefilter than go to next path.
             continue;
           }
-          unset($aux);
         }
         if ($this->hasContent($val)) {
           // We have content, check for filters.
           if ($field['filters']) {
             $val = $this->filters->apply($name, $val);
+            if (!$this->hasContent($val)) {
+              $val = NULL;
+            }
           }
           // We matched one path.
           break;
         }
       }
       // Check if default action is needed.
-      if (!$this->hasContent($val)) {
+      if ($val === NULL) {
         switch ($field['default_action']) {
           // Provide default value.
           // This is also default action.
@@ -984,7 +986,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
             $this->current = $this->prefilteredValue = NULL;
             return $this->NULL;
           // Don't add this field to entity.
-          case static::ACTION_SKIP_ITEM:
+          case static::ACTION_IGNORE_FIELD:
             $this->prefilteredValue = NULL;
             continue 2;
         }
