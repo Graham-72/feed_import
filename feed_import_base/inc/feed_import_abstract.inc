@@ -271,6 +271,16 @@ interface FeedImportStaticHashManager {
    *      hash_id: enity_id
    */
   public static function getExpired($max = 0);
+  
+  /**
+   * Reschedules all entities
+   *
+   * @param string $name
+   *    Feed machine name
+   * @param int $ttl
+   *    Time to live
+   */
+  public static function rescheduleAll($name, $ttl);
 
 }
 

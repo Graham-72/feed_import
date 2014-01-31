@@ -123,6 +123,13 @@ function feed_import_base_schema() {
         'default' => 0,
         'description' => 'Duration of last run in seconds',
       ),
+      'last_run_items' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => 'Last run number of items in feed',
+      ),
     ),
     'primary key' => array('id'),
     'unique keys' => array(

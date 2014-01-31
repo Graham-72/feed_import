@@ -105,21 +105,66 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   $report = FeedImport::import($feed, _feed_import_base_get_filters_dir());
   _feed_import_base_remove_running($feed);
   $feed->skip_remove_running = TRUE;
+  $report_errors = variable_get('feed_import_reports', FALSE);
   // Check for errors.
   if ($report) {
+    // Save last run and duration.
     $feed->last_run = $report['started'];
     $d = $report['finished'] - $report['started'];
     $feed->last_run_duration = $d > 0 ? $d : 0;
+    // Check fewer items protection.
+    if ($feed->settings['uniq_path'] && $feed->settings['feed']['protect_on_fewer_items']) {
+      $d = trim($feed->settings['feed']['protect_on_fewer_items']);
+      if (substr($d, -1) == '%') {
+        $d = rtrim($d, '%') * $feed->last_run_items / 100;
+      }
+      else {
+        $d = (int) $d;
+      }
+      if ($report['total'] < $d) {
+        // Save import status.
+        FeedImport::saveFeedImportStatus($feed);
+        // Reschedul all.
+        $class = $feed->settings['hashes']['class'];
+        $class::rescheduleAll($feed->machine_name, $feed->settings['hashes']['options']['ttl']);
+        if ($report_errors) {
+          // Report base info.
+          _feed_import_base_save_report($report, $feed);
+          // Report rescheduled all.
+          watchdog('Feed Import', 'Rescheduled all items for @name because source contained only @total items but expected @expected.', array(
+            '@name' => $feed->name,
+            '@total' => $report['total'],
+            '@expected' => $d,
+          ), WATCHDOG_WARNING);
+        }
+        return NULL;
+      }
+    }
+    $feed->last_run_items = $report['total'];
     FeedImport::saveFeedImportStatus($feed);
     // Save report if needed.
-    if (variable_get('feed_import_reports', FALSE)) {
-      _feed_import_base_save_report($report, $feed);
-    }
+    $report_errors && _feed_import_base_save_report($report, $feed);
     return TRUE;
   }
   else {
-    return FALSE;
+    // Reader init problem.
+    if ($feed->settings['uniq_path'] && $feed->settings['feed']['protect_on_invalid_source']) {
+      $feed->last_run = time();
+      $feed->last_run_duration = 0;
+      FeedImport::saveFeedImportStatus($feed);
+      // Reschedule all.
+      $class = $feed->settings['hashes']['class'];
+      $class::rescheduleAll($feed->machine_name, $feed->settings['hashes']['options']['ttl']);
+      if ($report_errors) {
+        // Report reschedule all.
+        watchdog('Feed Import', 'Rescheduled all items for @name due to a source problem.', array(
+          '@name' => $feed->name,
+        ), WATCHDOG_WARNING);
+      }
+      return NULL;
+    }
   }
+  return FALSE;
 }
 
 /**

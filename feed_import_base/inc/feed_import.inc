@@ -246,9 +246,13 @@ class FeedImport {
       'cron_import' => 0,
       'last_run' => 0,
       'last_run_duration' => 0,
+      'last_run_items' => 0,
       'settings' => array(
-        'expire' => 0,
         'uniq_path' => NULL,
+        'feed' => array(
+          'protect_on_invalid_source' => FALSE,
+          'protect_on_fewer_items' => 0,
+        ),
         'processor' => array(
           'name' => 'default',
           'class' => 'FeedImportProcessor',
@@ -318,6 +322,7 @@ class FeedImport {
       $fields += array(
         'last_run' => 0,
         'last_run_duration' => 0,
+        'last_run_items' => 0,
       );
       db_insert('feed_import_settings')
         ->fields($fields)
@@ -334,6 +339,7 @@ class FeedImport {
       ->fields(array(
         'last_run' => (int) $feed->last_run,
         'last_run_duration' => (int) $feed->last_run_duration,
+        'last_run_items' => (int) $feed->last_run_items,
       ))
       ->condition('machine_name', $feed->machine_name)
       ->execute();
@@ -1678,6 +1684,19 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       $ret[$r['entity']][$r['id']] = $r['entity_id'];
     }
     return $ret;
+  }
+  
+  /**
+   * {@inheritdoc}
+   */
+  public static function rescheduleAll($name, $ttl) {
+    if ($ttl) {
+      $ttl += time();
+    }
+    db_update('feed_import_settings')
+      ->condition('feed_machine_name', $name)
+      ->fields(array('expire' => $ttl))
+      ->execute();
   }
 
 

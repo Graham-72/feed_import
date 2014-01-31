@@ -757,6 +757,7 @@ function feed_import_list_feeds() {
         $feed->entity,
         $feed->cron_import ? t('Enabled') : t('Disabled'),
         $run,
+        $feed->last_run_items,
         $op['edit'],
         $op['process'],
         $op['export'],
@@ -770,7 +771,7 @@ function feed_import_list_feeds() {
 
   return array(
     '#theme' => 'table',
-    '#header' => array(t('Name'), t('Entity'), t('Cron import'), t('Last run'), array(
+    '#header' => array(t('Name'), t('Entity'), t('Cron import'), t('Last run'), t('Last run items in source'), array(
       'data' => t('Operations'),
       'colspan' => 4,
     )),
@@ -803,7 +804,7 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
     '#default_value' => $feed ? $feed->name : NULL,
     '#required' => TRUE,
   );
-
+  
   if ($feed) {
     $form['machine_name'] = array(
       '#type' => 'value',
@@ -834,18 +835,48 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
     '#maxlength' => 64,
     '#required' => TRUE,
   );
-
+  
   if ($feed) {
     $form['entity']['#default_value'] = $feed->entity;
     $form['entity']['#disabled'] = !empty($feed->settings['fields']);
+    
+    $form['cron_import'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Import at cron'),
+      '#default_value' => $feed->cron_import,
+      '#description' => t('Check this if you want to import feed items when cron runs.'),
+    );
+    
+    $form['feed'] = array(
+      '#type' => 'fieldset',
+      '#tree' => TRUE,
+      '#title' => t('Delete protection'),
+      '#description' => t('Reschedule items if one of the below conditions is met.') . ' ' .
+                        t('This is useful for cron imported items.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    
+    $form['feed']['protect_on_invalid_source'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Source file or network is unavailable'),
+      '#default_value' => $feed->settings['feed']['protect_on_invalid_source'],
+    );
+    
+    $form['feed']['protect_on_fewer_items'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Total number of items is less than'),
+      '#default_value' => $feed->settings['feed']['protect_on_fewer_items'],
+      '#description' => t('You can also use a percentage by appending %. Percentage is reported to items count of last import.') . ' ' .
+                        t('Use 0 to ignore this setting.'),
+    );
   }
-
-  $form['cron_import'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Import at cron'),
-    '#default_value' => $feed ? (bool) $feed->cron_import : FALSE,
-    '#description' => t('Check this if you want to import feed items when cron runs.'),
-  );
+  else {
+    $form['cron_import'] = array(
+      '#type' => 'value',
+      '#value' => FALSE,
+    );
+  }
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -898,6 +929,9 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
   $feed->name = $v['name'];
   $feed->entity = $v['entity'];
   $feed->cron_import = $v['cron_import'];
+  if (isset($v['feed'])) {
+    $feed->settings['feed'] = $v['feed'];
+  }
   if (FeedImport::saveFeed($feed)) {
     drupal_set_message(t('Feed saved'));
     drupal_goto(FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed');
