@@ -1494,7 +1494,8 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       NULL, // holds hash
       0, // holds expire
     );
-    $this->hashPart = $this->entity . '/' . $this->group . '/';
+    
+    $this->hashPart = '/' . $this->group . '/' . $this->entity;
 
     // Create select object.
     $this->select = db_select('feed_import_hashes', 'f')
@@ -1533,8 +1534,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
    * {@inheritdoc}
    */
   public function hash(&$uniq) {
-    $this->generatedHashes[] = $hash = md5($this->hashPart . $uniq);
-    return $hash;
+    return $this->generatedHashes[] = md5($uniq . $this->hashPart);
   }
 
   /**
