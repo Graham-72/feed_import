@@ -2147,7 +2147,8 @@ function feed_import_generate_path_item($pos, array $values, $collapsed = FALSE)
     '#id' => 'default_action_' . $pos,
   );
   $container['default_value'] = array(
-    '#type' => 'textfield',
+    '#type' => 'textarea',
+    '#rows' => 2,
     '#default_value' => $values['default_value'],
     '#title' => t('Default value'),
     '#description' => t('If no path passes pre-filter then use a default value.'),
