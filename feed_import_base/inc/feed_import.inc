@@ -1432,7 +1432,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
 
     // Throw an exception to be caught by a try-catch statement.
     if ($this->throwException) {
-      throw new Exception('(Uncaught Feed Import Exception) ' . $errmsg, $errno);
+      throw new Exception("(Uncaught Feed Import Exception) [$errmsg; file: $file; line: $line]", $errno);
     }
   }
 }

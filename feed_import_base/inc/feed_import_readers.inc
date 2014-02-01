@@ -600,7 +600,7 @@ class CSVFIReader extends FeedImportUniVectorReader {
     // Check to see if column names are used.
     if ($this->options['use_column_names']) {
       if ($this->columns = $this->get()) {
-        $this->columns = array_flip(array_map('trim', $this->columns));
+        $this->columns = array_flip($this->columns);
       }
       else {
         return FALSE;
@@ -627,10 +627,15 @@ class CSVFIReader extends FeedImportUniVectorReader {
    * {@inheritdoc}
    */
   public function formatPath($path) {
-    if ($this->columns && isset($this->columns[$path])) {
-      return $this->columns[$path];
+    $path = parent::formatPath($path);
+    if ($this->columns) {
+      foreach ($path as &$p) {
+        if (isset($this->columns[$p])) {
+          $p = $this->columns[$p];
+        }
+      }
     }
-    return (int) $path;
+    return $path;
   }
 
   /**
