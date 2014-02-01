@@ -23,23 +23,27 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
    */
   public function init() {
     // Set default required options.
-    $this->options += array('class' => 'SimpleXMLElement', 'options' => LIBXML_NOCDATA, 'raw' => '');
+    $this->options += array('class' => 'SimpleXMLElement', 'options' => array(LIBXML_NOCDATA), 'raw' => '');
+    $opts = 0;
+    foreach ($this->options['options'] as $opt) {
+      $opts |= $opt;
+    }
 
-    // Check if raw value is submitted.
-    if ($this->options['raw'] = trim($this->options['raw'])) {
+    // Try to fetch from URL.
+    if ($this->options['url']) {
       try {
-        $this->items = simplexml_load_string($this->options['raw'], $this->options['class'], $this->options['options']);
-        // Not needed anymore.
-        unset($this->options['raw']);
+        $this->items = simplexml_load_file($this->options['url'], $this->options['class'], $opts);
       }
       catch (Exception $e) {
         return FALSE;
       }
     }
-    // Try to fetch from URL.
-    elseif ($this->options['url']) {
+    // Check if raw value is submitted.
+    elseif ($this->options['raw'] = trim($this->options['raw'])) {
       try {
-        $this->items = simplexml_load_file($this->options['url'], $this->options['class'], $this->options['options']);
+        $this->items = simplexml_load_string($this->options['raw'], $this->options['class'], $opts);
+        // Not needed anymore.
+        unset($this->options['raw']);
       }
       catch (Exception $e) {
         return FALSE;
@@ -94,7 +98,88 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
     }
     return $item;
   }
+  
+  /**
+   * {@inheritdoc}
+   */
+  public static function validateOption($option_name, $value) {
+    if ($option_name == 'class') {
+      return $value == 'SimpleXMLElement' || is_subclass_of($value, 'SimpleXMLElement');
+    }
+    return TRUE;
+  }
 
+}
+
+
+/**
+ * DomDocument XML reader
+ */
+class DomXMLFIReader extends FeedImportDomXPathReader {
+  
+  // Number of items returned by parent xpath
+  protected $totalItems = 0;
+  // Current item.
+  protected $currentItem = 0;
+  
+  /**
+   * {@inheritdoc}
+   */
+  public function init() {
+    if (empty($this->options['parent'])) {
+      return FALSE;
+    }
+    $this->options += array('url' => '', 'raw' => NULL, 'options' => array(LIBXML_NOCDATA), 'php_func' => NULL);
+    
+    $opts = 0;
+    foreach ($this->options['options'] as $opt) {
+      $opts |= $opt;
+    }
+    
+    $doc = new DOMDocument();
+    if ($this->options['url']) {
+      if (!$doc->load($this->options['url'], $opts)) {
+        return FALSE;
+      }
+    }
+    elseif ($this->options['raw']) {
+      if (!$doc->loadXML($this->options['raw'], $opts)) {
+        return FALSE;
+      }
+    }
+    else {
+      return FALSE;
+    }
+    unset($this->options['raw']);
+    
+    $this->xpath = new DOMXPath($doc);
+    
+    if ($this->options['php_func']) {
+      if (!is_array($this->options['php_func'])) {
+        $this->options['php_func'] = static::cleanLines($this->options['php_func']);
+      }
+      $this->xpath->registerNamespace('php', 'http://php.net/xpath');
+      $this->xpath->registerPhpFunctions($this->options['php_func']);
+    }
+    
+    $this->items = $this->xpath->query($this->options['parent']);
+    if ($this->items === FALSE || !($this->totalItems = $this->items->length)) {
+      return FALSE;
+    }
+    return TRUE;
+  }
+  
+  /**
+   * {@inheritdoc}
+   */
+  public function get() {
+    if ($this->currentItem < $this->totalItems) {
+      return $this->items->item($this->currentItem++);
+    }
+    unset($this->items);
+    return NULL;
+  }
+  
 }
 
 
@@ -103,29 +188,35 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
  */
 class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
   // Default xml properties.
-  private $properties = '<?xml version="1.0" encoding="utf-8"?>';
+  protected $properties = '<?xml version="1.0" encoding="utf-8"?>';
   // Substring function.
-  private $substr = 'substr';
+  protected $substr = 'substr';
   // Chunk size.
-  private $size = 8192;
+  protected $size = 8192;
   // XML parent.
-  private $root;
+  protected $root;
+  // SimpleXMLElement class
+  protected $sxclass = 'SimpleXMLElement';
 
   // Tags info.
-  private $tagOpen;
-  private $tagClose;
-  private $tagLen;
-  private $tagCloseLen;
+  protected $tagOpen;
+  protected $tagClose;
+  protected $tagLen;
+  protected $tagCloseLen;
 
   // Read content.
-  private $content = '';
+  protected $content = '';
   // Fiel handle.
-  private $fh;
+  protected $fh;
 
   /**
    * {@inheritdoc}
    */
   public function init() {
+    // Check SXE class
+    if (isset($this->options['class'])) {
+      $this->sxclass = $this->options['class'];
+    }
     // Check for resource location and parent xpath.
     if (empty($this->options['url']) || empty($this->options['parent'])) {
       return FALSE;
@@ -247,7 +338,7 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
 
         // Create xml object.
         try {
-          $item = simplexml_load_string($item, 'SimpleXMLElement', LIBXML_NOCDATA);
+          $item = simplexml_load_string($item, $this->sxclass, LIBXML_NOCDATA);
         }
         catch (Exception $e) {
           continue;
@@ -297,6 +388,8 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
         return (bool) preg_match("/^\<\?xml (.*)\?\>$/", $value);
       case 'substr':
         return in_array($value, array('substr', 'mb_substr', 'drupal_substr'));
+      case 'class':
+        return $value == 'SimpleXMLElement' || is_subclass_of($value, 'SimpleXMLElement');
     }
     return TRUE;
   }

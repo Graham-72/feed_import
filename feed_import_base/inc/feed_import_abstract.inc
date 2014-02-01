@@ -153,10 +153,42 @@ abstract class FeedImportSimpleXPathReader extends FeedImportReader {
       $values[$i] = (string) $values[$i][0];
     }
 
-    // Return value or an array of values.
-    return $count == 1 ? $values[0] : $values;
+    // Return values.
+    return $values;
   }
 
+}
+
+/**
+ * This class provides a helper for dom xpath queries.
+ */
+abstract class FeedImportDomXPathReader extends FeedImportReader {
+  
+  // DomXPath instance
+  protected $xpath;
+  
+  // Bool, see DomXPath::evaluate
+  protected $xpathRegisterNodeNS = TRUE; 
+  
+  /**
+   * {@inheritdoc}
+   */
+  public function map(&$item, &$path) {
+    $values = $this->xpath->evaluate($path, $item, $this->xpathRegisterNodeNS);
+    if ($values instanceof DOMNodeList) {
+      if (!($len = $values->length)) {
+        return NULL;
+      }
+      $i = 0;
+      $ret = array();
+      while ($i < $len) {
+        $ret[] = $values->item($i++)->nodeValue;
+      }
+      return $ret;
+    }
+    return $values;
+  }
+  
 }
 
 
@@ -171,6 +203,27 @@ abstract class FeedImportVectorReader extends FeedImportReader {
    * {@inheritdoc}
    */
   public function map(&$vector, &$path) {
+    $ret = array();
+    foreach ($path as $p) {
+      if (($p = $this->submap($vector, $p)) !== NULL) {
+        $ret[] = $p;
+      }
+    }
+    return $ret ? $ret : NULL;
+  }
+  
+  /**
+   * Gets an element by path.
+   *
+   * @param mixed $vector
+   *    The vector to search
+   * @param array $path
+   *    Path parts
+   *
+   * @return mixed
+   *    Found value or NULL
+   */
+  public function submap(&$vector, &$path) {
     foreach ($path as &$p) {
       if (is_array($vector)) {
         if (isset($vector[$p])) {
@@ -193,7 +246,11 @@ abstract class FeedImportVectorReader extends FeedImportReader {
    * {@inheritdoc}
    */
   public function formatPath($path) {
-    return explode('/', $path);
+    $path = preg_split('/(\s?\|\s?)/', $path, -1, PREG_SPLIT_NO_EMPTY);
+    foreach ($path as &$p) {
+      $p = explode('/', $p);
+    }
+    return $path;
   }
 }
 
@@ -209,14 +266,31 @@ abstract class FeedImportUniVectorReader extends FeedImportReader {
    */
   public function map(&$vector, &$path) {
     if (is_array($vector)) {
-      if (isset($vector[$path])) {
-        return $vector[$path];
+      $ret = array();
+      foreach ($path as $p) {
+        if (isset($vector[$p])) {
+          $ret[] = $vector[$p];
+        }
       }
+      return $ret ? $ret : NULL;
     }
-    elseif (is_object($vector) && isset($vector->$path)) {
-      return $vector->$path;
+    elseif (is_object($vector)) {
+      $ret = array();
+      foreach ($path as $p) {
+        if (isset($vector->$p)) {
+          $ret[] = $vector->$p;
+        }
+      }
+      return $ret ? $ret : NULL;
     }
     return NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function formatPath($path) {
+    return preg_split('/(\s?\|\s?)/', $path, -1, PREG_SPLIT_NO_EMPTY);
   }
 
 }

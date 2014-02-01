@@ -266,28 +266,58 @@ function feed_import_feed_import_reader_info() {
                         ),
                       )),
   );
-
+    
+  $sxeclass = array(
+    '#type' => 'textfield',
+    '#title' => t('SimpleXMLElement class'),
+    '#default_value' => 'SimpleXMLElement',
+    '#required' => TRUE,
+  );
+  
+  if (!defined('LIBXML_PARSEHUGE')) {
+    define('LIBXML_PARSEHUGE', 524288);
+  }
+  
+  $parent_xpath = array(
+    '#type' => 'textfield',
+    '#title' => t('Parent XPATH, this is the context for desired items'),
+    '#description' => t('All field paths must be relative to parent.'),
+    '#maxlength' => 1024,
+    '#required' => TRUE,
+  );
+  
+  $libxml = array(
+    '#type'  => 'select',
+    '#multiple' => TRUE,
+    '#title' => t('libxml options'),
+    '#description' => t('Select desired libxml options'),
+    '#default_value' => array(LIBXML_NOBLANKS, LIBXML_NOCDATA),
+    '#size' => 6,
+    '#options' => array(
+      LIBXML_NOBLANKS  => t('Remove blank nodes'),
+      LIBXML_NOCDATA   => t('Merge CDATA as text nodes'),
+      LIBXML_NOENT     => t('Substitute entities'),
+      LIBXML_PARSEHUGE => t('Parse huge'),
+      LIBXML_XINCLUDE  => t('Implement XInclude substitution'),
+    ),
+  );
+  
   $items['xml'] = array(
     'name' => t('XML Document'),
     'description' => t('Use this reader when the XML file is not huge.') . ' ' .
                       t('Paths must be in XPATH 1 format.'),
-    'extends' => FALSE,
+    'inherit_options' => FALSE,
     'class' => 'SimpleXMLFIReader',
     'options' => array(
       'url' => array(
         '#type' => 'textfield',
         '#title' => t('URL to a valid XML resource'),
         '#description' => t('You can also use local filesystem paths.'),
-        '#required' => TRUE,
         '#maxlength' => 1024,
       ),
-      'parent' => array(
-        '#type' => 'textfield',
-        '#title' => t('Parent XPATH, this is the context for desired items'),
-        '#description' => t('All field paths must be relative to parent.'),
-        '#required' => TRUE,
-        '#maxlength' => 1024,
-      ),
+      'parent' => $parent_xpath,
+      'class' => $sxeclass,
+      'options' => $libxml,
       'namespaces' => array(
         '#type' => 'textarea',
         '#title' => t('Register namespaces for XML (only for XMLs having namespaces)'),
@@ -296,7 +326,7 @@ function feed_import_feed_import_reader_info() {
       'raw' => array(
         '#type' => 'textarea',
         '#title' => t('Raw XML string'),
-        '#description' => t('You can use this XML for tests. Remove it when ready to import from URL.'),
+        '#description' => t('You can use this XML for tests, just remove the URL.'),
       ),
     )
   );
@@ -305,7 +335,7 @@ function feed_import_feed_import_reader_info() {
     'name' => t('XML Chunked'),
     'description' => t('Use this reader when the XML file is huge.') . ' ' .
                       t('Paths must be in XPATH 1 format.'),
-    'extends' => FALSE,
+    'inherit_options' => FALSE,
     'class' => 'ChunkedXMLFIReader',
     'options' => array(
       'url' => array(
@@ -315,13 +345,7 @@ function feed_import_feed_import_reader_info() {
         '#required' => TRUE,
         '#maxlength' => 1024,
       ),
-      'parent' => array(
-        '#type' => 'textfield',
-        '#title' => t('Parent XPATH, this is the context for desired items'),
-        '#description' => t('All field paths must be relative to parent.'),
-        '#required' => TRUE,
-        '#maxlength' => 1024,
-      ),
+      'parent' => $parent_xpath,
       'size' => array(
         '#type' => 'textfield',
         '#title' => t('Chunk size in bytes'),
@@ -350,7 +374,39 @@ function feed_import_feed_import_reader_info() {
         '#maxlength' => 1024,
       ),
       'stream' => $stream,
+      'class' => $sxeclass,
     )
+  );
+  
+  $items['dom'] = array(
+    'name' => t('DomDocument XML'),
+    'description' => t('Use this reader for XML files.') . ' ' .
+                      t('Path must be in XPATH 1 format, but you can register PHP functions for XPATH.'),
+    'class' => 'DomXMLFIReader',
+    'inherit_options' => FALSE,
+    'options' => array(
+      'url' => array(
+        '#type' => 'textfield',
+        '#title' => t('URL to a valid XML resource'),
+        '#description' => t('You can also use local filesystem paths.'),
+        '#maxlength' => 1024,
+      ),
+      'parent' => $parent_xpath,
+      'php_func' => array(
+        '#type' => 'textarea',
+        '#title' => t('Register php functions for XPATHs'),
+        '#description' => t('Use one function per line. You may use them in xpaths like this @xpath', array(
+          '@xpath' => '//book[php:functionString("substr", title, 0, 3) = "PHP"]',
+        )),
+        '#default_value' => '',
+      ),
+      'options' => $libxml,
+      'raw' => array(
+        '#type' => 'textarea',
+        '#title' => t('Raw XML string'),
+        '#description' => t('You can use this XML for tests, just remove the URL.'),
+      ),
+    ),
   );
 
   $items['html'] = array(
@@ -358,7 +414,7 @@ function feed_import_feed_import_reader_info() {
     'description' => t('Use this reader for HTML files.') . ' ' .
                       t('Paths must be in XPATH 1 format.'),
     'class' => 'HTMLFIReader',
-    'extends' => FALSE,
+    'inherit_options' => FALSE,
     'options' => array(
       'url' => array(
         '#type' => 'textfield',
@@ -367,13 +423,7 @@ function feed_import_feed_import_reader_info() {
         '#maxlength' => 1024,
         '#required' => TRUE,
       ),
-      'parent' => array(
-        '#type' => 'textfield',
-        '#title' => t('Parent XPATH, this is the context for desired items'),
-        '#description' => t('All field paths must be relative to parent.'),
-        '#maxlength' => 1024,
-        '#required' => TRUE,
-      ),
+      'parent' => $parent_xpath,
       'report_html_errors' => array(
         '#type' => 'checkbox',
         '#title' => t('Report HTML errors'),
@@ -388,7 +438,7 @@ function feed_import_feed_import_reader_info() {
     'description' => t('Use this reader for SQL resultset.') . ' ' .
                       t('Paths must be column names.'),
     'class' => 'SQLFIReader',
-    'extends' => FALSE,
+    'inherit_options' => FALSE,
     'options' => array(
       'dsn' => array(
         '#type' => 'textfield',
@@ -434,7 +484,7 @@ function feed_import_feed_import_reader_info() {
     'name' => t('CSV file'),
     'description' => t('Use this reader for CSV files.') . ' ' .
                       t('Paths must be indexes or column names.'),
-    'extends' => FALSE,
+    'inherit_options' => FALSE,
     'class' => 'CSVFIReader',
     'options' => array(
       'url' => array(
@@ -486,7 +536,7 @@ function feed_import_feed_import_reader_info() {
     'description' => t('Use this reader for JSON files.') . ' ' .
                       t('Path format is a/b/c.'),
     'class' => 'JSONFIReader',
-    'extends' => FALSE,
+    'inherit_options' => FALSE,
     'options' => array(
       'url' => array(
         '#type' => 'textfield',
@@ -518,7 +568,7 @@ function feed_import_feed_import_processor_info() {
       'name' => t('Feed Import Processor'),
       'description' => t('Processor provided by Feed Import module'),
       'class' => 'FeedImportProcessor',
-      'extends' => FALSE,
+      'inherit_options' => FALSE,
       'options' => array(
         'items_count' => array(
           '#type' => 'textfield',
@@ -579,7 +629,7 @@ function feed_import_feed_import_hash_manager_info() {
     'sql' => array(
       'name' => t('SQL Hash Manager'),
       'description' => t('Monitorized data is saved in database.'),
-      'extends' => FALSE,
+      'inherit_options' => FALSE,
       'class' => 'FeedImportSQLHashes',
       'options' => array(
         'group' => array(
@@ -620,7 +670,7 @@ function feed_import_feed_import_filter_info() {
     'default' => array(
       'name' => t('Feed Import filter'),
       'description' => t('Filter class provided by Feed Import module'),
-      'extends' => FALSE,
+      'inherit_options' => FALSE,
       'class' => 'FeedImportMultiFilter',
       'options' => array(
         'param' => array(
@@ -960,15 +1010,15 @@ function feed_import_class_settings_form($form, &$form_state, $feed, $setting, $
     drupal_set_title(t($title, array('@name' => $feed->name)), PASS_THROUGH);
   }
 
-  $default = array();
-
   // Get setting name.
   if (isset($form_state['values']['name'])) {
+    $default = $form_state['values']['options'];
     $sn = $form_state['values']['name'];
     unset($form_state['values']['options'], $form_state['input']['options']);
   }
   else {
     if (!isset($feed->settings[$setting]['name'])) {
+      $default = array();
       // Use a default setting.
       $first = reset($settings);
       $sn = key($settings);
@@ -990,7 +1040,9 @@ function feed_import_class_settings_form($form, &$form_state, $feed, $setting, $
   // Get setting options.
   $options = array();
   foreach ($settings as $key => &$r) {
-    $options[$key] = $r['name'];
+    if (empty($r['hidden'])) {
+      $options[$key] = $r['name'];
+    }
   }
 
   $form['machine_name'] = array(
@@ -1112,10 +1164,10 @@ function _feed_import_ajax_whole_form($form, &$form_state) {
  * @see _feed_import_generate_class_options_form()
  */
 function _feed_import_get_class_options_form(array &$setting, array &$settings, array &$default) {
-  $fields = isset($setting['extends']) && isset($settings[$setting['extends']])
+  $fields = isset($setting['inherit_options']) && isset($settings[$setting['inherit_options']])
           ? _feed_import_generate_class_options_form(
             $setting,
-            $settings[$setting['extends']],
+            $settings[$setting['inherit_options']],
             $settings
           ) : $setting['options'];
 
@@ -1145,10 +1197,10 @@ function _feed_import_get_class_options_form(array &$setting, array &$settings, 
  *    An array containing all form items
  */
 function _feed_import_generate_class_options_form(array &$setting, array &$parent, array &$settings) {
-  if ($parent['extends'] && isset($settings[$setting['extends']])) {
+  if ($parent['inherit_options'] && isset($settings[$setting['inherit_options']])) {
     $options = _feed_import_generate_class_options_form(
       $parent,
-      $settings[$setting['extends']],
+      $settings[$setting['inherit_options']],
       $settings
     );
   }
@@ -1160,10 +1212,10 @@ function _feed_import_generate_class_options_form(array &$setting, array &$paren
 
   foreach ($ret as $key => &$opt) {
     if (isset($options[$key])) {
-      if ($ret === FALSE) {
+      if ($opt === FALSE) {
         unset($ret[$key]);
       }
-      elseif (!isset($ret['#type']) || $ret['#type'] == $options[$key]['#type']) {
+      elseif (!isset($opt['#type']) || $opt['#type'] == $options[$key]['#type']) {
         $opt += $options[$key];
       }
       unset($options[$key]);
