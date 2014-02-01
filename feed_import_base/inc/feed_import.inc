@@ -932,7 +932,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
     $this->current = &$entity;
     // Check for unique id of item.
     if ($this->uniq === NULL) {
-      // No hash, so not monitorized.
+      // No hash, so not monitored.
       $entity[static::TEMP_HASH] = NULL;
     }
     else {
@@ -1182,7 +1182,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       $hash = &$entity[static::TEMP_HASH];
       // Not needed anymore.
       unset($entity[static::TEMP_HASH]);
-      // Check if item is already imported or is not monitorized.
+      // Check if item is already imported or is not monitored.
       if ($hash !== NULL && isset($ids[$hash])) {
         // Check if is used option to skip item if already imported.
         if ($this->skipImportedItems) {
@@ -1285,7 +1285,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
         }
         // Entity might be added in static cache.
         $this->staticCacheEntities++;
-        // Check if is monitorized.
+        // Check if is monitored.
         if ($hash !== NULL) {
           // Insert into feed import hash table.
           $this->hashes->insert($entity->{$this->entityInfo->idKey}, $hash);
@@ -1697,6 +1697,25 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       ->condition('feed_machine_name', $name)
       ->fields(array('expire' => $ttl))
       ->execute();
+  }
+  
+  /**
+   * {@inheritdoc}
+   */
+  public static function totalHashes($name = NULL) {
+    $q = db_select('feed_import_hashes', 'f')
+         ->fields('f', array('feed_machine_name'));
+    if ($name) {
+      $q->condition('feed_machine_name', $name);
+    }
+    $q->addExpression('COUNT(*)', 'cnt');
+    $q = $q->groupBy('feed_machine_name')
+            ->execute()
+            ->fetchAllKeyed();
+    if ($name && is_scalar($name)) {
+      return isset($q[$name]) ? $q[$name] : 0;
+    }
+    return $q;
   }
 
 

@@ -355,6 +355,16 @@ interface FeedImportStaticHashManager {
    *    Time to live
    */
   public static function rescheduleAll($name, $ttl);
+  
+  /**
+   * Returns total number of hashes for desired feeds.
+   *
+   * @param mixed $name
+   *    The feed machine name (array for multiple) or NULL for all.
+   * @return mixed $name
+   *    Number of hashes (groupped by name for multiple)
+   */
+  public static function totalHashes($name = NULL);
 
 }
 

@@ -581,7 +581,7 @@ function feed_import_feed_import_processor_info() {
           '#type' => 'checkbox',
           '#title' => t('Skip already imported items'),
           '#default_value' => FALSE,
-          '#description' => t('This is possible only when items are monitorized.'),
+          '#description' => t('This is possible only when items are monitored.'),
         ),
         'reset_cache' => array(
           '#type' => 'textfield',
@@ -628,7 +628,7 @@ function feed_import_feed_import_hash_manager_info() {
   return array(
     'sql' => array(
       'name' => t('SQL Hash Manager'),
-      'description' => t('Monitorized data is saved in database.'),
+      'description' => t('Monitored data is saved in database.'),
       'inherit_options' => FALSE,
       'class' => 'FeedImportSQLHashes',
       'options' => array(
@@ -790,9 +790,19 @@ function feed_import_list_feeds() {
       $run = format_date($feed->last_run);
       $run .= '<br />';
       $run .= t('Duration') . ': ' . gmdate('H:i:s', $feed->last_run_duration);
+      $run .= '<br />';
+      $run .= t('Source had @count items', array('@count' => $feed->last_run_items));
     }
     else {
       $run = t('Never');
+    }
+    
+    if ($feed->settings['uniq_path']) {
+      $hashes = $feed->settings['hashes']['class'];
+      $hashes = $hashes::totalHashes($feed->machine_name);
+    }
+    else {
+      $hashes = t('Feed is not monitored');
     }
 
     // Add operations.
@@ -807,7 +817,7 @@ function feed_import_list_feeds() {
         $feed->entity,
         $feed->cron_import ? t('Enabled') : t('Disabled'),
         $run,
-        $feed->last_run_items,
+        $hashes,
         $op['edit'],
         $op['process'],
         $op['export'],
@@ -821,7 +831,7 @@ function feed_import_list_feeds() {
 
   return array(
     '#theme' => 'table',
-    '#header' => array(t('Name'), t('Entity'), t('Cron import'), t('Last run'), t('Last run items in source'), array(
+    '#header' => array(t('Name'), t('Entity'), t('Cron import'), t('Last run'), t('Monitored items'), array(
       'data' => t('Operations'),
       'colspan' => 4,
     )),
@@ -2236,6 +2246,7 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
     $code->cron_import = 0;
     $code->last_run = 0;
     $code->last_run_duration = 0;
+    $code->last_run_items = 0;
     unset($code->id);
     if (FeedImport::saveFeed($code)) {
       drupal_set_message(t('Feed imported'));
@@ -2269,7 +2280,15 @@ function feed_import_process_feed($feed) {
  * Export feed.
  */
 function feed_import_export_feed($feed) {
-  unset($feed->id, $feed->last_run, $feed->last_run_duration, $feed->name, $feed->machine_name, $feed->cron_import);
+  unset(
+    $feed->id,
+    $feed->last_run,
+    $feed->last_run_duration,
+    $feed->last_run_items,
+    $feed->name,
+    $feed->machine_name,
+    $feed->cron_import
+  );
   $opt = 0;
   if (defined('JSON_PRETTY_PRINT')) {
     $opt |= JSON_PRETTY_PRINT;
