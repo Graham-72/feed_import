@@ -454,7 +454,8 @@ function feed_import_feed_import_reader_info() {
   $items['sql'] = array(
     'name' => t('SQL resultset'),
     'description' => t('Use this reader for SQL resultset.') . ' ' .
-                      t('Paths must be column names.'),
+                      t('Paths must be column names.') . ' ' .
+                      t('You can group multiple paths using | (pipe).'),
     'class' => 'SQLFIReader',
     'inherit_options' => FALSE,
     'options' => array(
@@ -501,7 +502,8 @@ function feed_import_feed_import_reader_info() {
   $items['csv'] = array(
     'name' => t('CSV file'),
     'description' => t('Use this reader for CSV files.') . ' ' .
-                      t('Paths must be indexes or column names.'),
+                      t('Paths must be indexes or column names.') . ' ' .
+                      t('You can group multiple paths using | (pipe).'),
     'inherit_options' => FALSE,
     'class' => 'CSVFIReader',
     'options' => array(
@@ -552,7 +554,8 @@ function feed_import_feed_import_reader_info() {
   $items['json'] = array(
     'name' => t('JSON file'),
     'description' => t('Use this reader for JSON files.') . ' ' .
-                      t('Path format is a/b/c.'),
+                      t('Path format is a/b/c.') . ' ' .
+                      t('You can group multiple paths using | (pipe).'),
     'class' => 'JSONFIReader',
     'inherit_options' => FALSE,
     'options' => array(
