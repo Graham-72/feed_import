@@ -1693,7 +1693,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     if ($ttl) {
       $ttl += time();
     }
-    db_update('feed_import_settings')
+    db_update('feed_import_hashes')
       ->condition('feed_machine_name', $name)
       ->fields(array('expire' => $ttl))
       ->execute();

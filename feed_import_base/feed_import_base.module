@@ -118,9 +118,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
       if (substr($d, -1) == '%') {
         $d = rtrim($d, '%') * $feed->last_run_items / 100;
       }
-      else {
-        $d = (int) $d;
-      }
+      $d = (int) $d;
       if ($report['total'] < $d) {
         // Save import status.
         FeedImport::saveFeedImportStatus($feed);
@@ -137,7 +135,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
             '@expected' => $d,
           ), WATCHDOG_WARNING);
         }
-        return NULL;
+        return TRUE;
       }
     }
     $feed->last_run_items = $report['total'];
@@ -161,7 +159,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
           '@name' => $feed->name,
         ), WATCHDOG_WARNING);
       }
-      return NULL;
+      return TRUE;
     }
   }
   return FALSE;
