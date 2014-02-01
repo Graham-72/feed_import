@@ -299,6 +299,8 @@ function feed_import_feed_import_reader_info() {
       LIBXML_NOENT     => t('Substitute entities'),
       LIBXML_PARSEHUGE => t('Parse huge'),
       LIBXML_XINCLUDE  => t('Implement XInclude substitution'),
+      LIBXML_NOERROR   => t('No error reports'),
+      LIBXML_NOWARNING => t('No warning reports'),
     ),
   );
   
@@ -379,12 +381,22 @@ function feed_import_feed_import_reader_info() {
   );
   
   $items['dom'] = array(
-    'name' => t('DomDocument XML'),
+    'name' => t('DomDocument XML/HTML'),
     'description' => t('Use this reader for XML files.') . ' ' .
                       t('Path must be in XPATH 1 format, but you can register PHP functions for XPATH.'),
     'class' => 'DomXMLFIReader',
     'inherit_options' => FALSE,
     'options' => array(
+      'format' => array(
+        '#type' => 'select',
+        '#title' => t('Document format'),
+        '#options' => array(
+          'xml' => 'XML',
+          'html' => 'HTML',
+        ),
+        '#default_value' => 'xml',
+        '#required' => TRUE,
+      ),
       'url' => array(
         '#type' => 'textfield',
         '#title' => t('URL to a valid XML resource'),
@@ -401,34 +413,40 @@ function feed_import_feed_import_reader_info() {
         '#default_value' => '',
       ),
       'options' => $libxml,
+      'strictErrorChecking' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Strict error checking'),
+        '#description' => '',
+        '#default_value' => FALSE,
+      ),
+      'preserveWhiteSpace' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Preserve whitespace'),
+        '#description' => t('Do not remove redundant white space.'),
+        '#default_value' => FALSE,
+      ),
+      'resolveExternals' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Resolve externals'),
+        '#description' => t('Load external entities from a doctype declaration.'),
+        '#default_value' => FALSE,
+      ),
+      'recover' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Recover'),
+        '#description' => t('Try to parse non-well formed documents.'),
+        '#default_value' => FALSE,
+      ),
+      'normalizeDocument' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Normalize document'),
+        '#description' => t('Putting the document in a "normal" form by simulating save and load.'),
+        '#default_value' => FALSE,
+      ),
       'raw' => array(
         '#type' => 'textarea',
-        '#title' => t('Raw XML string'),
-        '#description' => t('You can use this XML for tests, just remove the URL.'),
-      ),
-    ),
-  );
-
-  $items['html'] = array(
-    'name' => t('HTML document'),
-    'description' => t('Use this reader for HTML files.') . ' ' .
-                      t('Paths must be in XPATH 1 format.'),
-    'class' => 'HTMLFIReader',
-    'inherit_options' => FALSE,
-    'options' => array(
-      'url' => array(
-        '#type' => 'textfield',
-        '#title' => t('URL to a valid HTML resource'),
-        '#description' => t('You can also use local filesystem paths.'),
-        '#maxlength' => 1024,
-        '#required' => TRUE,
-      ),
-      'parent' => $parent_xpath,
-      'report_html_errors' => array(
-        '#type' => 'checkbox',
-        '#title' => t('Report HTML errors'),
-        '#description' => t('Use this to silence any HTML error'),
-        '#default_value' => FALSE,
+        '#title' => t('Raw source string'),
+        '#description' => t('You can use this source for tests if you remove the URL.'),
       ),
     ),
   );
@@ -2249,6 +2267,7 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
     $code->last_run = 0;
     $code->last_run_duration = 0;
     $code->last_run_items = 0;
+    $code->settings['hashes']['options']['group'] = $code->machine_name;
     unset($code->id);
     if (FeedImport::saveFeed($code)) {
       drupal_set_message(t('Feed imported'));

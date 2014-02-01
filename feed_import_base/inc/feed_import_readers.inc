@@ -126,10 +126,20 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
    * {@inheritdoc}
    */
   public function init() {
-    if (empty($this->options['parent'])) {
+    if (empty($this->options['parent']) || empty($this->options['format'])) {
       return FALSE;
     }
-    $this->options += array('url' => '', 'raw' => NULL, 'options' => array(LIBXML_NOCDATA), 'php_func' => NULL);
+    $this->options += array(
+      'url' => NULL,
+      'raw' => NULL,
+      'options' => array(LIBXML_NOCDATA),
+      'php_func' => NULL,
+      'recover' => FALSE,
+      'normalizeDocument' => FALSE,
+      'strictErrorChecking' => FALSE,
+      'preserveWhiteSpace' => FALSE,
+      'resolveExternals' => FALSE,
+    );
     
     $opts = 0;
     foreach ($this->options['options'] as $opt) {
@@ -138,19 +148,37 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
     
     $doc = new DOMDocument();
     if ($this->options['url']) {
-      if (!$doc->load($this->options['url'], $opts)) {
+      if ($this->options['format'] == 'html') {
+        if (!$doc->loadHTMLFile($this->options['url'], $opts)) {
+          return FALSE;
+        }
+      }
+      elseif (!$doc->load($this->options['url'], $opts)) {
         return FALSE;
       }
     }
     elseif ($this->options['raw']) {
-      if (!$doc->loadXML($this->options['raw'], $opts)) {
+      if ($this->options['format'] == 'html') {
+        if (!$doc->loadHTML($this->options['raw'], $opts)) {
+          return FALSE;
+        }
+      }
+      elseif (!$doc->loadXML($this->options['raw'], $opts)) {
         return FALSE;
       }
     }
     else {
       return FALSE;
     }
-    unset($this->options['raw']);
+    unset($this->options['raw'], $opts, $opt);
+    
+    $doc->strictErrorChecking =  $this->options['strictErrorChecking'];
+    $doc->preserveWhiteSpace = $this->options['preserveWhiteSpace'];
+    $doc->resolveExternals = $this->options['resolveExternals'];
+    $doc->recover = $this->options['recover'];
+    if ($this->options['normalizeDocument']) {
+      $doc->normalizeDocument();
+    }
     
     $this->xpath = new DOMXPath($doc);
     
@@ -395,81 +423,6 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
   }
 
 }
-
-
-
-/**
- * HTML Reader class, used for html pages.
- */
-class HTMLFIReader extends FeedImportSimpleXPathReader {
-  /**
-   * {@inheritdoc}
-   */
-  public function init() {
-    // Require url resource and parent xpath.
-    if (empty($this->options['url']) || empty($this->options['parent'])) {
-      return FALSE;
-    }
-    // Set default options.
-    $this->options += array(
-      'report_html_errors' => TRUE,
-    );
-    // Create DOM Document.
-    $dom = new DOMDocument();
-    // No error check.
-    $dom->strictErrorChecking = FALSE;
-    // No whitespace.
-    $dom->preserveWhiteSpace = FALSE;
-    // Recover enabled.
-    $dom->recover = TRUE;
-    // Load HTML file from url.
-    try {
-      if ($this->options['report_html_errors']) {
-        if (!$dom->loadHTMLFile($this->options['url'])) {
-          return FALSE;
-        }
-      }
-      else {
-        if (!@$dom->loadHTMLFile($this->options['url'])) {
-          return FALSE;
-        }
-      }
-    }
-    catch (Exception $e) {
-      // This try-catch is just to parse the HTML file. Nothing to handle.
-    }
-    // Normalize document.
-    $dom->normalizeDocument();
-    // Try to convert to xml.
-    try {
-      $xml = simplexml_import_dom($dom);
-    }
-    catch (Exception $e) {
-      return FALSE;
-    }
-    // Not needed anymore.
-    unset($dom);
-
-    // Check instance.
-    if (!($xml instanceof SimpleXMLElement)) {
-      return FALSE;
-    }
-
-    // Get items from root.
-    $this->items = $xml->xpath($this->options['parent']);
-
-    return TRUE;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function get() {
-    return array_shift($this->items);
-  }
-
-}
-
 
 /**
  * SQL Reader class, used te read data with SQL queries.
