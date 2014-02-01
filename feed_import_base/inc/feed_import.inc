@@ -1681,7 +1681,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   public static function getExpired($max = 0) {
     $q = db_select('feed_import_hashes', 'f')
           ->fields('f', array('entity', 'id', 'entity_id'))
-          ->condition('expire', array(0, time()), 'BETWEEN');
+          ->condition('expire', array(1, time()), 'BETWEEN');
     if ($max) {
       $q->range(0, $max);
     }
