@@ -5,7 +5,7 @@
 */
 function feed_import_base_drush_help($section) {
   $sections = array(
-    'drush:feed-import' => "Import feeds",
+    'drush:feed-import-base' => "Import feeds",
   );
   if (isset($sections[$section])) {
     return dt($sections[$section]);
