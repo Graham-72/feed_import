@@ -9,6 +9,13 @@
  * This class provides helper functions for feed import.
  */
 class FeedImport {
+  
+  // Constants
+  const FEED_OK = 1;
+  const FEED_SOURCE_ERR = 2;
+  const FEED_ITEMS_ERR = 3;
+  const FEED_OVERLAP_ERR = 4;
+  const FEED_CONFIG_ERR = 5;
 
   // Entity info cache.
   protected static $entityInfo = array();

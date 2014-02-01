@@ -2264,14 +2264,25 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
  */
 function feed_import_process_feed($feed) {
   $status = _feed_import_base_process_feed($feed, TRUE);
-  if ($status) {
-    drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
-  }
-  else {
-    $msg = $status === NULL
-          ? t('Cannot process feed because another one is running!')
-          : t('Cannot process feed because is misconfigured!');
-    drupal_set_message($msg, 'error');
+  
+  switch ($status) {
+    case FeedImport::FEED_OK:
+      drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
+      break;
+    case FeedImport::FEED_OVERLAP_ERR:
+      drupal_set_message(t('Cannot process feed because another one is running!'), 'error');
+      break;
+    case FeedImport::FEED_CONFIG_ERR:
+      drupal_set_message(t('Cannot process feed because is misconfigured!'), 'error');
+      break;
+    case FeedImport::FEED_SOURCE_ERR:
+      drupal_set_message(t('Cannot process feed because there is a source error!'), 'error');
+      drupal_set_message(t('All items were rescheduled due to delete protection!'), 'warning');
+      break;
+    case FeedImport::FEED_ITEMS_ERR:
+      drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
+      drupal_set_message(t('All items were rescheduled due to delete protection!'), 'warning');
+      break;
   }
   drupal_goto(FEED_IMPORT_PATH);
 }

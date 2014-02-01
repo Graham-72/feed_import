@@ -93,7 +93,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
         !empty($running[$feed->entity]) &&
         in_array($feed->machine_name, $running[$feed->entity])
         ) {
-      return NULL;
+      return FeedImport::FEED_OVERLAP_ERR;
     }
     unset($overlap);
   }
@@ -135,14 +135,14 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
             '@expected' => $d,
           ), WATCHDOG_WARNING);
         }
-        return TRUE;
+        return FeedImport::FEED_ITEMS_ERR;
       }
     }
     $feed->last_run_items = $report['total'];
     FeedImport::saveFeedImportStatus($feed);
     // Save report if needed.
     $report_errors && _feed_import_base_save_report($report, $feed);
-    return TRUE;
+    return FeedImport::FEED_OK;
   }
   else {
     // Reader init problem.
@@ -159,10 +159,10 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
           '@name' => $feed->name,
         ), WATCHDOG_WARNING);
       }
-      return TRUE;
+      return FeedImport::FEED_SOURCE_ERR;
     }
   }
-  return FALSE;
+  return FeedImport::FEED_CONFIG_ERR;
 }
 
 /**
