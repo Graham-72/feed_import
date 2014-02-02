@@ -64,7 +64,7 @@ function feed_import_base_cron() {
       }
       unset($feeds, $feed);
       if ($to_import) {
-        _feed_import_base_process_feed($feed);
+        _feed_import_base_process_feed($to_import);
         variable_set('feed_import_last_executed_import', REQUEST_TIME);
       }
     }

@@ -18,6 +18,9 @@ function feed_import_base_drush_help($section) {
 function feed_import_base_drush_command() {
   $items['feed-import-base-cron'] = array(
     'description' => "Runs feed import cron",
+    'arguments' => array(
+      'force' => 'Pass force to ignore cron time settings',
+    ),
     'aliases' => array('feedcron'),
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
   );
@@ -43,9 +46,13 @@ function feed_import_base_drush_command() {
 /**
 * Implements drush_COMMANDFILE_COMMANDNAME()
 */
-function drush_feed_import_base_cron() {
+function drush_feed_import_base_cron($force = FALSE) {
   global $conf;
   $conf['feed_import_use_cron'] = TRUE;
+  if ($force) {
+    $conf['feed_import_time_settings'] = 0;
+    $conf['feed_import_time_between_imports'] = 0;
+  }
   feed_import_base_cron();
   $conf['feed_import_use_cron'] = FALSE;
   drupal_set_message(t('Feed Import cron run'));

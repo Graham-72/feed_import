@@ -426,7 +426,7 @@ function feed_import_feed_import_reader_info() {
       'strictErrorChecking' => array(
         '#type' => 'checkbox',
         '#title' => t('Strict error checking'),
-        '#description' => t('Throws DOM errors'),
+        '#description' => t('Throws DOM errors.'),
         '#default_value' => FALSE,
       ),
       'preserveWhiteSpace' => array(
