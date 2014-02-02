@@ -173,7 +173,7 @@ abstract class FeedImportSimpleXPathReader extends FeedImportReader {
     }
 
     // Return values.
-    return $values;
+    return $count == 1 ? $values[0] : $values;
   }
 
 }
@@ -197,6 +197,9 @@ abstract class FeedImportDomXPathReader extends FeedImportReader {
     if ($values instanceof DOMNodeList) {
       if (!($len = $values->length)) {
         return NULL;
+      }
+      elseif ($len == 1) {
+        return $values->item(0)->nodeValue;
       }
       $i = 0;
       $ret = array();
@@ -223,12 +226,14 @@ abstract class FeedImportVectorReader extends FeedImportReader {
    */
   public function map(&$vector, &$path) {
     $ret = array();
+    $count = 0;
     foreach ($path as $p) {
       if (($p = $this->submap($vector, $p)) !== NULL) {
         $ret[] = $p;
+        $count++;
       }
     }
-    return $ret ? $ret : NULL;
+    return $count == 0 ? NULL : ($count == 1 ? $ret[0] : $ret);
   }
   
   /**
@@ -285,22 +290,26 @@ abstract class FeedImportUniVectorReader extends FeedImportReader {
    */
   public function map(&$vector, &$path) {
     if (is_array($vector)) {
+      $count = 0;
       $ret = array();
       foreach ($path as $p) {
         if (isset($vector[$p])) {
           $ret[] = $vector[$p];
+          $count++;
         }
       }
-      return $ret ? $ret : NULL;
+      return $count == 0 ? NULL : ($count == 1 ? $ret[0] : $ret);
     }
     elseif (is_object($vector)) {
+      $count = 0;
       $ret = array();
       foreach ($path as $p) {
         if (isset($vector->$p)) {
           $ret[] = $vector->$p;
+          $count++;
         }
       }
-      return $ret ? $ret : NULL;
+      return $count == 0 ? NULL : ($count == 1 ? $ret[0] : $ret);
     }
     return NULL;
   }

@@ -271,21 +271,10 @@ class FeedImportFilter {
    *   Replaced content
    */
   public static function replace($field, $what = '', $with = '', $insensitive = FALSE) {
-    if ($what == $with) {
-      return $field;
-    }
-    elseif (is_array($field)) {
-      foreach ($field as &$f) {
-        $f = self::replace($f, $what, $with);
-      }
-      return $field;
-    }
     if ($insensitive) {
       return str_ireplace($what, $with, $field);
     }
-    else {
-      return str_replace($what, $with, $field);
-    }
+    return str_replace($what, $with, $field);
   }
 
   /**
@@ -649,5 +638,105 @@ class FeedImportFilter {
     }
     return user_hash_password($field);
   }
-  // Other filters ...
+  
+  /**
+   * Gets the current prefiltered value.
+   *
+   * @param mixed $default
+   *    Default value to return if no import
+   *
+   * @return mixed
+   *    Prefiltered value
+   */
+  public static function usePrefilteredValue($default = NULL) {
+    if (FeedImport::$activeImport) {
+      return FeedImport::$activeImport->prefilteredValue;
+    }
+    return $default;
+  }
+  
+  /**
+   * Gets the current entity.
+   *
+   * @return mixed
+   *    Prefiltered value
+   */
+  public static function &getCurrentEntity() {
+    if (FeedImport::$activeImport) {
+      return FeedImport::$activeImport->current;
+    }
+    $ret = NULL;
+    return $ret;
+  }
+  
+  /**
+   * Returns false if field doesn't match regex.
+   */
+  public static function regexMatches($field, $regex) {
+    if (is_array($field)) {
+      foreach ($field as $f) {
+        if (!preg_match($regex, $f)) {
+          return FALSE;
+        }
+      }
+      return $field;
+    }
+    return preg_match($regex, $field) ? $field : FALSE;
+  }
+  
+  /**
+   * Returns false if field matches regex.
+   */
+  public static function regexNotMatches($field, $regex) {
+    if (($f = static::regexMatches($field, $regex)) === FALSE) {
+      return $f;
+    }
+    return FALSE;
+  }
+  
+  /**
+   * Performs a regex replace.
+   */
+  public static function regexReplace($field, $new, $regex) {
+    return preg_replace($regex, $new, $field);
+  }
+  
+  /**
+   * Returns the matchd groups of regex
+   */
+  public static function regex($field, $regex, $remove_indexes = FALSE) {
+    if (is_array($field)) {
+      foreach ($field as $key => &$f) {
+        if (preg_match($regex, $f, $m)) {
+          if ($remove_indexes) {
+            $i = -1;
+            while (isset($m[++$i])) {
+              unset($m[$i]);
+            }
+          }
+          else {
+            array_shift($m);
+          }
+          $f = $m;
+        }
+        else {
+          unset($field[$key]);
+        }
+      }
+      return $field ? $field : NULL;
+    }
+    if (preg_match($regex, $field, $m)) {
+      if ($remove_indexes) {
+        $i = -1;
+        while (isset($m[++$i])) {
+          unset($m[$i]);
+        }
+      }
+      else {
+        array_shift($m);
+      }
+      return $m;
+    }
+    return NULL;
+  }
 }

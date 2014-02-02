@@ -1770,7 +1770,7 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
           continue;
         }
         if (!$filter['params']) {
-          $filter['params'] = array($feed->settings['filter']['param']);
+          $filter['params'] = array();
         }
         else {
           $filter['params'] = _feed_import_lines($filter['params']);

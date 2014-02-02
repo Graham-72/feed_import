@@ -103,13 +103,19 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
   /**
    * Adds a new filter.
    *
-   * @param string $group The name of filter group
-   * @param string $function The function name. Use Class::method for static methods.
-   * @param array $params The params for this function.
+   * @param string $group
+   *    The name of filter group
+   * @param string $name
+   *    Filters name
+   * @param string $function
+   *    The function name. Use Class::method for static methods.
+   * @param array $params
+   *    The params for this function.
    *
-   * @return boolean TRUE if filter was added.
+   * @return boolean
+   *    TRUE if filter was added.
    */
-  public function add($group, $function, $params = array()) {
+  public function add($group, $name, $function, $params = array()) {
     // Get function name.
     if (!($function = $this->getCallable($function))) {
       return FALSE;
@@ -134,7 +140,7 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
     }
 
     // Add to filters array.
-    $this->filters[$group][] = &$f;
+    $this->filters[$group][$name][] = &$f;
 
     // All good, filter was added.
     return TRUE;
@@ -143,15 +149,20 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
   /**
    * Applies all filters to a value.
    *
-   * @param string $group The name of filter group
-   * @param mixed $value  The value to be filtered
+   * @param string $group
+   *    The name of filter group
+   * @param string $name
+   *    The name of filters
+   * @param mixed $value
+   *    The value to be filtered
    *
-   * @return mixed Filtered value
+   * @return mixed
+   *    Filtered value
    */
-  public function apply($group, $value) {
+  public function apply($group, $name, $value) {
     // Check if filter group exists.
-    if (isset($this->filters[$group])) {
-      $fl = &$this->filters[$group];
+    if (isset($this->filters[$group][$name])) {
+      $fl = &$this->filters[$group][$name];
       // Apply all filters.
       for ($i = 0, $m = count($fl); $i < $m; $i++) {
         // Set a reference to value in params array.

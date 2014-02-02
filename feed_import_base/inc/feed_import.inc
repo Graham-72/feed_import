@@ -151,14 +151,18 @@ class FeedImport {
     }
 
     $fi->setFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
-    $fi->setPreFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
 
     $hm = new $s['hashes']['class']($feed->entity, $feed->machine_name);
     $hm->setOptions($s['hashes']['options']);
     $fi->setHashManager($hm);
 
-    $fi->setUniq($s['uniq_path']);
-    $fi->setFields($s['fields'], $s['static_fields']);
+    if (!$fi->setUniq($s['uniq_path'])) {
+      return $fi->getErrors();
+    }
+    
+    if (!$fi->setFields($s['fields'], $s['static_fields'])) {
+      return $fi->getErrors();
+    }
 
     // Remove the basic settings.
     $base_settings = array(
@@ -356,6 +360,10 @@ class FeedImport {
       ->execute();
   }
 
+  
+  // Active import
+  public static $activeImport = NULL;
+  
   /**
    * Imports a feed.
    *
@@ -377,7 +385,10 @@ class FeedImport {
       );
     }
     unset($f);
+    $lastimport = static::$activeImport;
+    static::$activeImport = $fi;
     $f = $fi->process();
+    static::$activeImport = $lastimport;
     $fi->setErrorHandler(FALSE);
     return $f;
   }
@@ -524,10 +535,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
   protected $reader;
   // Current hash manager.
   protected $hashes;
-  // filters
+  // Filters
   protected $filters;
-  // prefilters
-  protected $prefilters;
   // After how many of entities to save.
   protected $itemsCount = 0;
   // After how many items to reset entity static cache.
@@ -624,9 +633,33 @@ class FeedImportProcessor extends FeedImportConfigurable {
   
   /**
    * Gets an array with errors.
+   *
+   * @return array
+   *    An array of errors
    */
   public function getErrors() {
     return $this->report['errors'];
+  }
+  
+  /**
+   * Adds an error to report
+   *
+   * @param string $errmsg
+   *    Error message
+   * @param int $errno
+   *    Error number
+   * @param int $line
+   *    Error line
+   * @param string $file
+   *    Error file
+   */
+  public function addError($errmsg, $errno = 0, $line = NULL, $file = NULL) {
+    $this->report['errors'][] = array(
+      'error' => $errmsg,
+      'error number' => $errno,
+      'line' => $line,
+      'file' => $file,
+    );
   }
 
   /**
@@ -675,6 +708,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
    */
   public function setEntityInfo($entity_info) {
     if (!$entity_info) {
+      $this->addError('No entity info provided');
       return FALSE;
     }
     $this->entityInfo = $entity_info;
@@ -688,16 +722,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
    */
   public function setFilter(FeedImportMultiFilter $filter) {
     $this->filters = $filter;
-  }
-
-  /**
-   * Sets the prefilters object.
-   *
-   * @param FeedImportMultiFilter $filter
-   *    An instance of FeedImportMultiFilter
-   */
-  public function setPreFilter(FeedImportMultiFilter $filter) {
-    $this->prefilters = $filter;
   }
 
   /**
@@ -743,6 +767,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       }
       return TRUE;
     }
+    $this->addError('You must have a reader to add unique path');
     return FALSE;
   }
 
@@ -770,10 +795,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
   public function setFields(array $fields = array(), array $static_fields = array()) {
 
     // Check for requirements.
-    if (!$this->entityInfo || !$this->reader ||
-        !$this->prefilters || !$this->filters ||
-        !empty($this->baseEntity)
-        ) {
+    if (!$this->entityInfo || !$this->reader || !$this->filters || !empty($this->baseEntity)) {
+      $this->addError('Could not set fields because there are missing dependencies or fields were already added');
       return FALSE;
     }
 
@@ -816,32 +839,28 @@ class FeedImportProcessor extends FeedImportConfigurable {
         continue;
       }
 
-      // Check prefilters
-      if ($f['prefilters']) {
-        $c = 0;
-        // Add prefilters
-        foreach ($f['prefilters'] as &$v) {
-          $this->prefilters->add($f['field'], $v['function'], $v['params']) && $c++;
+      // Check (pre)filters
+      foreach (array('prefilters', 'filters') as $fgroup) {
+        if ($f[$fgroup]) {
+          $ok = TRUE;
+          // Add filters
+          foreach ($f[$fgroup] as &$v) {
+            if (!$this->filters->add($fgroup, $f['field'], $v['function'], $v['params'])) {
+              $ok = FALSE;
+              $this->addError(sprintf(
+                'Could not add function %s in %s for %s field because is not defined',
+                $v['function'],
+                $fgroup,
+                $f['field']
+              ));
+            }
+          }
+          $f[$fgroup] = $ok;
         }
-        $f['prefilters'] = $c > 0;
-      }
-      else {
-        // No prefilters
-        $f['prefilters'] = FALSE;
-      }
-
-      // Check filters
-      if (count($f['filters'])) {
-        $c = 0;
-        // Add filters
-        foreach ($f['filters'] as &$v) {
-          $this->filters->add($f['field'], $v['function'], $v['params']) && $c++;
+        else {
+          // No filters
+          $f[$fgroup] = FALSE;
         }
-        $f['filters'] = $c > 0;
-      }
-      else {
-        // No filters
-        $f['filters'] = FALSE;
       }
 
       // Format paths
@@ -1051,7 +1070,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
         $val = $this->reader->map($item, $field['paths'][$i]);
         // Check if passes prefilter.
         if ($field['prefilters']) {
-          $this->prefilteredValue = $this->prefilters->apply($name, $val);
+          $this->prefilteredValue = $this->filters->apply("prefilters", $name, $val);
           if (!$this->hasContent($this->prefilteredValue)) {
             $val = $this->prefilteredValue = NULL;
             // If item doesn't pass prefilter than go to next path.
@@ -1061,7 +1080,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
         if ($this->hasContent($val)) {
           // We have content, check for filters.
           if ($field['filters']) {
-            $val = $this->filters->apply($name, $val);
+            $val = $this->filters->apply("filters", $name, $val);
             if (!$this->hasContent($val)) {
               $val = NULL;
             }
@@ -1081,7 +1100,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
             break;
           // Provide filtered default value.
           case static::ACTION_DEFAULT_FILTERED_VALUE:
-            $val = $this->filters->apply($name, $field['default_value']);
+            $val = $this->filters->apply("filters", $name, $field['default_value']);
             break;
           // Skip this item by returning NULL.
           case static::ACTION_SKIP_ITEM:
