@@ -420,13 +420,13 @@ function feed_import_feed_import_reader_info() {
       'silence_load_errors' => array(
         '#type' => 'checkbox',
         '#title' => t('Silence load errors'),
-        '#description' => '',
+        '#description' => t('This will not report errors on document load.'),
         '#default_value' => TRUE,
       ),
       'strictErrorChecking' => array(
         '#type' => 'checkbox',
         '#title' => t('Strict error checking'),
-        '#description' => '',
+        '#description' => t('Throws DOM errors'),
         '#default_value' => FALSE,
       ),
       'preserveWhiteSpace' => array(
@@ -2254,7 +2254,7 @@ function feed_import_import_feed_form($form, &$form_state) {
  */
 function feed_import_import_feed_form_validate($form, &$form_state) {
   $code = trim($form_state['values']['code']);
-  if (!$code || !($code = json_decode($code, TRUE))) {
+  if (!$code || !($code = @json_decode($code, TRUE))) {
     form_error($form['code'], t('Invalid JSON code!'));
     return;
   }
@@ -2268,7 +2268,7 @@ function feed_import_import_feed_form_validate($form, &$form_state) {
  * Import form submit
  */
 function feed_import_import_feed_form_submit($form, &$form_state) {
-  if ($code = json_decode($form_state['values']['code'], TRUE)) {
+  if ($code = @json_decode($form_state['values']['code'], TRUE)) {
     $ef = FeedImport::getEmptyFeed();
     $code += $ef;
     $code['settings'] += $ef['settings'];
