@@ -209,6 +209,15 @@ function feed_import_menu() {
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
     'weight' => 2,
   ) + $access;
+  
+  $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/functions'] = array(
+    'title' => 'Dynamic filters',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('feed_import_dynamic_func_form', $feedarg),
+    'type' => MENU_LOCAL_TASK,
+    'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
+    'weight' => 3,
+  ) + $access;
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/settings'] = array(
     'title' => 'Filter settings',
@@ -221,7 +230,7 @@ function feed_import_menu() {
     ),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
-    'weight' => 3,
+    'weight' => 4,
   ) + $access;
 
   return $items;
@@ -632,6 +641,18 @@ function feed_import_feed_import_processor_info() {
           '#title' => t('Maximum number of errors to log'),
           '#default_value' => 100,
           '#required' => TRUE,
+        ),
+        'break_on_undefined_filter' => array(
+          '#type' => 'checkbox',
+          '#title' => t('Stop import if a filter function is not declared'),
+          '#default_value' => TRUE,
+        ),
+        'skip_defined_functions_check' => array(
+          '#type' => 'checkbox',
+          '#title' => t('Skip creating already declared dynamic functions'),
+          '#description' => t('This is usefull if you try to import multiple feeds that declare same dynamic function names.') . ' ' .
+                            t('However, it is recommended to put those functions in a php filter file rather than creating them dynamically.'),
+          '#default_value' => FALSE,
         ),
         'before_combine' => array(
           '#type' => 'textfield',
@@ -1963,8 +1984,9 @@ function feed_import_fields_form($form, &$form_state, $feed) {
     $field = $fv['add_new_item_mode'] ? 'add_new_item_field' : 'add_new_item_manual';
     if ($field = drupal_strtolower($fv[$field])) {
       $i = -1; $exists = FALSE;
-      while (isset($fv['fields']['container_' . ++$i]['field'])) {
-        if ($fv['fields']['container_' . $i]['field'] == $field) {
+      while (++$i <= $form_state['#current_item']) {
+        if (isset($fv['fields']['container_' . $i]['field']) &&
+            $fv['fields']['container_' . $i]['field'] == $field) {
           $exists = TRUE;
           break;
         }
@@ -2378,4 +2400,201 @@ function feed_import_delete_feed_form_submit($form, &$form_state) {
   FeedImport::deleteFeed($feed, (bool) $form_state['values']['hashes']);
   drupal_set_message(t('Feed deleted'));
   drupal_goto(FEED_IMPORT_PATH);
+}
+
+/**
+ * Dynamic functions form.
+ */
+function feed_import_dynamic_func_form($form, &$form_state, $feed) {
+  if (empty($form_state['values'])) {
+    drupal_set_message(t('Dynamic filter functions are created using eval() which can be dangerous for import!'), 'warning');
+    drupal_set_title(t('Dynamic filter functions - @name', array('@name' => $feed->name)), PASS_THROUGH);
+  }
+  
+  $form['description'] = array(
+    '#markup' => t('If possible please use a php file including filters (see Filter settings).') . '<br>' .
+                  t('Import will not start if any of these functions have errors. If you have problems please check logs.') . '<br>' .
+                  '<strong>' .
+                  t('If an error occurs on runtime in one of these functions the whole script stops immediately, resulting a broken import process!') . '<br>' .
+                  t('Main purpose of these filter functions is testing.') . '<br>' .
+                  '</strong>' .
+                  '<i>' .
+                  t('Ok, eval() can be generally dangerous, but Feed Import assumes that access is enabled only for administrator.') .
+                  '</i>',
+  );
+  $d = &$form['description']['#markup'];
+  
+  $form['machine_name'] = array(
+    '#type' => 'value',
+    '#value' => $feed->machine_name,
+  );
+  
+  $form['fields'] = array(
+    '#type' => 'container',
+    '#tree' => TRUE,
+    '#attributes' => array('id' => 'feed_import_func_fields'),
+  );
+  
+  $func = array();
+  if (isset($form_state['#current_item'])) {
+    $fv = &$form_state['values']['fields'];
+    for ($i = 0; $i <= $form_state['#current_item']; $i++) {
+      if (!isset($fv['container_' . $i])) {
+        continue;
+      }
+      $field = &$fv['container_' . $i];
+      $func += feed_import_generate_func_item($i, $field);
+      unset($field);
+    }
+    unset($fv);
+  }
+  else {
+    $form_state['#current_item'] = -1;
+    foreach ($feed->settings['functions'] as &$field) {
+      $form_state['#current_item']++;
+      $func += feed_import_generate_func_item($form_state['#current_item'], $field, TRUE);
+    }
+    unset($field);
+  }
+  
+  $cbk = isset($form_state['triggering_element']['#name'])
+          ? $form_state['triggering_element']['#name'] : '';
+  if ($cbk == 'add') {
+    $fv = &$form_state['values'];
+    $form_state['#field_added'] = FALSE;
+    if ($field = drupal_strtolower($fv['func'])) {
+      $i = -1; $exists = FALSE;
+      while (++$i <= $form_state['#current_item']) {
+        if (isset($fv['fields']['container_' . $i]['name']) &&
+            $fv['fields']['container_' . $i]['name'] == $field) {
+          $exists = TRUE;
+          break;
+        }
+      }
+      if (!$exists) {
+        $form_state['#field_added'] = TRUE;
+        $form_state['#current_item']++;
+        $func += feed_import_generate_func_item(
+          $form_state['#current_item'],
+          array(
+            'name' => $field,
+            'args' => '',
+            'body' => '',
+          )
+        );
+      }
+    }
+  }
+  elseif (preg_match('/remove_container_([0-9]{1,9})/', $cbk, $match)) {
+    // Delete container.
+    unset($func['container_' . $match[1]]);
+  }
+
+  // Add fields.
+  $form['fields'] += $func;
+  
+  $form['func'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Function name'),
+    '#description' => t('Name must start with underscore and can contain only alphanumeric chars or underscores.'),
+  );
+  
+  $form['add'] = array(
+    '#type' => 'button',
+    '#name' => 'add',
+    '#value' => t('Add function'),
+    '#ajax' => array(
+      'event' => 'click',
+      'callback' => 'feed_import_ajax_add_new_item',
+      'wrapper' => 'feed_import_func_fields',
+      'method' => 'append',
+    ),
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'save',
+    '#value' => t('Save functions'),
+  );
+  return $form;
+}
+
+/**
+ * Dynamic functions form submit.
+ */
+function feed_import_dynamic_func_form_submit($form, &$form_state) {
+  $v = &$form_state['values'];
+  if (!($feed = FeedImport::loadFeed($v['machine_name']))) {
+    return;
+  }
+  $funcs = array();
+  for ($i = 0; $i <= $form_state['#current_item']; $i++) {
+    if (empty($v['fields']['container_' . $i]['name'])) {
+      continue;
+    }
+    $f = $v['fields']['container_' . $i];
+    unset($f['remove_container_' . $i]);
+    $f = array_map('trim', $f);
+    if ($f['name'] && $f['body']) {
+      $funcs[] = $f;
+    }
+  }
+  $feed->settings['functions'] = $funcs;
+  if (FeedImport::saveFeed($feed)) {
+    drupal_set_message(t('Feed saved'));
+  }
+}
+
+/**
+ * Generates function fields.
+ */
+function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE) {
+  if (!preg_match('/^_[a-z0-9_]+$/i', $values['name'])) {
+    return array();
+  }
+  $container = 'container_' . $pos;
+  $item[$container] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Function @name', array('@name' => $values['name'])),
+    '#collapsible' => TRUE,
+    '#collapsed' => $collapsed,
+    '#attributes' => array('id' => 'item_container_' . $pos),
+  );
+  $container = &$item[$container];
+  
+  $container['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#description' => t('Name must start with underscore and can contain only alphanumeric chars or underscores.'),
+    '#default_value' => $values['name'],
+  );
+  
+  $container['args'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Parameters'),
+    '#description' => t('Use variable names separated by comma, like: $a, $b'),
+    '#default_value' => $values['args'],
+  );
+  
+  $container['body'] = array(
+    '#type' => 'textarea',
+    '#rows' => 5,
+    '#title' => t('Body'),
+    '#description' => t('Write here only function body. Do not forget to return a value.'),
+    '#default_value' => $values['body'],
+  );
+  
+  $container['remove_container_' . $pos] = array(
+    '#type' => 'button',
+    '#name' => 'remove_container_' . $pos,
+    '#value' => t('Remove function'),
+    '#ajax' => array(
+      'event' => 'click',
+      'wrapper' => 'item_container_' . $pos,
+      'method' => 'replace',
+      'callback' => 'feed_import_ajax_remove_item',
+    ),
+  );
+  
+  return $item;
 }

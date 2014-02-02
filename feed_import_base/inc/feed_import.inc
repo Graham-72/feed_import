@@ -264,6 +264,8 @@ class FeedImport {
             'items_count' => 0,
             'skip_imported' => FALSE,
             'reset_cache' => 100,
+            'break_on_undefined_filter' => TRUE,
+            'skip_defined_functions_check' => FALSE,
           ),
         ),
         'reader' => array(
@@ -291,6 +293,7 @@ class FeedImport {
         ),
         'fields' => array(),
         'static_fields' => array(),
+        'functions' => array(),
       ),
     );
   }
@@ -1800,6 +1803,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     }
     db_update('feed_import_hashes')
       ->condition('feed_machine_name', $name)
+      ->condition('expire', 0, '>')
       ->fields(array('expire' => $ttl))
       ->execute();
   }
