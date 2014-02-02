@@ -132,7 +132,7 @@ abstract class FeedImportReader extends FeedImportConfigurable {
   public function getStreamContext($ctx) {
     if ($ctx && (
       is_array($ctx) ||
-      (is_scalar($ctx) && ($ctx = @json_decode($ctx, TRUE)))
+      (is_scalar($ctx) && ($ctx = json_decode($ctx, TRUE)))
       )) {
       return stream_context_create($ctx);
     }

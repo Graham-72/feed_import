@@ -442,7 +442,7 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
     switch ($option_name) {
       case 'stream':
         // Stream setting must be a valid json.
-        return !$value || @json_decode($value);
+        return !$value || json_decode($value);
       case 'size':
         return $value > 0;
       case 'properties':
@@ -633,7 +633,7 @@ class CSVFIReader extends FeedImportUniVectorReader {
     switch ($option_name) {
       case 'stream':
         // Stream setting must be a valid json.
-        return !$value || @json_decode($value);
+        return !$value || json_decode($value);
       case 'length':
         return $value >= 0;
       case 'delimiter': case 'enclosure': case 'escape':
@@ -704,7 +704,7 @@ class JSONFIReader extends FeedImportVectorReader {
   public static function validateOption($option_name, $value) {
     if ($option_name == 'stream') {
       // Stream setting must be a valid json.
-      return !$value || @json_decode($value);
+      return !$value || json_decode($value);
     }
     return TRUE;
   }
