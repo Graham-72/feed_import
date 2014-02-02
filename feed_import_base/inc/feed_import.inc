@@ -190,6 +190,7 @@ class FeedImport {
     }
     $feeds = db_select('feed_import_settings', 'f')
             ->fields('f')
+            ->orderBy('id', 'DESC')
             ->execute()
             ->fetchAll();
     $ret = array();
