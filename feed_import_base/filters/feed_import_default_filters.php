@@ -697,7 +697,7 @@ class FeedImportFilter {
   /**
    * Performs a regex replace.
    */
-  public static function regexReplace($field, $new, $regex) {
+  public static function regexReplace($field, $regex, $new) {
     return preg_replace($regex, $new, $field);
   }
   
