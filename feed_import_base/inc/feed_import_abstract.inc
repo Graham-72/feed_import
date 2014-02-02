@@ -119,6 +119,25 @@ abstract class FeedImportReader extends FeedImportConfigurable {
   public function formatPath($path) {
     return $path;
   }
+  
+  /**
+   * Returns a stream context
+   *
+   * @param mixed $ctx
+   *    Context options
+   * 
+   * @return resource
+   *    Stream context or NULL on failure
+   */
+  public function getStreamContext($ctx) {
+    if ($ctx && (
+      is_array($ctx) ||
+      (is_scalar($ctx) && ($ctx = @json_decode($ctx, TRUE)))
+      )) {
+      return stream_context_create($ctx);
+    }
+    return NULL;
+  }
 
 }
 

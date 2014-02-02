@@ -23,14 +23,22 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
    */
   public function init() {
     // Set default required options.
-    $this->options += array('class' => 'SimpleXMLElement', 'options' => array(LIBXML_NOCDATA), 'raw' => '');
+    $this->options += array(
+      'class' => 'SimpleXMLElement',
+      'options' => array(LIBXML_NOCDATA),
+      'raw' => '',
+      'stream' => NULL,
+    );
     $opts = 0;
     foreach ($this->options['options'] as $opt) {
       $opts |= $opt;
     }
-
+    
     // Try to fetch from URL.
     if ($this->options['url']) {
+      if ($ctx = $this->getStreamContext($this->options['stream'])) {
+        libxml_set_streams_context($ctx);
+      }
       try {
         $this->items = simplexml_load_file($this->options['url'], $this->options['class'], $opts);
       }
@@ -139,6 +147,8 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
       'strictErrorChecking' => FALSE,
       'preserveWhiteSpace' => FALSE,
       'resolveExternals' => FALSE,
+      'stream' => NULL,
+      'silence_load_errors' => FALSE,
     );
     
     $opts = 0;
@@ -146,40 +156,70 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
       $opts |= $opt;
     }
     
+    list($majorv, $minorv) = explode('.', phpversion());
+    $htmlok = $majorv >= 5 && $minorv >= 4;
+    
     $doc = new DOMDocument();
+    $doc->strictErrorChecking = $this->options['strictErrorChecking'];
+    $doc->preserveWhiteSpace = $this->options['preserveWhiteSpace'];
+    $doc->resolveExternals = $this->options['resolveExternals'];
+    
+    $silence_load = $this->options['silence_load_errors'];
+    $loaded = FALSE;
     if ($this->options['url']) {
+      if ($ctx = $this->getStreamContext($this->options['stream'])) {
+        libxml_set_streams_context($ctx);
+      }
       if ($this->options['format'] == 'html') {
-        if (!$doc->loadHTMLFile($this->options['url'], $opts)) {
-          return FALSE;
+        if ($htmlok) {
+          $loaded = $silence_load
+                      ? @$doc->loadHTMLFile($this->options['url'], $opts)
+                      : $doc->loadHTMLFile($this->options['url'], $opts);
+        }
+        else {
+          $loaded = $silence_load
+                      ? @$doc->loadHTMLFile($this->options['url'])
+                      : $doc->loadHTMLFile($this->options['url']);
         }
       }
-      elseif (!$doc->load($this->options['url'], $opts)) {
-        return FALSE;
+      else {
+        $loaded = $silence_load
+                    ? @$doc->loadXML($this->options['url'], $opts)
+                    : $doc->loadXML($this->options['url'], $opts);
       }
     }
     elseif ($this->options['raw']) {
       if ($this->options['format'] == 'html') {
-        if (!$doc->loadHTML($this->options['raw'], $opts)) {
-          return FALSE;
+        if ($htmlok) {
+          $loaded = $silence_load
+                      ? @$doc->loadHTML($this->options['raw'], $opts)
+                      : $doc->loadHTML($this->options['raw'], $opts);
+        }
+        else {
+          $loaded = $silence_load
+                      ? @$doc->loadHTML($this->options['raw'])
+                      : $doc->loadHTML($this->options['raw']);
         }
       }
-      elseif (!$doc->loadXML($this->options['raw'], $opts)) {
-        return FALSE;
+      else {
+        $loaded = $silence_load
+                    ? @$doc->loadXML($this->options['raw'], $opts)
+                    : $doc->loadXML($this->options['raw'], $opts);
       }
     }
-    else {
+    
+    if (!$loaded) {
       return FALSE;
     }
-    unset($this->options['raw'], $opts, $opt);
     
-    $doc->strictErrorChecking =  $this->options['strictErrorChecking'];
-    $doc->preserveWhiteSpace = $this->options['preserveWhiteSpace'];
-    $doc->resolveExternals = $this->options['resolveExternals'];
+    unset($this->options['raw'], $opts, $opt, $htmlok, $loaded, $e);
+    
     $doc->recover = $this->options['recover'];
     if ($this->options['normalizeDocument']) {
       $doc->normalizeDocument();
     }
     
+    // Create xpath object.
     $this->xpath = new DOMXPath($doc);
     
     if ($this->options['php_func']) {
@@ -191,9 +231,10 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
     }
     
     $this->items = $this->xpath->query($this->options['parent']);
-    if ($this->items === FALSE || !($this->totalItems = $this->items->length)) {
+    if ($this->items === FALSE) {
       return FALSE;
     }
+    $this->totalItems = $this->items->length;
     return TRUE;
   }
   
@@ -241,23 +282,20 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
    * {@inheritdoc}
    */
   public function init() {
-    // Check SXE class
-    if (isset($this->options['class'])) {
-      $this->sxclass = $this->options['class'];
-    }
     // Check for resource location and parent xpath.
     if (empty($this->options['url']) || empty($this->options['parent'])) {
       return FALSE;
     }
+    $this->options += array('stream' => NULL);
+    // Check SXE class
+    if (isset($this->options['class'])) {
+      $this->sxclass = $this->options['class'];
+    }
 
     // Check for stream options.
-    if ($this->options['stream'] && (
-          is_array($this->options['stream']) ||
-          $this->options['stream'] = @json_decode($this->options['stream'], TRUE)
-        )) {
+    if ($ctx = $this->getStreamContext($this->options['stream'])) {
       try {
         // Open the file using stream options.
-        $ctx = stream_context_create($this->options['stream']);
         $this->fh = fopen($this->options['url'], 'rb', FALSE, $ctx);
       }
       catch (Exception $e) {
@@ -523,17 +561,13 @@ class CSVFIReader extends FeedImportUniVectorReader {
       'enclosure' => '"',
       'escape' => '\\',
       'use_column_names' => FALSE,
-      'stream' => FALSE,
+      'stream' => NULL,
     );
 
     // Check for stream options.
-    if ($this->options['stream'] && (
-          is_array($this->options['stream']) ||
-          $this->options['stream'] = @json_decode($this->options['stream'], TRUE)
-        )) {
+    if ($ctx = $this->getStreamContext($this->options['stream'])) {
       try {
         // Open the file using stream options.
-        $ctx = stream_context_create($this->options['stream']);
         $this->fh = fopen($this->options['url'], 'rb', FALSE, $ctx);
       }
       catch (Exception $e) {
@@ -638,18 +672,14 @@ class JSONFIReader extends FeedImportVectorReader {
 
     // Set default params
     $this->options += array(
-      'stream' => FALSE,
+      'stream' => NULL,
       'parent' => FALSE,
     );
 
      // Check for stream options.
-    if ($this->options['stream'] && (
-          is_array($this->options['stream']) ||
-          $this->options['stream'] = @json_decode($this->options['stream'], TRUE)
-        )) {
+    if ($ctx = $this->getStreamContext($this->options['stream'])) {
       try {
         // Open the file using stream options.
-        $ctx = stream_context_create($this->options['stream']);
         $this->items = json_decode(file_get_contents($this->options['url'], FALSE, $ctx));
       }
       catch (Exception $e) {

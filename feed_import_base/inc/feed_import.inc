@@ -127,8 +127,10 @@ class FeedImport {
   }
 
   /**
-   * Returns a new feed processor
+   * Sets processor settings.
    *
+   * @param FeedImportProcessor $fi
+   *    The processor
    * @param object $feed
    *     Feed settings
    * @param string $filter_dir
@@ -137,16 +139,16 @@ class FeedImport {
    * @return FeedImportProcessor
    *     An instance of FeedImportProcessor or FALSE on error
    */
-  public static function getProcessor($feed, $filter_dir) {
+  public static function setProcessorSettings(FeedImportProcessor $fi, $feed, $filter_dir) {
     $s = $feed->settings;
 
-    $fi = new $s['processor']['class']($feed->machine_name);
     if (!$fi->setReader(new $s['reader']['class']($s['reader']['options']))) {
-      return FALSE;
+      return $fi->getErrors();
     }
-    $fi->setOptions($s['processor']['options']);
     $fi->setEntityInfo(static::getEntityInfo($feed->entity));
-
+    if (!$fi->setOptions($s['processor']['options'])) {
+      return $fi->getErrors();
+    }
 
     $fi->setFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
     $fi->setPreFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
@@ -161,18 +163,19 @@ class FeedImport {
     // Remove the basic settings.
     $base_settings = array(
       'uniq_path', 'processor', 'reader', 'hashes',
-      'filter', 'fields', 'static_fields',
+      'filter', 'fields', 'static_fields', 'feed',
     );
+    
     foreach ($base_settings as $f) {
       unset($s[$f]);
     }
 
     // Set custom settings.
     if (!$fi->setCustomSettings($s)) {
-      return FALSE;
+      return $fi->getErrors();
     }
 
-    return $fi;
+    return TRUE;
   }
 
   // A list of all feeds configuration.
@@ -361,10 +364,21 @@ class FeedImport {
    *    Path to filters dir
    */
   public static function import($feed, $filters_dir) {
-    if ($f = static::getProcessor($feed, $filters_dir)) {
-      return $f->process();
+    $class = $feed->settings['processor']['class'];
+    $fi = new $class($feed->machine_name);
+    $fi->setErrorHandler(TRUE);
+    $f = static::setProcessorSettings($fi, $feed, $filters_dir);
+    if ($f !== TRUE) {
+      $fi->setErrorHandler(FALSE);
+      return array(
+        'init_error' => TRUE,
+        'errors' => $f,
+      );
     }
-    return FALSE;
+    unset($f);
+    $f = $fi->process();
+    $fi->setErrorHandler(FALSE);
+    return $f;
   }
 
   /**
@@ -522,25 +536,96 @@ class FeedImportProcessor extends FeedImportConfigurable {
   // Callback for before combine entities
   protected $beforeCombine = FALSE;
   protected $afterCombine  = FALSE;
-
+  // List of missing entities (as hash ids)
+  protected $orphanHashes = array();
+  // A null value.
+  protected $NULL = NULL;
+  // Reports.
+  protected $report = array(
+    'total' => 0,
+    'updated' => 0,
+    'new' => 0,
+    'rescheduled' => 0,
+    'skipped' => 0,
+    'missing' => 0,
+    'started' => 0,
+    'finished' => 0,
+    'errors' => array(),
+  );
+  
   // Current entities in work.
   public $current;
   // Current prefiltered values.
   public $prefilteredValue;
-  // Reports.
-  public $report;
-
-  // List of missing entities (as hash ids)
-  protected $orphanHashes = array();
-
-  // A null value.
-  protected $NULL = NULL;
 
   /**
    * Constructor.
    */
   public function __construct($machine_name) {
     $this->machineName = $machine_name;
+  }
+  
+  // Error handler status.
+  protected $errHandlerEnabled = FALSE;
+  
+  /**
+   * Enables/disables error handler.
+   *
+   * @param bool $enable
+   *    Whatever to enable or disable the error handler
+   */
+  public function setErrorHandler($enable) {
+    if ($enable) {
+      if (!$this->errHandlerEnabled) {
+        // Set error handler.
+        $this->errHandlerEnabled = TRUE;
+        set_error_handler(array($this, 'errorHandler'));
+      }
+    }
+    elseif ($this->errHandlerEnabled) {
+      // Resore eror handler.
+      $this->errHandlerEnabled = FALSE;
+      restore_error_handler();
+    }
+  }
+  
+  // Max number of errors to report.
+  protected $errorsLeft = 100;
+  protected $throwException = TRUE;
+
+  /**
+   * Error handler callback
+   * This is setted with set_error_handling()
+   */
+  public function errorHandler($errno, $errmsg, $file, $line) {
+
+    // Handle silenced errors with @.
+    if (error_reporting() == 0) {
+      return FALSE;
+    }
+    
+    // Add error to reports.
+    if ($this->errorsLeft) {
+      $this->report['errors'][] = array(
+        'error' => $errmsg,
+        'error number' => $errno,
+        'line' => $line,
+        'file' => $file,
+      );
+      $this->errorsLeft--;
+    }
+
+    // Throw an exception to be caught by a try-catch statement.
+    if ($this->throwException) {
+      throw new Exception("(Uncaught Feed Import Exception) [$errmsg; file: $file; line: $line]", $errno);
+    }
+  }
+  
+  /**
+   * Gets an array with errors.
+   */
+  public function getErrors() {
+    return $this->report['errors'];
   }
 
   /**
@@ -568,6 +653,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (isset($options['after_combine']) && function_exists($options['after_combine'])) {
       $this->afterCombine = $options['after_combine'];
     }
+    return TRUE;
   }
 
   /**
@@ -624,7 +710,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
    */
   public function setReader(FeedImportReader $reader) {
     $this->reader = $reader;
-    return $this->reader->init();
+    $this->throwException = FALSE;
+    $ok = $this->reader->init();
+    $this->throwException = TRUE;
+    return $ok;
   }
 
 
@@ -1336,19 +1425,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       set_time_limit(0);
     }
     // Reset report.
-    $this->report = array(
-      'total' => 0,
-      'updated' => 0,
-      'new' => 0,
-      'rescheduled' => 0,
-      'skipped' => 0,
-      'missing' => 0,
-      'started' => time(),
-      'finished' => 0,
-      'errors' => array(),
-    );
-    // Set error handler.
-    set_error_handler(array($this, 'errorHandler'));
+    $this->report['started'] = time();
     $entities = array();
     $reader = $this->reader;
     if ($this->itemsCount) {
@@ -1397,44 +1474,23 @@ class FeedImportProcessor extends FeedImportConfigurable {
       $this->orphanHashes = array();
     }
 
-    // Restor error handler.
-    restore_error_handler();
-
-    // Return report.
     $this->report['finished'] = time();
-    return $this->report;
+    $report = $this->report;
+    // Reset report
+    $this->report = array(
+      'total' => 0,
+      'updated' => 0,
+      'new' => 0,
+      'rescheduled' => 0,
+      'skipped' => 0,
+      'missing' => 0,
+      'started' => 0,
+      'finished' => 0,
+      'errors' => array(),
+    );
+    return $report;
   }
 
-
-  // Max number of errors to report.
-  protected $errorsLeft = 100;
-  protected $throwException = TRUE;
-  /**
-   * Error handler callback
-   * This is setted with set_error_handling()
-   */
-  public function errorHandler($errno, $errmsg, $file, $line) {
-    // Handle silenced errors with @.
-    if (error_reporting() == 0) {
-      return FALSE;
-    }
-
-    // Add error to reports.
-    if ($this->errorsLeft > 0) {
-      $this->report['errors'][] = array(
-        'error' => $errmsg,
-        'error number' => $errno,
-        'line' => $line,
-        'file' => $file,
-      );
-      $this->errorsLeft--;
-    }
-
-    // Throw an exception to be caught by a try-catch statement.
-    if ($this->throwException) {
-      throw new Exception("(Uncaught Feed Import Exception) [$errmsg; file: $file; line: $line]", $errno);
-    }
-  }
 }
 
 

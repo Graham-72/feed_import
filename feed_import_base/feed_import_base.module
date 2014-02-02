@@ -107,7 +107,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   $feed->skip_remove_running = TRUE;
   $report_errors = variable_get('feed_import_reports', FALSE);
   // Check for errors.
-  if ($report) {
+  if (empty($report['init_error'])) {
     // Save last run and duration.
     $feed->last_run = $report['started'];
     $d = $report['finished'] - $report['started'];
@@ -129,10 +129,11 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
           // Report base info.
           _feed_import_base_save_report($report, $feed);
           // Report rescheduled all.
-          watchdog('Feed Import', 'Rescheduled all items for @name because source contained only @total items but expected @expected.', array(
+          watchdog('Feed Import', 'Rescheduled all items for @name because source contained only @total items but expected @expected. !errors', array(
             '@name' => $feed->name,
             '@total' => $report['total'],
             '@expected' => $d,
+            '!errors' => '<br />' . _feed_import_base_get_error_table($report['errors']),
           ), WATCHDOG_WARNING);
         }
         return FeedImport::FEED_ITEMS_ERR;
@@ -155,12 +156,19 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
       $class::rescheduleAll($feed->machine_name, $feed->settings['hashes']['options']['ttl']);
       if ($report_errors) {
         // Report reschedule all.
-        watchdog('Feed Import', 'Rescheduled all items for @name due to a source problem.', array(
+        watchdog('Feed Import', 'Rescheduled all items for @name due to a source problem. !errors', array(
           '@name' => $feed->name,
+          '!errors' => '<br />' . _feed_import_base_get_error_table($report['errors']),
         ), WATCHDOG_WARNING);
       }
       return FeedImport::FEED_SOURCE_ERR;
     }
+  }
+  if ($report_errors) {
+    watchdog('Feed Import', 'Cannot process feed @name because is misconfigured. !errors', array(
+      '@name' => $feed->name,
+      '!errors' => '<br />' . _feed_import_base_get_error_table($report['errors']),
+    ), WATCHDOG_WARNING);
   }
   return FeedImport::FEED_CONFIG_ERR;
 }
@@ -213,19 +221,25 @@ function _feed_import_base_save_report($r, $feed) {
     )),
   ));
 
-  $err = theme('table', array(
-    'header' => array(t('Error'), t('Error number'), t('Line'), t('File')),
-    'rows' => $r['errors'],
-    'empty' => t('No errors reported'),
-    'caption' => t('Errors'),
-  ));
-
-
+  $err = _feed_import_base_get_error_table($r['errors']);
+  
   watchdog('Feed Import', 'Feed @name imported !status Errors !errors', array(
     '@name' => $feed->name,
     '!status' => '<br>' . $info,
     '!errors' => '<br>' . $err,
   ), $r['errors'] ? WATCHDOG_WARNING : WATCHDOG_NOTICE);
+}
+
+/**
+ * Returns a table containig error messages.
+ */
+function _feed_import_base_get_error_table($errors) {
+  return theme('table', array(
+    'header' => array(t('Error'), t('Error number'), t('Line'), t('File')),
+    'rows' => $errors,
+    'empty' => t('No errors reported'),
+    'caption' => t('Errors'),
+  ));
 }
 
 /**

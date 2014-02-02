@@ -325,6 +325,7 @@ function feed_import_feed_import_reader_info() {
         '#title' => t('Register namespaces for XML (only for XMLs having namespaces)'),
         '#description' => t('Each namespace must be on a line in the following format: name=URI'),
       ),
+      'stream' => $stream,
       'raw' => array(
         '#type' => 'textarea',
         '#title' => t('Raw XML string'),
@@ -399,7 +400,7 @@ function feed_import_feed_import_reader_info() {
       ),
       'url' => array(
         '#type' => 'textfield',
-        '#title' => t('URL to a valid XML resource'),
+        '#title' => t('URL to a valid XML/HTML resource'),
         '#description' => t('You can also use local filesystem paths.'),
         '#maxlength' => 1024,
       ),
@@ -413,6 +414,12 @@ function feed_import_feed_import_reader_info() {
         '#default_value' => '',
       ),
       'options' => $libxml,
+      'silence_load_errors' => array(
+        '#type' => 'checkbox',
+        '#title' => t('Silence load errors'),
+        '#description' => '',
+        '#default_value' => TRUE,
+      ),
       'strictErrorChecking' => array(
         '#type' => 'checkbox',
         '#title' => t('Strict error checking'),
@@ -443,6 +450,7 @@ function feed_import_feed_import_reader_info() {
         '#description' => t('Putting the document in a "normal" form by simulating save and load.'),
         '#default_value' => FALSE,
       ),
+      'stream' => $stream,
       'raw' => array(
         '#type' => 'textarea',
         '#title' => t('Raw source string'),
