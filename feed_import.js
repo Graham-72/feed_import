@@ -20,6 +20,9 @@
           }
           $('#add-new-item-manual').val('');
         });
+        $('[name="add_new_func"]').bind('click', function() {
+          $('#func-name').val('');
+        });
         addevent = true;
       }
       else if (fsets.length == 1) {
@@ -33,6 +36,13 @@
             Drupal.behaviors.feed_import.checkSelectVisibility(this);
           });
         });
+        // Function names
+        $('input[id^="func_name_"]', fsets).each(function () {
+          Drupal.behaviors.feed_import.changeFieldsetTitle(this);
+          $(this).bind('keyup', function() {
+            Drupal.behaviors.feed_import.changeFieldsetTitle(this);
+          });
+        });
       }
     },
     checkSelectVisibility: function (elem) {
@@ -43,6 +53,17 @@
       }
       else {
         target.hide();
+      }
+    },
+    changeFieldsetTitle: function (elem) {
+      var fs = $(elem).closest('fieldset[id^="item_container_"]');
+      fs = fs.find('legend .fieldset-title').contents().filter(function() {
+        return this.nodeType == 3 && this.nodeValue.replace(/\s*/i, '') != '';
+      });
+      var pos;
+      if (fs.length && (pos = fs.text().indexOf(' _')) > -1) {
+        var txt = fs.text().substr(0, pos + 1) + $(elem).val();
+        fs.get(0).nodeValue = txt;
       }
     }
   }

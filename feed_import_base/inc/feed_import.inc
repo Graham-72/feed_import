@@ -1446,21 +1446,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
   }
 
   /**
-   * Load entities by id
-   * Hoever, this is not used...
-   *
-   * @param array $ids
-   *     An array of entity ids
-   *
-   * @return array
-   *     An array of entities keyed by ids
-   */
-  protected function entityLoad(array &$ids) {
-    static $conditions = array();
-    return $this->entityInfo->controller->load($ids, $conditions);
-  }
-
-  /**
    * Processes the import.
    */
   public function process() {

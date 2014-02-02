@@ -2413,7 +2413,7 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
   
   $form['description'] = array(
     '#markup' => t('If possible please use a php file including filters (see Filter settings).') . '<br>' .
-                  t('Import will not start if any of these functions have errors. If you have problems please check logs.') . '<br>' .
+                  t('Import will not start if any of these functions have syntax errors. If you have problems please check logs.') . '<br>' .
                   '<strong>' .
                   t('If an error occurs on runtime in one of these functions the whole script stops immediately, resulting a broken import process!') . '<br>' .
                   t('Main purpose of these filter functions is testing.') . '<br>' .
@@ -2422,7 +2422,6 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
                   t('Ok, eval() can be generally dangerous, but Feed Import assumes that access is enabled only for administrator.') .
                   '</i>',
   );
-  $d = &$form['description']['#markup'];
   
   $form['machine_name'] = array(
     '#type' => 'value',
@@ -2459,7 +2458,7 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
   
   $cbk = isset($form_state['triggering_element']['#name'])
           ? $form_state['triggering_element']['#name'] : '';
-  if ($cbk == 'add') {
+  if ($cbk == 'add_new_func') {
     $fv = &$form_state['values'];
     $form_state['#field_added'] = FALSE;
     if ($field = drupal_strtolower($fv['func'])) {
@@ -2496,12 +2495,13 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
   $form['func'] = array(
     '#type' => 'textfield',
     '#title' => t('Function name'),
+    '#attributes' => array('id' => 'func-name'),
     '#description' => t('Name must start with underscore and can contain only alphanumeric chars or underscores.'),
   );
   
-  $form['add'] = array(
+  $form['add_new_func'] = array(
     '#type' => 'button',
-    '#name' => 'add',
+    '#name' => 'add_new_func',
     '#value' => t('Add function'),
     '#ajax' => array(
       'event' => 'click',
@@ -2515,6 +2515,15 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
     '#type' => 'submit',
     '#name' => 'save',
     '#value' => t('Save functions'),
+  );
+  
+  // Add js.
+  $form['#attached'] = array(
+    'js' => array(
+      drupal_get_path('module', 'feed_import') . '/feed_import.js' => array(
+        'type' => 'file',
+      ),
+    ),
   );
   return $form;
 }
@@ -2567,6 +2576,7 @@ function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE)
     '#title' => t('Name'),
     '#description' => t('Name must start with underscore and can contain only alphanumeric chars or underscores.'),
     '#default_value' => $values['name'],
+    '#attributes' => array('id' => 'func_name_' . $pos),
   );
   
   $container['args'] = array(
