@@ -113,7 +113,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
     $d = $report['finished'] - $report['started'];
     $feed->last_run_duration = $d > 0 ? $d : 0;
     // Check fewer items protection.
-    if ($feed->settings['uniq_path'] && $feed->settings['feed']['protect_on_fewer_items']) {
+    if (strlen($feed->settings['uniq_path']) && $feed->settings['feed']['protect_on_fewer_items']) {
       $d = trim($feed->settings['feed']['protect_on_fewer_items']);
       if (substr($d, -1) == '%') {
         $d = rtrim($d, '%') * $feed->last_run_items / 100;
@@ -147,7 +147,7 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   }
   else {
     // Reader init problem.
-    if ($feed->settings['uniq_path'] && $feed->settings['feed']['protect_on_invalid_source']) {
+    if (strlen($feed->settings['uniq_path']) && $feed->settings['feed']['protect_on_invalid_source']) {
       $feed->last_run = time();
       $feed->last_run_duration = 0;
       FeedImport::saveFeedImportStatus($feed);

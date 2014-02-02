@@ -827,7 +827,7 @@ function feed_import_list_feeds() {
       $run = t('Never');
     }
     
-    if ($feed->settings['uniq_path']) {
+    if (strlen($feed->settings['uniq_path'])) {
       $hashes = $feed->settings['hashes']['class'];
       $hashes = $hashes::totalHashes($feed->machine_name);
     }
