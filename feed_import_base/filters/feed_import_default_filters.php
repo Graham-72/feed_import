@@ -837,3 +837,12 @@ class FeedImportFilter {
     return NULL;
   }
 }
+
+
+/**
+ * Implodes all arguments.
+ */
+function feed_import_implode() {
+  $args = func_get_args();
+  return implode(array_shift($args), $args);
+}

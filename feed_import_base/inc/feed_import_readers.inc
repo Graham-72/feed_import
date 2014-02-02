@@ -179,8 +179,8 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
       }
       else {
         $loaded = $silence_load
-                    ? @$doc->loadXML($this->options['url'], $opts)
-                    : $doc->loadXML($this->options['url'], $opts);
+                    ? @$doc->load($this->options['url'], $opts)
+                    : $doc->load($this->options['url'], $opts);
       }
     }
     elseif ($this->options['raw']) {

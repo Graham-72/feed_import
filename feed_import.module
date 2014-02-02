@@ -421,7 +421,7 @@ function feed_import_feed_import_reader_info() {
         '#type' => 'checkbox',
         '#title' => t('Silence load errors'),
         '#description' => t('This will not report errors on document load.'),
-        '#default_value' => TRUE,
+        '#default_value' => FALSE,
       ),
       'strictErrorChecking' => array(
         '#type' => 'checkbox',
