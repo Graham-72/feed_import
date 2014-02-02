@@ -141,45 +141,34 @@ class FeedImport {
    */
   public static function setProcessorSettings(FeedImportProcessor $fi, $feed, $filter_dir) {
     $s = $feed->settings;
-
-    if (!$fi->setReader(new $s['reader']['class']($s['reader']['options']))) {
-      return $fi->getErrors();
+    
+    $ok = TRUE;
+    $ok = $ok && $fi->setEntityInfo(static::getEntityInfo($feed->entity));
+    $ok = $ok && $fi->setOptions($s['processor']['options']);
+    if (!isset($s['functions'])) {
+      $s['functions'] = NULL;
     }
-    $fi->setEntityInfo(static::getEntityInfo($feed->entity));
-    if (!$fi->setOptions($s['processor']['options'])) {
-      return $fi->getErrors();
-    }
-
-    $fi->setFilter(new $s['filter']['class']($filter_dir, $s['filter']['options']));
+    $ok = $ok && $fi->setFilter(
+      new $s['filter']['class']($filter_dir, $s['filter']['options']),
+      $s['functions']
+    );
+    $ok = $ok && $fi->setReader(new $s['reader']['class']($s['reader']['options']));
+    
 
     $hm = new $s['hashes']['class']($feed->entity, $feed->machine_name);
     $hm->setOptions($s['hashes']['options']);
-    $fi->setHashManager($hm);
-
-    if (!$fi->setUniq($s['uniq_path'])) {
-      return $fi->getErrors();
-    }
     
-    if (!$fi->setFields($s['fields'], $s['static_fields'])) {
-      return $fi->getErrors();
-    }
-
-    // Remove the basic settings.
-    $base_settings = array(
-      'uniq_path', 'processor', 'reader', 'hashes',
-      'filter', 'fields', 'static_fields', 'feed',
-    );
+    $ok = $ok && $fi->setHashManager($hm);
+    $ok = $ok && $fi->setUniq($s['uniq_path']);
+    $ok = $ok && $fi->setFields($s['fields'], $s['static_fields']);
     
-    foreach ($base_settings as $f) {
-      unset($s[$f]);
-    }
+    $ok = $ok && $fi->setCustomSettings(array_diff_key($s, array(
+      'uniq_path' => 1, 'processor' => 1, 'reader' => 1, 'hashes' => 1,
+      'filter' => 1, 'fields' => 1, 'static_fields' => 1, 'feed' => 1,
+      'functions' => 1,
+    )));
 
-    // Set custom settings.
-    if (!$fi->setCustomSettings($s)) {
-      return $fi->getErrors();
-    }
-
-    return TRUE;
+    return $ok ? TRUE : $fi->getErrors();
   }
 
   // A list of all feeds configuration.
@@ -550,6 +539,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
   protected $orphanHashes = array();
   // A null value.
   protected $NULL = NULL;
+  // Flag indicating to skip creating dynamic functions if already exists.
+  protected $skipDefFunChk = FALSE;
+  // This will break import if a filter function is missing.
+  protected $breakOnUndefinedFilter = TRUE;
   // Reports.
   protected $report = array(
     'total' => 0,
@@ -687,6 +680,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (isset($options['after_combine']) && function_exists($options['after_combine'])) {
       $this->afterCombine = $options['after_combine'];
     }
+    if (isset($options['skip_defined_functions_check'])) {
+      $this->skipDefFunChk = (bool) $options['skip_defined_functions_check'];
+    }
+    if (isset($options['break_on_undefined_filter'])) {
+      $this->breakOnUndefinedFilter = (bool) $options['break_on_undefined_filter'];
+    }
     return TRUE;
   }
 
@@ -712,6 +711,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       return FALSE;
     }
     $this->entityInfo = $entity_info;
+    return TRUE;
   }
 
   /**
@@ -719,9 +719,26 @@ class FeedImportProcessor extends FeedImportConfigurable {
    *
    * @param FeedImportMultiFilter $filter
    *    An instance of FeedImportMultiFilter
+   * @param array $functions
+   *    An array of functions to create
+   * @return bool
+   *    TRUE on success
    */
-  public function setFilter(FeedImportMultiFilter $filter) {
+  public function setFilter(FeedImportMultiFilter $filter, $functions = array()) {
     $this->filters = $filter;
+    if ($functions) {
+      foreach ($functions as &$f) {
+        if ($this->skipDefFunChk && function_exists($f['name'])) {
+          continue;
+        }
+        $msg = $this->filters->createFunction($f['name'], $f['args'], $f['body']);
+        if ($msg !== TRUE) {
+          $this->addError($msg);
+          return FALSE;
+        }
+      }
+    }
+    return TRUE;
   }
 
   /**
@@ -779,6 +796,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
    */
   public function setHashManager(FeedImportHashManager $hm) {
     $this->hashes = $hm;
+    return TRUE;
   }
 
   /**
@@ -853,6 +871,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
                 $fgroup,
                 $f['field']
               ));
+              if ($this->breakOnUndefinedFilter) {
+                $this->addError('Import stopped because a filter function is missing!');
+                return FALSE;
+              }
             }
           }
           $f[$fgroup] = $ok;

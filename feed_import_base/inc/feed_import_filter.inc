@@ -176,5 +176,54 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
     // Return filtered value.
     return $value;
   }
-
+  
+  /**
+   * Creates a function dynamically. Warning! This uses eval!
+   *
+   * @param string $name
+   *    Function name
+   * @param string $args
+   *    Function args
+   * @param string $body
+   *    Function body
+   *
+   * @return mixed
+   *    TRUE if created or an error message if failed
+   */
+  public static function createFunction($name, $args, $body) {
+    if (!$name || $name[0] != '_') {
+      return "Invalid function name '$name'! Function name must start with an underscore.";
+    }
+    if (!preg_match('/^_[a-z0-9_]+$/i', $name)) {
+      return "Invalid function name '$name'! You can use only alphanumeric chars and underscores.";
+    }
+    if (function_exists($name)) {
+      return "Function '$name' is already defined! You cannot redeclare a function.";
+    }
+    if (preg_match('/\?>.*<\?/i', $body)) {
+      return "Body for function '$name' is not well formated! You cannot open/close PHP tags.";
+    }
+    // Create PHP code for eval.
+    $code = "function $name($args) {
+      $body;
+    }
+    return TRUE;";
+    // Show errors, te be available for ob.
+    $de = @ini_set('display_errors', TRUE);
+    // Do not log these errors.
+    $le = @ini_set('log_errors', FALSE);
+    ob_start();
+    $created = eval($code);
+    $err = trim(ob_get_clean());
+    // Restore ini values
+    $de !== FALSE && ini_set('display_errors', $de);
+    $le !== FALSE && ini_set('log_errors', $le);
+    if ($err) {
+      return "Could not create function '$name'! $err";
+    }
+    elseif ($created === TRUE && function_exists($name)) {
+      return TRUE;
+    }
+    return "Could not create function '$name'!";
+  }
 }
