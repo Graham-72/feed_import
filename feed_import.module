@@ -304,6 +304,13 @@ function feed_import_feed_import_reader_info() {
     ),
   );
   
+  $raw = array(
+    '#type' => 'textarea',
+    '#title' => t('Raw source string'),
+    '#description' => t('You can use this source for tests if you remove the URL.'),
+    '#default_value' => '',
+  );
+  
   $items['xml'] = array(
     'name' => t('XML Document'),
     'description' => t('Use this reader when the XML file is not huge.') . ' ' .
@@ -326,11 +333,7 @@ function feed_import_feed_import_reader_info() {
         '#description' => t('Each namespace must be on a line in the following format: name=URI'),
       ),
       'stream' => $stream,
-      'raw' => array(
-        '#type' => 'textarea',
-        '#title' => t('Raw XML string'),
-        '#description' => t('You can use this XML for tests, just remove the URL.'),
-      ),
+      'raw' => $raw,
     )
   );
 
@@ -451,11 +454,7 @@ function feed_import_feed_import_reader_info() {
         '#default_value' => FALSE,
       ),
       'stream' => $stream,
-      'raw' => array(
-        '#type' => 'textarea',
-        '#title' => t('Raw source string'),
-        '#description' => t('You can use this source for tests if you remove the URL.'),
-      ),
+      'raw' => $raw,
     ),
   );
 
@@ -581,6 +580,7 @@ function feed_import_feed_import_reader_info() {
         '#maxlength' => 1024,
       ),
       'stream' => $stream,
+      'raw' => $raw,
     ),
   );
 
@@ -2306,7 +2306,7 @@ function feed_import_process_feed($feed) {
       drupal_set_message(t('Cannot process feed because another one is running!'), 'error');
       break;
     case FeedImport::FEED_CONFIG_ERR:
-      drupal_set_message(t('Cannot process feed because is misconfigured!'), 'error');
+      drupal_set_message(t('Cannot process feed because source is misconfigured!'), 'error');
       break;
     case FeedImport::FEED_SOURCE_ERR:
       drupal_set_message(t('Cannot process feed because there is a source error!'), 'error');

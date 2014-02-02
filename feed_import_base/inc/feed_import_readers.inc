@@ -33,34 +33,29 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
     foreach ($this->options['options'] as $opt) {
       $opts |= $opt;
     }
-    
+    $this->items = FALSE;
     // Try to fetch from URL.
     if ($this->options['url']) {
       if ($ctx = $this->getStreamContext($this->options['stream'])) {
         libxml_set_streams_context($ctx);
       }
-      try {
-        $this->items = simplexml_load_file($this->options['url'], $this->options['class'], $opts);
-      }
-      catch (Exception $e) {
-        return FALSE;
-      }
+      $this->items = simplexml_load_file($this->options['url'], $this->options['class'], $opts);
     }
     // Check if raw value is submitted.
     elseif ($this->options['raw'] = trim($this->options['raw'])) {
-      try {
-        $this->items = simplexml_load_string($this->options['raw'], $this->options['class'], $opts);
-        // Not needed anymore.
-        unset($this->options['raw']);
-      }
-      catch (Exception $e) {
-        return FALSE;
-      }
+      $this->items = simplexml_load_string($this->options['raw'], $this->options['class'], $opts);
     }
     else {
       // No raw or url resource provided.
       return FALSE;
     }
+    
+    if (!$this->items) {
+      return FALSE;
+    }
+    
+    // Not needed anymore.
+    unset($this->options['raw']);
 
     // Check for namespace settings.
     if (!empty($this->options['namespaces'])) {
@@ -287,29 +282,19 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
       return FALSE;
     }
     $this->options += array('stream' => NULL);
-    // Check SXE class
-    if (isset($this->options['class'])) {
-      $this->sxclass = $this->options['class'];
-    }
 
     // Check for stream options.
     if ($ctx = $this->getStreamContext($this->options['stream'])) {
-      try {
-        // Open the file using stream options.
-        $this->fh = fopen($this->options['url'], 'rb', FALSE, $ctx);
-      }
-      catch (Exception $e) {
-        return FALSE;
-      }
+      // Open the file using stream options.
+      $this->fh = fopen($this->options['url'], 'rb', FALSE, $ctx);
     }
     else {
-      try {
-        // Open the file.
-        $this->fh = fopen($this->options['url'], 'rb');
-      }
-      catch (Exception $e) {
-        return FALSE;
-      }
+      // Open the file.
+      $this->fh = fopen($this->options['url'], 'rb');
+    }
+    
+    if (!$this->fh) {
+      return FALSE;
     }
 
     // Get tag info.
@@ -325,6 +310,23 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
     $this->tagLen = strlen($tag);
     $this->tagCloseLen = strlen($this->tagClose);
 
+    // Create an empty array of read items.
+    $this->items = array();
+
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function get() {
+    return ($this->items || $this->read()) ? array_shift($this->items) : NULL;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setOptions(array $options, $overwrite = FALSE) {
     // Set substr function.
     if (!empty($this->options['substr']) && function_exists($this->options['substr'])) {
       $this->substr = $this->options['substr'];
@@ -339,20 +341,13 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
     if (!empty($this->options['size'])) {
       $this->size = (int) $this->options['size'];
     }
-
-    // Create an empty array of read items.
-    $this->items = array();
-
-    return TRUE;
+    
+    // Check SXE class
+    if (isset($this->options['class'])) {
+      $this->sxclass = $this->options['class'];
+    }
   }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function get() {
-    return ($this->items || $this->read()) ? array_shift($this->items) : NULL;
-  }
-
+  
   /**
    * Populates the $items array with xml nodes.
    */
@@ -498,27 +493,25 @@ class SQLFIReader extends FeedImportUniVectorReader {
       unset($param, $params);
     }
 
-    try {
-      // Connect to db.
-      $db = new PDO(
-        $this->options['dsn'],
-        $this->options['user'],
-        $this->options['pass']
-      );
-
-      // Prepare query.
-      $this->items = $db->prepare(
-        $this->options['query'],
-        array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY)
-      );
-
-      // Execute query
-      if (!$this->items->execute($this->options['params'])) {
-        // Report that query failed.
-        throw new Exception(implode(';', $this->items->errorInfo()), $this->items->errorCode());
-      }
+    // Connect to db.
+    $db = new PDO(
+      $this->options['dsn'],
+      $this->options['user'],
+      $this->options['pass']
+    );
+    
+    if (!$db) {
+      return FALSE;
     }
-    catch (Exception $e) {
+
+    // Prepare query.
+    $this->items = $db->prepare(
+      $this->options['query'],
+      array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY)
+    );
+
+    // Execute query
+    if (!$this->items->execute($this->options['params'])) {
       return FALSE;
     }
 
@@ -566,22 +559,16 @@ class CSVFIReader extends FeedImportUniVectorReader {
 
     // Check for stream options.
     if ($ctx = $this->getStreamContext($this->options['stream'])) {
-      try {
-        // Open the file using stream options.
-        $this->fh = fopen($this->options['url'], 'rb', FALSE, $ctx);
-      }
-      catch (Exception $e) {
-        return FALSE;
-      }
+      // Open the file using stream options.
+      $this->fh = fopen($this->options['url'], 'rb', FALSE, $ctx);
     }
     else {
-      try {
-        // Open the file.
-        $this->fh = fopen($this->options['url'], 'rb');
-      }
-      catch (Exception $e) {
-        return FALSE;
-      }
+      // Open the file.
+      $this->fh = fopen($this->options['url'], 'rb');
+    }
+    
+    if (!$this->fh) {
+      return FALSE;
     }
 
     // Check to see if column names are used.
@@ -665,36 +652,35 @@ class JSONFIReader extends FeedImportVectorReader {
    * {@inheritdoc}
    */
   public function init() {
-    // Check for url resource.
-    if (empty($this->options['url'])) {
-      return FALSE;
-    }
 
     // Set default params
     $this->options += array(
       'stream' => NULL,
-      'parent' => FALSE,
+      'parent' => NULL,
+      'raw' => NULL,
+      'url' => NULL,
     );
 
-     // Check for stream options.
-    if ($ctx = $this->getStreamContext($this->options['stream'])) {
-      try {
+    if ($this->options['url']) {
+      // Check for stream options.
+      if ($ctx = $this->getStreamContext($this->options['stream'])) {
         // Open the file using stream options.
         $this->items = json_decode(file_get_contents($this->options['url'], FALSE, $ctx));
       }
-      catch (Exception $e) {
-        return FALSE;
-      }
-    }
-    else {
-      try {
+      else {
         // Open the file.
         $this->items = json_decode(file_get_contents($this->options['url']));
       }
-      catch (Exception $e) {
-        return FALSE;
-      }
     }
+    elseif ($this->options['raw']) {
+      $this->items = json_decode($this->options['raw']);
+    }
+    
+    if (!$this->items) {
+      return FALSE;
+    }
+    
+    unset($this->options['raw']);
 
     // Check for parent
     if ($this->options['parent']) {
