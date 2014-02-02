@@ -138,6 +138,42 @@ class FeedImportFilter {
     }
     return $field;
   }
+  
+  /**
+   *
+   * Returns first matched property
+   *
+   * @param mixed $field
+   *    The searched vector
+   * @param string $...
+   *    Variable number of properties
+   *
+   * @return mixed
+   *    Matched property or null
+   */
+  public static function getProperty($field) {
+    $properties = func_get_args();
+    array_shift($properties);
+    if (!($count = count($properties))) {
+      return $field;
+    }
+    $i = -1;
+    if (is_array($field)) {
+      while (++$i < $count) {
+        if (isset($field[$properties[$i]])) {
+          return $field[$properties[$i]];
+        }
+      }
+    }
+    elseif (is_object($field)) {
+      while (++$i < $count) {
+        if (isset($field->{$properties[$i]})) {
+          return $field->{$properties[$i]};
+        }
+      }
+    }
+    return NULL;
+  }
 
   /**
    * Removes a property
@@ -275,6 +311,68 @@ class FeedImportFilter {
       return str_ireplace($what, $with, $field);
     }
     return str_replace($what, $with, $field);
+  }
+  
+  /**
+   * Check if a string contains specified substring
+   *
+   * @param string $field
+   *    The string to check on
+   * @param string $what
+   *    The substring
+   * @param bool $insensitive
+   *    Perform insensitive search
+   *
+   * @return mixed
+   *    Value of $field if TRUE
+   */
+  public static function contains($field, $what, $insensitive = FALSE) {
+    if ($insensitive) {
+      return stripos($field, $what) !== FALSE ? $field : NULL;
+    }
+    return strpos($field, $what) !== FALSE ? $field : NULL;
+  }
+  
+  /**
+   * Check if a string starts with a specified substring
+   *
+   * @param string $field
+   *    The string to check on
+   * @param string $what
+   *    The substring
+   * @param bool $insensitive
+   *    Perform insensitive search
+   *
+   * @return mixed
+   *    Value of $field if TRUE
+   */
+  public static function startsWith($field, $what, $insensitive = FALSE) {
+    if ($insensitive) {
+      return stripos($field, $what) === 0 ? $field : NULL;
+    }
+    return strpos($field, $what) === 0 ? $field : NULL;
+  }
+  
+  /**
+   * Check if a string ends with a specified substring
+   *
+   * @param string $field
+   *    The string to check on
+   * @param string $what
+   *    The substring
+   * @param bool $insensitive
+   *    Perform insensitive search
+   *
+   * @return mixed
+   *    Value of $field if TRUE
+   */
+  public static function endsWith($field, $what, $insensitive = FALSE) {
+    $len = strlen($field);
+    $wlen = strlen($what);
+    if ($insensitive) {
+      return strripos($field, $what) + $wlen == $len ? $field : NULL;
+    }
+    return strrpos($field, $what) + $wlen == $len ? $field : NULL;
   }
 
   /**
@@ -580,15 +678,17 @@ class FeedImportFilter {
   }
 
   /**
-   * Get property
+   * Get only speecified properties
    *
    * @param mixed $field
    *   Array or object to get property
+   * @param string $...
+   *   Variable number of properties
    *
    * @return mixed
-   *   Fetched property
+   *   Fetched properties
    */
-  public static function getProperty($field) {
+  public static function getProperties($field) {
     // Get all properties.
     $params = func_get_args();
     // Remove $field.
@@ -607,9 +707,6 @@ class FeedImportFilter {
       foreach ($params as &$param) {
         $properties[$param] = isset($field->{$param}) ? $field->{$param} : NULL;
       }
-    }
-    else {
-      return $field;
     }
     if (count($properties) == 1) {
       return reset($properties);
