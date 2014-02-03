@@ -1354,9 +1354,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
         // Entity might be in static cache.
         $this->staticCacheEntities++;
 
+        // Merge status of entity.
+        $changed = FALSE;
+
         // Check for before combine callback.
         if ($beforeCombine) {
-          switch ($beforeCombine($entity, $current)) {
+          switch ($beforeCombine($entity, $current, $changed)) {
             case static::ENTITY_RESCHEDULE:
               $this->report['rescheduled']++;
               goto ADD_HASH_UPDATE;
