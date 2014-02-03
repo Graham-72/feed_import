@@ -679,10 +679,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (isset($options['reset_cache']) && $options['reset_cache'] >= 0) {
       $this->resetStaticCache = (int) $options['reset_cache'];
     }
-    if (isset($options['before_combine']) && function_exists($options['before_combine'])) {
+    if (isset($options['before_combine'])) {
       $this->beforeCombine = $options['before_combine'];
     }
-    if (isset($options['after_combine']) && function_exists($options['after_combine'])) {
+    if (isset($options['after_combine'])) {
       $this->afterCombine = $options['after_combine'];
     }
     if (isset($options['skip_defined_functions_check'])) {
