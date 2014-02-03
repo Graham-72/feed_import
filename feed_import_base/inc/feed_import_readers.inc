@@ -49,11 +49,11 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
       // No raw or url resource provided.
       return FALSE;
     }
-    
+
     if (!$this->items) {
       return FALSE;
     }
-    
+
     // Not needed anymore.
     unset($this->options['raw']);
 
@@ -101,7 +101,7 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
     }
     return $item;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -119,12 +119,12 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
  * DomDocument XML reader
  */
 class DomXMLFIReader extends FeedImportDomXPathReader {
-  
+
   // Number of items returned by parent xpath
   protected $totalItems = 0;
   // Current item.
   protected $currentItem = 0;
-  
+
   /**
    * {@inheritdoc}
    */
@@ -145,20 +145,20 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
       'stream' => NULL,
       'silence_load_errors' => FALSE,
     );
-    
+
     $opts = 0;
     foreach ($this->options['options'] as $opt) {
       $opts |= $opt;
     }
-    
+
     list($majorv, $minorv) = explode('.', phpversion());
     $htmlok = $majorv >= 5 && $minorv >= 4;
-    
+
     $doc = new DOMDocument();
     $doc->strictErrorChecking = $this->options['strictErrorChecking'];
     $doc->preserveWhiteSpace = $this->options['preserveWhiteSpace'];
     $doc->resolveExternals = $this->options['resolveExternals'];
-    
+
     $silence_load = $this->options['silence_load_errors'];
     $loaded = FALSE;
     if ($this->options['url']) {
@@ -202,21 +202,21 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
                     : $doc->loadXML($this->options['raw'], $opts);
       }
     }
-    
+
     if (!$loaded) {
       return FALSE;
     }
-    
+
     unset($this->options['raw'], $opts, $opt, $htmlok, $loaded, $e);
-    
+
     $doc->recover = $this->options['recover'];
     if ($this->options['normalizeDocument']) {
       $doc->normalizeDocument();
     }
-    
+
     // Create xpath object.
     $this->xpath = new DOMXPath($doc);
-    
+
     if ($this->options['php_func']) {
       if (!is_array($this->options['php_func'])) {
         $this->options['php_func'] = static::cleanLines($this->options['php_func']);
@@ -224,7 +224,7 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
       $this->xpath->registerNamespace('php', 'http://php.net/xpath');
       $this->xpath->registerPhpFunctions($this->options['php_func']);
     }
-    
+
     $this->items = $this->xpath->query($this->options['parent']);
     if ($this->items === FALSE) {
       return FALSE;
@@ -232,7 +232,7 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
     $this->totalItems = $this->items->length;
     return TRUE;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -243,7 +243,7 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
     unset($this->items);
     return NULL;
   }
-  
+
 }
 
 
@@ -292,7 +292,7 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
       // Open the file.
       $this->fh = fopen($this->options['url'], 'rb');
     }
-    
+
     if (!$this->fh) {
       return FALSE;
     }
@@ -341,13 +341,13 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
     if (!empty($this->options['size'])) {
       $this->size = (int) $this->options['size'];
     }
-    
+
     // Check SXE class
     if (isset($this->options['class'])) {
       $this->sxclass = $this->options['class'];
     }
   }
-  
+
   /**
    * Populates the $items array with xml nodes.
    */
@@ -499,7 +499,7 @@ class SQLFIReader extends FeedImportUniVectorReader {
       $this->options['user'],
       $this->options['pass']
     );
-    
+
     if (!$db) {
       return FALSE;
     }
@@ -566,7 +566,7 @@ class CSVFIReader extends FeedImportUniVectorReader {
       // Open the file.
       $this->fh = fopen($this->options['url'], 'rb');
     }
-    
+
     if (!$this->fh) {
       return FALSE;
     }
@@ -675,11 +675,11 @@ class JSONFIReader extends FeedImportVectorReader {
     elseif ($this->options['raw']) {
       $this->items = json_decode($this->options['raw']);
     }
-    
+
     if (!$this->items) {
       return FALSE;
     }
-    
+
     unset($this->options['raw']);
 
     // Check for parent

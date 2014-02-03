@@ -138,7 +138,7 @@ class FeedImportFilter {
     }
     return $field;
   }
-  
+
   /**
    *
    * Returns first matched property
@@ -312,7 +312,7 @@ class FeedImportFilter {
     }
     return str_replace($what, $with, $field);
   }
-  
+
   /**
    * Check if a string contains specified substring
    *
@@ -332,7 +332,7 @@ class FeedImportFilter {
     }
     return strpos($field, $what) !== FALSE ? $field : NULL;
   }
-  
+
   /**
    * Check if a string starts with a specified substring
    *
@@ -352,7 +352,7 @@ class FeedImportFilter {
     }
     return strpos($field, $what) === 0 ? $field : NULL;
   }
-  
+
   /**
    * Check if a string ends with a specified substring
    *
@@ -735,7 +735,7 @@ class FeedImportFilter {
     }
     return user_hash_password($field);
   }
-  
+
   /**
    * Gets the current prefiltered value.
    *
@@ -751,7 +751,7 @@ class FeedImportFilter {
     }
     return $default;
   }
-  
+
   /**
    * Gets the current entity.
    *
@@ -765,7 +765,7 @@ class FeedImportFilter {
     $ret = NULL;
     return $ret;
   }
-  
+
   /**
    * Returns false if field doesn't match regex.
    */
@@ -780,7 +780,7 @@ class FeedImportFilter {
     }
     return preg_match($regex, $field) ? $field : FALSE;
   }
-  
+
   /**
    * Returns false if field matches regex.
    */
@@ -790,14 +790,14 @@ class FeedImportFilter {
     }
     return FALSE;
   }
-  
+
   /**
    * Performs a regex replace.
    */
   public static function regexReplace($field, $regex, $new) {
     return preg_replace($regex, $new, $field);
   }
-  
+
   /**
    * Returns the matchd groups of regex
    */

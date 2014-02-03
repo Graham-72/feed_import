@@ -56,7 +56,7 @@ abstract class FeedImportConfigurable {
    *    An array of strings
    */
   public static function cleanLines($str) {
-    return preg_split('/\r?\n/',$str);
+    return preg_split('/\r?\n/', $str);
   }
 }
 
@@ -119,13 +119,13 @@ abstract class FeedImportReader extends FeedImportConfigurable {
   public function formatPath($path) {
     return $path;
   }
-  
+
   /**
    * Returns a stream context
    *
    * @param mixed $ctx
    *    Context options
-   * 
+   *
    * @return resource
    *    Stream context or NULL on failure
    */
@@ -182,13 +182,13 @@ abstract class FeedImportSimpleXPathReader extends FeedImportReader {
  * This class provides a helper for dom xpath queries.
  */
 abstract class FeedImportDomXPathReader extends FeedImportReader {
-  
+
   // DomXPath instance
   protected $xpath;
-  
+
   // Bool, see DomXPath::evaluate
-  protected $xpathRegisterNodeNS = TRUE; 
-  
+  protected $xpathRegisterNodeNS = TRUE;
+
   /**
    * {@inheritdoc}
    */
@@ -210,7 +210,7 @@ abstract class FeedImportDomXPathReader extends FeedImportReader {
     }
     return $values;
   }
-  
+
 }
 
 
@@ -235,7 +235,7 @@ abstract class FeedImportVectorReader extends FeedImportReader {
     }
     return $count == 0 ? NULL : ($count == 1 ? $ret[0] : $ret);
   }
-  
+
   /**
    * Gets an element by path.
    *
@@ -373,7 +373,7 @@ interface FeedImportStaticHashManager {
    *      hash_id: enity_id
    */
   public static function getExpired($max = 0);
-  
+
   /**
    * Reschedules all entities
    *
@@ -383,7 +383,7 @@ interface FeedImportStaticHashManager {
    *    Time to live
    */
   public static function rescheduleAll($name, $ttl);
-  
+
   /**
    * Returns total number of hashes for desired feeds.
    *

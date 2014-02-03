@@ -209,7 +209,7 @@ function feed_import_menu() {
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
     'weight' => 2,
   ) + $access;
-  
+
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/functions'] = array(
     'title' => 'Dynamic filters',
     'page callback' => 'drupal_get_form',
@@ -275,18 +275,18 @@ function feed_import_feed_import_reader_info() {
                         ),
                       )),
   );
-    
+
   $sxeclass = array(
     '#type' => 'textfield',
     '#title' => t('SimpleXMLElement class'),
     '#default_value' => 'SimpleXMLElement',
     '#required' => TRUE,
   );
-  
+
   if (!defined('LIBXML_PARSEHUGE')) {
     define('LIBXML_PARSEHUGE', 524288);
   }
-  
+
   $parent_xpath = array(
     '#type' => 'textfield',
     '#title' => t('Parent XPATH, this is the context for desired items'),
@@ -294,7 +294,7 @@ function feed_import_feed_import_reader_info() {
     '#maxlength' => 1024,
     '#required' => TRUE,
   );
-  
+
   $libxml = array(
     '#type'  => 'select',
     '#multiple' => TRUE,
@@ -312,14 +312,14 @@ function feed_import_feed_import_reader_info() {
       LIBXML_NOWARNING => t('No warning reports'),
     ),
   );
-  
+
   $raw = array(
     '#type' => 'textarea',
     '#title' => t('Raw source string'),
     '#description' => t('You can use this source for tests if you remove the URL.'),
     '#default_value' => '',
   );
-  
+
   $items['xml'] = array(
     'name' => t('XML Document'),
     'description' => t('Use this reader when the XML file is not huge.') . ' ' .
@@ -392,7 +392,7 @@ function feed_import_feed_import_reader_info() {
       'class' => $sxeclass,
     )
   );
-  
+
   $items['dom'] = array(
     'name' => t('DomDocument XML/HTML'),
     'description' => t('Use this reader for XML files.') . ' ' .
@@ -814,7 +814,7 @@ function feed_import_get_class_settings($setting) {
  * Splits string by newlines.
  */
 function _feed_import_lines($str) {
-  return preg_split('/\r?\n/',$str);
+  return preg_split('/\r?\n/', $str);
 }
 
 /**
@@ -842,7 +842,7 @@ function feed_import_list_feeds() {
   unset($run);
   $rows = array();
   foreach ($feeds as &$feed) {
-    $name = l($feed->name, FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed'); 
+    $name = l($feed->name, FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed');
     if ($feed->last_run) {
       $run = format_date($feed->last_run);
       $run .= '<br />';
@@ -853,7 +853,7 @@ function feed_import_list_feeds() {
     else {
       $run = t('Never');
     }
-    
+
     // Check for running instances
     if (isset($running[$feed->machine_name])) {
       $run .= '<br /><b>';
@@ -861,7 +861,7 @@ function feed_import_list_feeds() {
       $run .= '</b>';
       unset($running[$feed->machine_name]);
     }
-    
+
     if (strlen($feed->settings['uniq_path'])) {
       $hashes = $feed->settings['hashes']['class'];
       $hashes = $hashes::totalHashes($feed->machine_name);
@@ -929,7 +929,7 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
     '#default_value' => $feed ? $feed->name : NULL,
     '#required' => TRUE,
   );
-  
+
   if ($feed) {
     $form['machine_name'] = array(
       '#type' => 'value',
@@ -960,18 +960,18 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
     '#maxlength' => 64,
     '#required' => TRUE,
   );
-  
+
   if ($feed) {
     $form['entity']['#default_value'] = $feed->entity;
     $form['entity']['#disabled'] = !empty($feed->settings['fields']);
-    
+
     $form['cron_import'] = array(
       '#type' => 'checkbox',
       '#title' => t('Import at cron'),
       '#default_value' => $feed->cron_import,
       '#description' => t('Check this if you want to import feed items when cron runs.'),
     );
-    
+
     $form['feed'] = array(
       '#type' => 'fieldset',
       '#tree' => TRUE,
@@ -981,13 +981,13 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
-    
+
     $form['feed']['protect_on_invalid_source'] = array(
       '#type' => 'checkbox',
       '#title' => t('Source file or network is unavailable'),
       '#default_value' => $feed->settings['feed']['protect_on_invalid_source'],
     );
-    
+
     $form['feed']['protect_on_fewer_items'] = array(
       '#type' => 'textfield',
       '#title' => t('Total number of items is less than'),
@@ -2333,7 +2333,7 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
  */
 function feed_import_process_feed($feed) {
   $status = _feed_import_base_process_feed($feed, TRUE);
-  
+
   switch ($status) {
     case FeedImport::FEED_OK:
       drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
@@ -2424,7 +2424,7 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
     drupal_set_message(t('Dynamic filter functions are created using eval() which can be dangerous for import!'), 'warning');
     drupal_set_title(t('Dynamic filter functions - @name', array('@name' => $feed->name)), PASS_THROUGH);
   }
-  
+
   $form['description'] = array(
     '#markup' => t('If possible please use a php file including filters (see Filter settings).') . '<br>' .
                   t('Import will not start if any of these functions have syntax errors. If you have problems please check logs.') . '<br>' .
@@ -2436,18 +2436,18 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
                   t('Ok, eval() can be generally dangerous, but Feed Import assumes that access is enabled only for administrator.') .
                   '</i>',
   );
-  
+
   $form['machine_name'] = array(
     '#type' => 'value',
     '#value' => $feed->machine_name,
   );
-  
+
   $form['fields'] = array(
     '#type' => 'container',
     '#tree' => TRUE,
     '#attributes' => array('id' => 'feed_import_func_fields'),
   );
-  
+
   $func = array();
   if (isset($form_state['#current_item'])) {
     $fv = &$form_state['values']['fields'];
@@ -2469,7 +2469,7 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
     }
     unset($field);
   }
-  
+
   $cbk = isset($form_state['triggering_element']['#name'])
           ? $form_state['triggering_element']['#name'] : '';
   if ($cbk == 'add_new_func') {
@@ -2505,14 +2505,14 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
 
   // Add fields.
   $form['fields'] += $func;
-  
+
   $form['func'] = array(
     '#type' => 'textfield',
     '#title' => t('Function name'),
     '#attributes' => array('id' => 'func-name'),
     '#description' => t('Name must start with underscore and can contain only alphanumeric chars or underscores.'),
   );
-  
+
   $form['add_new_func'] = array(
     '#type' => 'button',
     '#name' => 'add_new_func',
@@ -2524,13 +2524,13 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
       'method' => 'append',
     ),
   );
-  
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#name' => 'save',
     '#value' => t('Save functions'),
   );
-  
+
   // Add js.
   $form['#attached'] = array(
     'js' => array(
@@ -2584,7 +2584,7 @@ function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE)
     '#attributes' => array('id' => 'item_container_' . $pos),
   );
   $container = &$item[$container];
-  
+
   $container['name'] = array(
     '#type' => 'textfield',
     '#title' => t('Name'),
@@ -2592,14 +2592,14 @@ function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE)
     '#default_value' => $values['name'],
     '#attributes' => array('id' => 'func_name_' . $pos),
   );
-  
+
   $container['args'] = array(
     '#type' => 'textfield',
     '#title' => t('Parameters'),
     '#description' => t('Use variable names separated by comma, like: $a, $b'),
     '#default_value' => $values['args'],
   );
-  
+
   $container['body'] = array(
     '#type' => 'textarea',
     '#rows' => 5,
@@ -2607,7 +2607,7 @@ function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE)
     '#description' => t('Write here only function body. Do not forget to return a value.'),
     '#default_value' => $values['body'],
   );
-  
+
   $container['remove_container_' . $pos] = array(
     '#type' => 'button',
     '#name' => 'remove_container_' . $pos,
@@ -2619,6 +2619,6 @@ function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE)
       'callback' => 'feed_import_ajax_remove_item',
     ),
   );
-  
+
   return $item;
 }

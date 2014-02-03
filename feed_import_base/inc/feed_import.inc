@@ -9,7 +9,7 @@
  * This class provides helper functions for feed import.
  */
 class FeedImport {
-  
+
   // Constants
   const FEED_OK = 1;
   const FEED_SOURCE_ERR = 2;
@@ -141,7 +141,7 @@ class FeedImport {
    */
   public static function setProcessorSettings(FeedImportProcessor $fi, $feed, $filter_dir) {
     $s = $feed->settings;
-    
+
     $ok = TRUE;
     $ok = $ok && $fi->setEntityInfo(static::getEntityInfo($feed->entity));
     $ok = $ok && $fi->setOptions($s['processor']['options']);
@@ -153,15 +153,14 @@ class FeedImport {
       $s['functions']
     );
     $ok = $ok && $fi->setReader(new $s['reader']['class']($s['reader']['options']));
-    
 
     $hm = new $s['hashes']['class']($feed->entity, $feed->machine_name);
     $hm->setOptions($s['hashes']['options']);
-    
+
     $ok = $ok && $fi->setHashManager($hm);
     $ok = $ok && $fi->setUniq($s['uniq_path']);
     $ok = $ok && $fi->setFields($s['fields'], $s['static_fields']);
-    
+
     $ok = $ok && $fi->setCustomSettings(array_diff_key($s, array(
       'uniq_path' => 1, 'processor' => 1, 'reader' => 1, 'hashes' => 1,
       'filter' => 1, 'fields' => 1, 'static_fields' => 1, 'feed' => 1,
@@ -352,10 +351,10 @@ class FeedImport {
       ->execute();
   }
 
-  
+
   // Active import
   public static $activeImport = NULL;
-  
+
   /**
    * Imports a feed.
    *
@@ -558,7 +557,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
     'finished' => 0,
     'errors' => array(),
   );
-  
+
   // Current entities in work.
   public $current;
   // Current prefiltered values.
@@ -570,10 +569,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
   public function __construct($machine_name) {
     $this->machineName = $machine_name;
   }
-  
+
   // Error handler status.
   protected $errHandlerEnabled = FALSE;
-  
+
   /**
    * Enables/disables error handler.
    *
@@ -594,7 +593,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       restore_error_handler();
     }
   }
-  
+
   // Max number of errors to report.
   protected $errorsLeft = 100;
   protected $throwException = TRUE;
@@ -609,7 +608,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (error_reporting() == 0) {
       return FALSE;
     }
-    
+
     // Add error to reports.
     if ($this->errorsLeft) {
       $this->report['errors'][] = array(
@@ -626,7 +625,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       throw new Exception("(Uncaught Feed Import Exception) [$errmsg; file: $file; line: $line]", $errno);
     }
   }
-  
+
   /**
    * Gets an array with errors.
    *
@@ -636,7 +635,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
   public function getErrors() {
     return $this->report['errors'];
   }
-  
+
   /**
    * Adds an error to report
    *
@@ -1587,7 +1586,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       NULL, // holds hash
       0, // holds expire
     );
-    
+
     $this->hashPart = '/' . $this->group . '/' . $this->entity;
 
     // Create select object.
@@ -1778,7 +1777,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     }
     return $ret;
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -1792,13 +1791,13 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       ->fields(array('expire' => $ttl))
       ->execute();
   }
-  
+
   /**
    * {@inheritdoc}
    */
   public static function totalHashes($name = NULL) {
     $q = db_select('feed_import_hashes', 'f')
-         ->fields('f', array('feed_machine_name'));
+          ->fields('f', array('feed_machine_name'));
     if ($name) {
       $q->condition('feed_machine_name', $name);
     }

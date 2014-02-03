@@ -176,7 +176,7 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
     // Return filtered value.
     return $value;
   }
-  
+
   /**
    * Creates a function dynamically. Warning! This uses eval!
    *

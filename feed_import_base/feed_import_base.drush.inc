@@ -1,8 +1,13 @@
 <?php
 
 /**
-* Implements COMMANDFILE_drush_help()
-*/
+ * @file
+ * Contains drupal commands for feed import
+ */
+
+/**
+ * Implements COMMANDFILE_drush_help()
+ */
 function feed_import_base_drush_help($section) {
   $sections = array(
     'drush:feed-import-base' => "Import feeds",
@@ -13,8 +18,8 @@ function feed_import_base_drush_help($section) {
 }
 
 /**
-* Implements COMMANDFILE_drush_command()
-*/
+ * Implements COMMANDFILE_drush_command()
+ */
 function feed_import_base_drush_command() {
   $items['feed-import-base-cron'] = array(
     'description' => "Runs feed import cron",
@@ -44,8 +49,8 @@ function feed_import_base_drush_command() {
 }
 
 /**
-* Implements drush_COMMANDFILE_COMMANDNAME()
-*/
+ * Implements drush_COMMANDFILE_COMMANDNAME()
+ */
 function drush_feed_import_base_cron($force = FALSE) {
   global $conf;
   $conf['feed_import_use_cron'] = TRUE;
@@ -59,8 +64,8 @@ function drush_feed_import_base_cron($force = FALSE) {
 }
 
 /**
-* Implements drush_COMMANDFILE_COMMANDNAME()
-*/
+ * Implements drush_COMMANDFILE_COMMANDNAME()
+ */
 function drush_feed_import_base_feed($name) {
   if (!($feed = FeedImport::loadFeed($name))) {
     drush_set_error('Feed not found!');
@@ -71,8 +76,8 @@ function drush_feed_import_base_feed($name) {
 }
 
 /**
-* Implements drush_COMMANDFILE_COMMANDNAME()
-*/
+ * Implements drush_COMMANDFILE_COMMANDNAME()
+ */
 function drush_feed_import_base_list() {
   $msg = '%1$-25s | %2$-25s | %3$-3s ' . PHP_EOL;
   $h = sprintf($msg, t('Feed name'), t('Machine name'), t('Cron import'));

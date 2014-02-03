@@ -222,7 +222,7 @@ function _feed_import_base_save_report($r, $feed) {
   ));
 
   $err = _feed_import_base_get_error_table($r['errors']);
-  
+
   watchdog('Feed Import', 'Feed @name imported !status Errors !errors', array(
     '@name' => $feed->name,
     '!status' => '<br>' . $info,
