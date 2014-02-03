@@ -833,10 +833,16 @@ function feed_import_list_feeds() {
   // Load all feeds.
   $feeds = FeedImport::loadAllFeeds();
 
+  $running = array();
+  if ($run = variable_get('feed_import_import_running', array())) {
+    foreach ($run as $r) {
+      $running += array_count_values($r);
+    }
+  }
+  unset($run);
   $rows = array();
   foreach ($feeds as &$feed) {
-    $name = l($feed->name, FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed');
-
+    $name = l($feed->name, FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed'); 
     if ($feed->last_run) {
       $run = format_date($feed->last_run);
       $run .= '<br />';
@@ -846,6 +852,14 @@ function feed_import_list_feeds() {
     }
     else {
       $run = t('Never');
+    }
+    
+    // Check for running instances
+    if (isset($running[$feed->machine_name])) {
+      $run .= '<br /><b>';
+      $run .= t('Running instances: @count', array('@count' => $running[$feed->machine_name]));
+      $run .= '</b>';
+      unset($running[$feed->machine_name]);
     }
     
     if (strlen($feed->settings['uniq_path'])) {
