@@ -93,6 +93,13 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
         !empty($running[$feed->entity]) &&
         in_array($feed->machine_name, $running[$feed->entity])
         ) {
+      // Invoke hooks.
+      $invoke_hooks && module_invoke_all(
+        'feed_import_error',
+        FeedImport::FEED_OVERLAP_ERR,
+        $feed,
+        array()
+      );
       return FeedImport::FEED_OVERLAP_ERR;
     }
     unset($overlap);
@@ -164,8 +171,10 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
     return FeedImport::FEED_OK;
   }
   else {
+    $ret = FALSE;
     // Reader init problem.
     if (strlen($feed->settings['uniq_path']) && $feed->settings['feed']['protect_on_invalid_source']) {
+      $ret = TRUE;
       $feed->last_run = time();
       $feed->last_run_duration = 0;
       if (substr(trim($feed->settings['feed']['protect_on_fewer_items']), -1) != '%') {
@@ -190,7 +199,12 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
       $feed,
       $report
     );
-    return FeedImport::FEED_SOURCE_ERR;
+    if ($ret) {
+      return FeedImport::FEED_SOURCE_ERR;
+    }
+    else {
+      $invoke_hooks = FALSE;
+    }
   }
   if ($report_errors) {
     watchdog('Feed Import', 'Cannot process feed @name because is misconfigured. !errors', array(
