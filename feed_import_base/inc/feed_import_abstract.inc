@@ -89,7 +89,7 @@ abstract class FeedImportReader extends FeedImportConfigurable {
   /**
    * Here you'll init your reader.
    */
-  abstract protected function init();
+  abstract public function init();
 
   /**
    * This method returns the next available item or NULL if there are no items
