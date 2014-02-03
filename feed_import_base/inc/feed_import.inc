@@ -500,6 +500,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
   const ENTITY_RESCHEDULE = 1;
   const ENTITY_SKIP = 2;
   const ENTITY_NO_COMBINE = 3;
+  const ENTITY_MARK_PROTECTED = 4;
 
   // Hash property name.
   const TEMP_HASH = '$_FI~HASH_$';
@@ -552,6 +553,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
     'new' => 0,
     'rescheduled' => 0,
     'skipped' => 0,
+    'protected' => 0,
+    'protected_skipped' => 0,
     'missing' => 0,
     'started' => 0,
     'finished' => 0,
@@ -1324,9 +1327,11 @@ class FeedImportProcessor extends FeedImportConfigurable {
       unset($entity[static::TEMP_HASH]);
       // Check if item is already imported or is not monitored.
       if ($hash !== NULL && isset($ids[$hash])) {
-        // Check if is used option to skip item if already imported.
-        if ($this->skipImportedItems) {
-          $this->report['skipped']++;
+        // Check if is used option to skip item if already imported
+        // or entity is protected (import cannot make changes).
+        if ($this->skipImportedItems ||
+            $ids[$hash]->expire == FeedImportHashManager::MARK_PROTECTED) {
+          $this->report[$this->skipImportedItems ? 'skipped' : 'protected_skipped']++;
           unset($ids[$hash]);
           continue;
         }
@@ -1360,6 +1365,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
               goto UNSET_VARS;
             case static::ENTITY_NO_COMBINE:
               goto COMBINE_FINISHED;
+            case static::ENTITY_MARK_PROTECTED:
+              $this->report['protected']++;
+              $this->hashes->protect($ids[$hash]->id);
+              goto UNSET_VARS;
           }
         }
 
@@ -1374,6 +1383,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
               goto ADD_HASH_UPDATE;
             case static::ENTITY_SKIP:
               $this->report['skipped']++;
+              goto UNSET_VARS;
+            case static::ENTITY_MARK_PROTECTED:
+              $this->report['protected']++;
+              $this->hashes->protect($ids[$hash]->id);
               goto UNSET_VARS;
           }
         }
@@ -1512,6 +1525,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
       'new' => 0,
       'rescheduled' => 0,
       'skipped' => 0,
+      'protected' => 0,
+      'protected_skipped' => 0,
       'missing' => 0,
       'started' => 0,
       'finished' => 0,
@@ -1688,7 +1703,23 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   public function update($id) {
     $this->updateIds[] = $id;
     if (++$this->toUpdate == $this->updateChunkSize) {
-      $this->updateCommit();
+      $this->_update($this->updateIds, $this->ttl ? $this->ttl + time() : 0);
+      $this->toUpdate = 0;
+    }
+  }
+
+  // Ids that need to be protected.
+  protected $protectIds = array();
+  protected $toProtect = 0;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function protect($id) {
+    $this->protectIds[] = $id;
+    if (++$this->toProtect == $this->updateChunkSize) {
+      $this->_update($this->protectIds, static::MARK_PROTECTED);
+      $this->toProtect = 0;
     }
   }
 
@@ -1696,31 +1727,43 @@ class FeedImportSQLHashes extends FeedImportHashManager {
    * {@inheritdoc}
    */
   public function updateCommit() {
-    if (!$this->toUpdate) {
-      return;
+    if ($this->toUpdate) {
+      $this->_update($this->updateIds, $this->ttl ? $this->ttl + time() : 0);
+      $this->toUpdate = 0;
     }
-    $this->updateFormat['expire'] = $this->ttl ? $this->ttl + time() : 0;
+    if ($this->toProtect) {
+      $this->_update($this->protectIds, static::MARK_PROTECTED);
+      $this->toProtect = 0;
+    }
+  }
+
+  /**
+   * Makes an update.
+   */
+  protected function _update(array &$ids, $expire) {
+    $this->updateFormat['expire'] = $expire;
     $this->update->fields($this->updateFormat);
     // Get update conditions.
     $conditions = &$this->update->conditions();
-    if (count($this->updateIds) <= $this->updateChunkSize) {
+    if (count($ids) <= $this->updateChunkSize) {
       // Update hashes.
-      $this->update->condition('id', $this->updateIds, 'IN')->execute();
+      $this->update->condition('id', $ids, 'IN')->execute();
       // Remove last IN condition.
       array_pop($conditions);
+      // Clear array.
+      $ids = array();
     }
     else {
       // Split ids in chunks.
-      $this->updateIds = array_chunk($this->updateIds, $this->updateChunkSize);
-      for ($i = 0, $m = count($this->updateIds); $i < $m; $i++) {
+      $ids = array_chunk($ids, $this->updateChunkSize);
+      for ($i = 0, $m = count($ids); $i < $m; $i++) {
         // Update hashes.
-        $this->update->condition('id', $this->updateIds[$i], 'IN')->execute();
-        unset($this->updateIds[$i]);
+        $this->update->condition('id', $ids[$i], 'IN')->execute();
+        unset($ids[$i]);
         // Remove last IN condition.
         array_pop($conditions);
       }
     }
-    $this->toUpdate = 0;
   }
 
   /**
@@ -1766,7 +1809,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   public static function getExpired($max = 0) {
     $q = db_select('feed_import_hashes', 'f')
           ->fields('f', array('entity', 'id', 'entity_id'))
-          ->condition('expire', array(1, time()), 'BETWEEN');
+          ->condition('expire', array(static::MARK_PROTECTED + 1, time()), 'BETWEEN');
     if ($max) {
       $q->range(0, $max);
     }
@@ -1787,7 +1830,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     }
     db_update('feed_import_hashes')
       ->condition('feed_machine_name', $name)
-      ->condition('expire', 0, '>')
+      ->condition('expire', static::MARK_PROTECTED, '>')
       ->fields(array('expire' => $ttl))
       ->execute();
   }

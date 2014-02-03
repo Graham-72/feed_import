@@ -407,6 +407,9 @@ abstract class FeedImportHashManager extends FeedImportConfigurable {
   // Generated hashes.
   protected $generatedHashes = array();
 
+  // Item is marked as protected for updates.
+  const MARK_PROTECTED = 1;
+
   /**
    * Constructor.
    */
@@ -442,17 +445,22 @@ abstract class FeedImportHashManager extends FeedImportConfigurable {
    * Updates hashes.
    *
    * @param integer $id
-   *     Entity id
+   *     Hash id
    * @param int $expire
    *     Time to live
    */
   abstract public function update($id);
 
   /**
-   * Commits the update to storage.
+   * Protects a hash for updates
    *
-   * @param int $expire
-   *     Time to live
+   * @param integer $id
+   *    Hash id
+   */
+  abstract public function protect($id);
+
+  /**
+   * Commits the update to storage.
    */
   abstract public function updateCommit();
 
