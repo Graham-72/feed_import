@@ -80,13 +80,13 @@ function feed_import_base_cron() {
   }
 }
 
-
 /**
  * Imports a feed.
  */
 function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   $running = _feed_import_base_variable_get('feed_import_import_running', array());
-
+  $invoke_hooks = variable_get('feed_import_invoke_hooks', FALSE);
+  
   if ($recheck) {
     $overlap = variable_get('feed_import_let_overlap', array());
     if (!in_array($feed->entity, $overlap) &&
@@ -116,7 +116,11 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
     if (strlen($feed->settings['uniq_path']) && $feed->settings['feed']['protect_on_fewer_items']) {
       $d = trim($feed->settings['feed']['protect_on_fewer_items']);
       if (substr($d, -1) == '%') {
+        // Do not update last import items if percentage is used!
         $d = rtrim($d, '%') * $feed->last_run_items / 100;
+      }
+      else {
+        $feed->last_run_items = $report['total'];
       }
       $d = (int) $d;
       if ($report['total'] < $d) {
@@ -136,6 +140,14 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
             '!errors' => '<br />' . _feed_import_base_get_error_table($report['errors']),
           ), WATCHDOG_WARNING);
         }
+        $report['expected'] = $d;
+        // Invoke hooks.
+        $invoke_hooks && module_invoke_all(
+          'feed_import_error',
+          FeedImport::FEED_ITEMS_ERR,
+          $feed,
+          $report
+        );
         return FeedImport::FEED_ITEMS_ERR;
       }
     }
@@ -143,6 +155,12 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
     FeedImport::saveFeedImportStatus($feed);
     // Save report if needed.
     $report_errors && _feed_import_base_save_report($report, $feed);
+    // Invoke hooks.
+    $invoke_hooks && module_invoke_all(
+      'feed_import_success',
+      $feed,
+      $report
+    );
     return FeedImport::FEED_OK;
   }
   else {
@@ -150,6 +168,9 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
     if (strlen($feed->settings['uniq_path']) && $feed->settings['feed']['protect_on_invalid_source']) {
       $feed->last_run = time();
       $feed->last_run_duration = 0;
+      if (substr(trim($feed->settings['feed']['protect_on_fewer_items']), -1) != '%') {
+        $feed->last_run_items = 0;
+      }
       FeedImport::saveFeedImportStatus($feed);
       // Reschedule all.
       $class = $feed->settings['hashes']['class'];
@@ -161,8 +182,15 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
           '!errors' => '<br />' . _feed_import_base_get_error_table($report['errors']),
         ), WATCHDOG_WARNING);
       }
-      return FeedImport::FEED_SOURCE_ERR;
     }
+    // Invoke hooks.
+    $invoke_hooks && module_invoke_all(
+      'feed_import_error',
+      FeedImport::FEED_SOURCE_ERR,
+      $feed,
+      $report
+    );
+    return FeedImport::FEED_SOURCE_ERR;
   }
   if ($report_errors) {
     watchdog('Feed Import', 'Cannot process feed @name because is misconfigured. !errors', array(
@@ -170,6 +198,13 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
       '!errors' => '<br />' . _feed_import_base_get_error_table($report['errors']),
     ), WATCHDOG_WARNING);
   }
+  // Invoke hooks.
+  $invoke_hooks && module_invoke_all(
+    'feed_import_error',
+    FeedImport::FEED_CONFIG_ERR,
+    $feed,
+    $report
+  );
   return FeedImport::FEED_CONFIG_ERR;
 }
 
@@ -315,6 +350,7 @@ function feed_import_base_settings_form($form, &$form_state) {
     '#type' => 'checkbox',
     '#default_value' => variable_get('feed_import_reports', TRUE),
     '#title' => t('Provide import reports'),
+    '#description' => t('These are log reports.'),
   );
   $form['feed_import_use_cron'] = array(
     '#type' => 'checkbox',
@@ -392,6 +428,13 @@ function feed_import_base_settings_form($form, &$form_state) {
     '#default_value' => variable_get('feed_import_let_overlap', array()),
     '#title' => t('Allow import overlap for specified entities'),
     '#description' => t('This is not indicated for nodes.'),
+  );
+
+  $form['feed_import_invoke_hooks'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('feed_import_invoke_hooks', FALSE),
+    '#title' => t('Invoke hooks on import sucess or error'),
+    '#description' => t('This can be useful for sending alerts.'),
   );
 
   return system_settings_form($form);

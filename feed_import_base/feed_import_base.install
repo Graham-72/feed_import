@@ -58,7 +58,7 @@ function feed_import_base_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'default' => 0,
-        'description' => 'Timestamp when item expires. 0 = never expires'
+        'description' => 'Timestamp when item expires. 0 = never expires, 1 = item is protected'
       ),
     ),
     'primary key' => array('id'),
@@ -156,6 +156,7 @@ function feed_import_base_uninstall() {
     'feed_import_interval_stop',
     'feed_import_filters_dir',
     'feed_import_reports',
+    'feed_import_invoke_hooks',
   );
   array_map('variable_del', $vars);
   db_drop_table('feed_import_hashes');
