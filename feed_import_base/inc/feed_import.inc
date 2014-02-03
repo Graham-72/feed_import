@@ -1606,7 +1606,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
 
     // Create select object.
     $this->select = db_select('feed_import_hashes', 'f')
-                      ->fields('f', array('hash', 'id', 'entity_id'))
+                      ->fields('f', array('hash', 'id', 'entity_id', 'expire'))
                       ->condition('feed_group', $this->group)
                       ->condition('entity', $this->entity)
                       ->condition('hash', array(), 'IN');
