@@ -298,8 +298,15 @@ function feed_import_feed_import_reader_info() {
   $libxml = array(
     '#type'  => 'select',
     '#multiple' => TRUE,
-    '#title' => t('libxml options'),
-    '#description' => t('Select desired libxml options'),
+    '#title' => t('LibXml options'),
+    '#description' => t('Select desired libxml options.') . ' ' .
+                      t('For more info check !link', array(
+                        '!link' => l(
+                          'libxml options',
+                          'http://www.php.net/manual/en/libxml.constants.php',
+                          array('attributes' => array('target' => '_blank'))
+                        ),
+                      )),
     '#default_value' => array(LIBXML_NOBLANKS, LIBXML_NOCDATA),
     '#size' => 6,
     '#options' => array(
@@ -323,7 +330,7 @@ function feed_import_feed_import_reader_info() {
   $items['xml'] = array(
     'name' => t('XML Document'),
     'description' => t('Use this reader when the XML file is not huge.') . ' ' .
-                      t('Paths must be in XPATH 1 format.'),
+                      t('Paths must be in XPATH 1.0 format.'),
     'inherit_options' => FALSE,
     'class' => 'SimpleXMLFIReader',
     'options' => array(
@@ -349,7 +356,7 @@ function feed_import_feed_import_reader_info() {
   $items['xml-chunked'] = array(
     'name' => t('XML Chunked'),
     'description' => t('Use this reader when the XML file is huge.') . ' ' .
-                      t('Paths must be in XPATH 1 format.'),
+                      t('Paths must be in XPATH 1.0 format.'),
     'inherit_options' => FALSE,
     'class' => 'ChunkedXMLFIReader',
     'options' => array(
@@ -395,8 +402,8 @@ function feed_import_feed_import_reader_info() {
 
   $items['dom'] = array(
     'name' => t('DomDocument XML/HTML'),
-    'description' => t('Use this reader for XML files.') . ' ' .
-                      t('Path must be in XPATH 1 format, but you can register PHP functions for XPATH.'),
+    'description' => t('Use this reader for XML or HTML files.') . ' ' .
+                      t('Path must be in XPATH 1.0 format, but you can register PHP functions for XPATH.'),
     'class' => 'DomXMLFIReader',
     'inherit_options' => FALSE,
     'options' => array(
