@@ -737,8 +737,8 @@ function feed_import_feed_import_filter_info() {
           '#description' => t('This files should contain additional filters.') . ' ' .
                             t('Enter paths to PHP files (one per line).') . ' ' .
                             t('Paths are relative to @dir folder.', array(
-                              '@dir' => 'feed_import/filters'
-                            )) . ' ' .
+                              '@dir' => _feed_import_base_get_filters_dir()
+                            )) . '<br />' .
                             t('You can use absolute paths by prepending /.'),
           '#rows' => 5,
           '#default_value' => '',
