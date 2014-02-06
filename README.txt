@@ -25,9 +25,9 @@ To register a reader:
 
 function hook_feed_import_reader_info() {
   return array(
-    'processor_name' => array(
+    'my_reader' => array(
       // Reader name
-      'name' => t('Processor name'),
+      'name' => t('Reader name'),
       // Reader description
       'description' => t('Description'),
       // If you want to extend other reader and use its options you can specify
