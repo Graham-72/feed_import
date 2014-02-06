@@ -37,3 +37,27 @@ The processor
 -------------
 The processor takes care of all import process.
 This module provides just one processor compatibile with all readers.
+
+
+Hooks
+-------------
+There are two hooks you could implement:
+
+hook_feed_import_error($error_type, $feed, $report)
+
+$error_type - an integer indicationg error type.
+Can be one of the following constant from FeedImport class:
+FEED_OVERLAP_ERR - overlap error
+FEED_ITEMS_ERR   - few items error
+FEED_SOURCE_ERR  - source error
+FEED_CONFIG_ERR  - configuration error
+
+$feed - feed configuration
+$report - report info
+
+hook_feed_import_success($feed, $report)
+$feed - feed configuration
+$report - report info
+
+These hooks will not be called if variable feed_import_invoke_hooks
+is set to false.
