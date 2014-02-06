@@ -4,6 +4,20 @@
  * Basic settings for feed import base module
  */
 
+/**
+ * Implements hook_help().
+ */
+function feed_import_base_help($path, $arg) {
+  if ($path == 'admin/help#feed_import_base') {
+    $vars = array(
+      '!project_page' => l('Feed Import', 'http://drupal.org/project/feed_import'),
+    );
+    $help  = t('The basic functionality used to import content into entities.');
+    $help .= '<br />';
+    $help .= t('For more info please read README.txt or go to !project_page.', $vars);
+    return $help;
+  }
+}
 
 /**
  * Implements hook_permision().

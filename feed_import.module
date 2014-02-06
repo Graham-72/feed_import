@@ -13,12 +13,11 @@ define('FEED_IMPORT_PATH', 'admin/config/services/feed_import');
 function feed_import_help($path, $arg) {
   if ($path == 'admin/help#feed_import') {
     $vars = array(
-      '!file' => l('README.txt', drupal_get_path('module', 'feed_import') . '/README.txt'),
       '!project_page' => l('Feed Import', 'http://drupal.org/project/feed_import'),
     );
     $help  = t('Imports content from various file types (like XML, HTML, CSV, JSON, ...) or from databases.');
     $help .= '<br />';
-    $help .= t('For more info please read !file file or go to !project_page.', $vars);
+    $help .= t('For more info please go to !project_page.', $vars);
     return $help;
   }
 }
