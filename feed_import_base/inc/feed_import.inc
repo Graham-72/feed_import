@@ -1557,9 +1557,6 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   // Update format.
   protected $updateFormat;
 
-  // Used to generate hash.
-  protected $hashPart;
-
   // Reuseable db objects.
   protected $select;
   protected $insert;
@@ -1605,8 +1602,6 @@ class FeedImportSQLHashes extends FeedImportHashManager {
       0, // holds expire
     );
 
-    $this->hashPart = '/' . $this->group . '/' . $this->entity;
-
     // Create select object.
     $this->select = db_select('feed_import_hashes', 'f')
                       ->fields('f', array('hash', 'id', 'entity_id', 'expire'))
@@ -1644,7 +1639,7 @@ class FeedImportSQLHashes extends FeedImportHashManager {
    * {@inheritdoc}
    */
   public function hash(&$uniq) {
-    return $this->generatedHashes[] = md5($uniq . $this->hashPart);
+    return $this->generatedHashes[] = md5($uniq);
   }
 
   /**
@@ -1858,4 +1853,27 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   }
 
 
+}
+
+/**
+ * This class implements SQL hash storage compatible with version 2.x
+ */
+class FeedImportSQLHashesv2Compatible extends FeedImportSQLHashes {
+  // Used to generate hash.
+  protected $hashPart;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hash(&$uniq) {
+    return $this->generatedHashes[] = md5($uniq . $this->hashPart);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setOptions(array $options, $overwrite = FALSE) {
+    parent::setOptions($options, $overwrite);
+    $this->hashPart = '/' . $this->group . '/' . $this->entity;
+  }
 }

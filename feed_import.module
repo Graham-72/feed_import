@@ -681,7 +681,7 @@ function feed_import_feed_import_processor_info() {
  * Implements hook_feed_import_hash_manager_info().
  */
 function feed_import_feed_import_hash_manager_info() {
-  return array(
+  $items = array(
     'sql' => array(
       'name' => t('SQL Hash Manager'),
       'description' => t('Monitored data is saved in database.'),
@@ -717,6 +717,19 @@ function feed_import_feed_import_hash_manager_info() {
       ),
     ),
   );
+  $items['sqlv2compatible'] = array(
+    'class' => 'FeedImportSQLHashesv2Compatible',
+    'name' => t('SQL Hash Manager 2.x compatible'),
+    'description' => t('Monitored data is saved in database.') . '<br>' .
+                      t('Do not use this for new feeds and do not change it if used!'),
+    'inherit_options' => 'sql',
+    'options' => array(
+      'group' => array(
+        '#disabled' => TRUE,
+      ),
+    ),
+  );
+  return $items;
 }
 
 /**
@@ -2297,6 +2310,7 @@ function feed_import_import_feed_form($form, &$form_state) {
 function feed_import_import_feed_form_validate($form, &$form_state) {
   $code = trim($form_state['values']['code']);
   if (!$code || !($code = @json_decode($code, TRUE))) {
+    dpm(json_last_error());
     form_error($form['code'], t('Invalid JSON code!'));
     return;
   }
