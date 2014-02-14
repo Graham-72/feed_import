@@ -413,7 +413,7 @@ abstract class FeedImportHashManager extends FeedImportConfigurable {
   /**
    * Constructor.
    */
-  abstract public function __construct($entity_name, $group, $feed_machine_name);
+  abstract public function __construct($entity_name, $feed_machine_name);
 
   /**
    * Returns an array of entity keyed by hash,
