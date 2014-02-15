@@ -585,7 +585,6 @@ function feed_import_feed_import_reader_info() {
         '#type' => 'textfield',
         '#title' => t('URL to a valid JSON resource'),
         '#description' => t('You can also use local filesystem paths.'),
-        '#required' => TRUE,
         '#maxlength' => 1024,
       ),
       'parent' => array(
