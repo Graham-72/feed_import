@@ -501,6 +501,9 @@ class FeedImportProcessor extends FeedImportConfigurable {
   const ENTITY_SKIP = 2;
   const ENTITY_NO_COMBINE = 3;
   const ENTITY_MARK_PROTECTED = 4;
+  // Action before/after create/save entity
+  const ENTITY_SKIP_CREATE = 5;
+  const ENTITY_SKIP_SAVE = 6;
 
   // Hash property name.
   const TEMP_HASH = '$_FI~HASH_$';
@@ -535,9 +538,13 @@ class FeedImportProcessor extends FeedImportConfigurable {
   protected $resetStaticCache = 0;
   // Number entities in static cache.
   protected $staticCacheEntities = 0;
-  // Callback for before combine entities
+  // Callbacks for before/after combine entities
   protected $beforeCombine = FALSE;
   protected $afterCombine  = FALSE;
+  // Callbacks for before/after create/save entities
+  protected $beforeCreate  = FALSE;
+  protected $beforeSave    = FALSE;
+  protected $afterSave     = FALSE;
   // List of missing entities (as hash ids)
   protected $orphanHashes = array();
   // A null value.
@@ -679,18 +686,27 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (isset($options['reset_cache']) && $options['reset_cache'] >= 0) {
       $this->resetStaticCache = (int) $options['reset_cache'];
     }
-    if (isset($options['before_combine'])) {
-      $this->beforeCombine = $options['before_combine'];
-    }
-    if (isset($options['after_combine'])) {
-      $this->afterCombine = $options['after_combine'];
-    }
     if (isset($options['skip_defined_functions_check'])) {
       $this->skipDefFunChk = (bool) $options['skip_defined_functions_check'];
     }
     if (isset($options['break_on_undefined_filter'])) {
       $this->breakOnUndefinedFilter = (bool) $options['break_on_undefined_filter'];
     }
+    
+    $cbks = array(
+      'before_combine' => &$this->beforeCombine,
+      'after_combine'  => &$this->afterCombine,
+      'before_create'  => &$this->beforeCreate,
+      'before_save'    => &$this->beforeSave,
+      'after_save'     => &$this->afterSave,
+    );
+    
+    foreach ($cbks as $opt => &$val) {
+      if (!empty($options[$opt])) {
+        $val = $options[$opt];
+      }
+    }
+    
     return TRUE;
   }
 
@@ -1309,6 +1325,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
     $beforeCombine = &$this->beforeCombine;
     // Entity after combine callback
     $afterCombine = &$this->afterCombine;
+    // Entity before create callback
+    $beforeCreate = &$this->beforeCreate;
+    // Entity before save callback
+    $beforeSave = &$this->beforeSave;
+    // Entity after save callback
+    $afterSave = &$this->afterSave;
 
     // Entity load id.
     $loadId = &$loadArr[0];
@@ -1409,6 +1431,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
           }
           // Set report about updated items.
           $this->report['updated']++;
+          // Check after save callback
+          $afterSave && $afterSave($current, FALSE);
         }
         else {
           // Set report about rescheduled items.
@@ -1422,6 +1446,20 @@ class FeedImportProcessor extends FeedImportConfigurable {
         unset($ids[$hash], $current, $entity, $hash);
       }
       else {
+        
+        // Check before save callback
+        if ($beforeCreate) {
+          switch ($beforeCreate($entity)) {
+            case static::ENTITY_SKIP:
+              $this->report['skipped']++;
+              goto UNSET_E_VARS;
+            case static::ENTITY_SKIP_CREATE:
+              goto ENTITY_SAVE;
+            case static::ENTITY_SKIP_SAVE:
+              goto ENTITY_SAVED;
+          }
+        }
+        
         // Create a new entity.
         if ($createCallback) {
           $entity = $createCallback($entity);
@@ -1432,6 +1470,19 @@ class FeedImportProcessor extends FeedImportConfigurable {
         else {
           $entity = (object) $entity;
         }
+        
+        ENTITY_SAVE:
+        // Check before save callback
+        if ($beforeSave) {
+          switch ($beforeSave($entity)) {
+            case static::ENTITY_SKIP:
+              $this->report['skipped']++;
+              goto UNSET_E_VARS;
+            case static::ENTITY_SKIP_SAVE:
+              goto ENTITY_SAVED;
+          }
+        }
+        
         // Save entity, if any.
         if (!$entity || (!$saveCallback && ($entity->save() === FALSE))) {
           continue;
@@ -1439,8 +1490,14 @@ class FeedImportProcessor extends FeedImportConfigurable {
         else {
           $saveCallback($entity);
         }
+        
+        ENTITY_SAVED:
         // Entity might be added in static cache.
         $this->staticCacheEntities++;
+        
+        // Check after save callback
+        $afterSave && $afterSave($entity, TRUE);
+
         // Check if is monitored.
         if ($hash !== NULL) {
           // Insert into feed import hash table.
@@ -1448,7 +1505,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
         }
         // Set report about new items.
         $this->report['new']++;
-
+        
+        UNSET_E_VARS:
         // Not needed anymore.
         unset($entity, $hash);
       }

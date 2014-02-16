@@ -659,6 +659,12 @@ function feed_import_feed_import_processor_info() {
                             t('However, it is recommended to put those functions in a php filter file rather than creating them dynamically.'),
           '#default_value' => FALSE,
         ),
+        'after_save' => array(
+          '#type' => 'textfield',
+          '#title' => t('Entity after save/update callback'),
+          '#description' => t('Function to call after entity was saved or updated.'),
+          '#default_value' => '',
+        ),
         'before_combine' => array(
           '#type' => 'textfield',
           '#title' => t('Entity before combine callback'),
@@ -669,6 +675,18 @@ function feed_import_feed_import_processor_info() {
           '#type' => 'textfield',
           '#title' => t('Entity after combine callback'),
           '#description' => t('Return of this function decides if the new entity will be updated, skipped or rescheduled.'),
+          '#default_value' => '',
+        ),
+        'before_create' => array(
+          '#type' => 'textfield',
+          '#title' => t('Entity before create callback'),
+          '#description' => t('Return of this function decides if will skip the entity import, create or save.'),
+          '#default_value' => '',
+        ),
+        'before_save' => array(
+          '#type' => 'textfield',
+          '#title' => t('Entity before save callback'),
+          '#description' => t('Return of this function decides if will skip entity import or save.'),
           '#default_value' => '',
         ),
       ),
@@ -724,6 +742,7 @@ function feed_import_feed_import_hash_manager_info() {
     'inherit_options' => 'sql',
     'options' => array(
       'group' => array(
+        '#description' => t('You cannot change the group, but you can use this group in other feeds.'),
         '#disabled' => TRUE,
       ),
     ),
