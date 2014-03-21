@@ -726,7 +726,7 @@ class FeedImportFilter {
    */
   public static function userHashPassword($field) {
     static $not_included = TRUE;
-    if (!$not_included) {
+    if ($not_included) {
       require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
       $not_included = FALSE;
     }
