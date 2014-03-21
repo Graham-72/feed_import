@@ -601,7 +601,6 @@ function feed_import_feed_import_reader_info() {
   return $items;
 }
 
-
 /**
  * Implements hook_feed_import_processor_info().
  */
@@ -1048,7 +1047,6 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
   return $form;
 }
 
-
 /**
  * Checks if a machine name already exists.
  * Callback for machine_name input type.
@@ -1103,10 +1101,6 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
     drupal_set_message(t('Error saving feed'), 'error');
   }
 }
-
-
-
-
 
 /**
  * Class options edit form.
@@ -1337,7 +1331,6 @@ function _feed_import_generate_class_options_form(array &$setting, array &$paren
 
   return $options + $ret;
 }
-
 
 /**
  * Static fields form
@@ -2136,7 +2129,6 @@ function feed_import_fields_form($form, &$form_state, $feed) {
   return $form;
 }
 
-
 /**
  * Edit fields form submit
  */
@@ -2175,8 +2167,6 @@ function feed_import_fields_form_submit($form, &$form_state) {
     drupal_set_message(t('Feed saved'));
   }
 }
-
-
 
 /**
  * Generate field
@@ -2353,10 +2343,13 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
     $code->last_run = 0;
     $code->last_run_duration = 0;
     $code->last_run_items = 0;
-    $code->settings['hashes']['options']['group'] = $code->machine_name;
+		if (empty($code->settings['hashes']['options']['group'])) {
+    	$code->settings['hashes']['options']['group'] = $code->machine_name;
+		}
     unset($code->id);
     if (FeedImport::saveFeed($code)) {
       drupal_set_message(t('Feed imported'));
+			drupal_set_message(t('Please check the Group setting in Hash Manager before importing any items!'), 'warning');
       drupal_goto(FEED_IMPORT_PATH . '/edit/' . $code->machine_name . '/feed');
     }
     else {
