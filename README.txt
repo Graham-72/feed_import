@@ -46,6 +46,8 @@ function hook_feed_import_reader_info() {
           '#default_value' => '1',
           '#required' => TRUE,
           '#maxlength' => 1024,
+          // validate option by using #element_validate
+          '#element_validate' => array('my_element_validate_function'),
         ),
         'optionx' => array(
           '#type' => 'textarea',

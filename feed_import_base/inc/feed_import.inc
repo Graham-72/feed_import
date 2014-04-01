@@ -711,19 +711,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option, $value) {
-    switch ($option) {
-      case 'max_reported_errors':
-      case 'items_count':
-      case 'reset_cache':
-        return $value >= 0;
-    }
-    return TRUE;
-  }
-
-  /**
    * Sets the entity info object.
    */
   public function setEntityInfo($entity_info) {
@@ -1678,19 +1665,6 @@ class FeedImportSQLHashes extends FeedImportHashManager {
     // Create insert object.
     $this->insert = db_insert('feed_import_hashes')
                       ->fields(array('feed_machine_name', 'feed_group', 'entity', 'entity_id', 'hash', 'expire'));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option_name, $value) {
-    switch ($option_name) {
-      case 'update_chunk': case 'insert_chunk':
-        return $value > 0;
-      case 'ttl':
-        return $value >= 0;
-    }
-    return TRUE;
   }
 
   /**

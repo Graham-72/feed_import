@@ -273,6 +273,7 @@ function feed_import_feed_import_reader_info() {
                           array('attributes' => array('target' => '_blank'))
                         ),
                       )),
+    '#element_validate' => array('feed_import_element_validate_json'),
   );
 
   $sxeclass = array(
@@ -280,6 +281,7 @@ function feed_import_feed_import_reader_info() {
     '#title' => t('SimpleXMLElement class'),
     '#default_value' => 'SimpleXMLElement',
     '#required' => TRUE,
+    '#element_validate' => array('feed_import_element_validate_simplexmlclass'),
   );
 
   if (!defined('LIBXML_PARSEHUGE')) {
@@ -374,6 +376,7 @@ function feed_import_feed_import_reader_info() {
         '#default_value' => 8192,
         '#size' => 10,
         '#required' => TRUE,
+        '#element_validate' => array('element_validate_integer_positive'),
       ),
       'substr' => array(
         '#type' => 'select',
@@ -393,6 +396,7 @@ function feed_import_feed_import_reader_info() {
         '#description' => t('Change XML properties (like encoding).'),
         '#default_value' => '<?xml version="1.0" encoding="utf-8"?>',
         '#maxlength' => 1024,
+        '#element_validate' => array('feed_import_element_validate_xmldec'),
       ),
       'stream' => $stream,
       'class' => $sxeclass,
@@ -594,7 +598,9 @@ function feed_import_feed_import_reader_info() {
         '#maxlength' => 1024,
       ),
       'stream' => $stream,
-      'raw' => $raw,
+      'raw' => $raw + array(
+        '#element_validate' => array('feed_import_element_validate_json'),
+      ),
     ),
   );
 
@@ -618,6 +624,7 @@ function feed_import_feed_import_processor_info() {
           '#description' => t('Use 0 for creating all entities first.'),
           '#default_value' => 300,
           '#required' => TRUE,
+          '#element_validate' => array('element_validate_integer'),
         ),
         'skip_imported' => array(
           '#type' => 'checkbox',
@@ -631,6 +638,7 @@ function feed_import_feed_import_processor_info() {
           '#description' => t('After how many cached entities to reset the in-memory cache.') . ' ' .
                             t('This can reduce memory usage. Use 0 to ignore it.'),
           '#default_value' => 100,
+          '#element_validate' => array('element_validate_integer'),
           '#required' => TRUE,
         ),
         'throw_exception' => array(
@@ -644,6 +652,7 @@ function feed_import_feed_import_processor_info() {
           '#type' => 'textfield',
           '#title' => t('Maximum number of errors to log'),
           '#default_value' => 100,
+          '#element_validate' => array('element_validate_integer_positive'),
           '#required' => TRUE,
         ),
         'break_on_undefined_filter' => array(
@@ -716,18 +725,21 @@ function feed_import_feed_import_hash_manager_info() {
           '#title' => t('Keep imported items (seconds)'),
           '#description' => t('This is used to delete items after expiration. Use 0 to keep items forever.'),
           '#default_value' => 0,
+          '#element_validate' => array('element_validate_integer'),
           '#required' => TRUE,
         ),
         'update_chunk' => array(
           '#type' => 'textfield',
           '#title' => t('Minimum number of hashes to commit update'),
           '#default_value' => 300,
+          '#element_validate' => array('element_validate_integer_positive'),
           '#required' => TRUE,
         ),
         'insert_chunk' => array(
           '#type' => 'textfield',
           '#title' => t('Minimum number of hashes to commit insert'),
           '#default_value' => 300,
+          '#element_validate' => array('element_validate_integer_positive'),
           '#required' => TRUE,
         ),
       ),
@@ -766,6 +778,7 @@ function feed_import_feed_import_filter_info() {
           '#default_value' => '[field]',
           '#type' => 'textfield',
           '#required' => TRUE,
+          '#element_validate' => array('feed_import_element_validate_not_numeric'),
         ),
         'include' => array(
           '#type' => 'textarea',
@@ -1204,28 +1217,6 @@ function feed_import_class_settings_form($form, &$form_state, $feed, $setting, $
   );
 
   return $form;
-}
-
-/**
- * Options edit form validate
- */
-function feed_import_class_settings_form_validate($form, &$form_state) {
-  if ($form_state['triggering_element']['#type'] != 'submit') {
-    return;
-  }
-  $class = $form_state['values']['class'];
-  // Try to validate options, if class suports.
-  if (method_exists($class, 'validateOption')) {
-    foreach ($form_state['values']['options'] as $opt => &$val) {
-      if (!$class::validateOption($opt, $val)) {
-        $f = &$form['options'][$opt];
-        form_error($f, t('@field field contains invalid value!', array(
-          '@field' => isset($f['#title']) ? $f['#title'] : $opt,
-        )));
-        unset($f);
-      }
-    }
-  }
 }
 
 /**
@@ -2318,7 +2309,6 @@ function feed_import_import_feed_form($form, &$form_state) {
 function feed_import_import_feed_form_validate($form, &$form_state) {
   $code = trim($form_state['values']['code']);
   if (!$code || !($code = @json_decode($code, TRUE))) {
-    dpm(json_last_error());
     form_error($form['code'], t('Invalid JSON code!'));
     return;
   }
@@ -2652,4 +2642,52 @@ function feed_import_generate_func_item($pos, array $values, $collapsed = FALSE)
   );
 
   return $item;
+}
+
+
+/**
+ * Validates JSON code
+ */
+function feed_import_element_validate_json($element, &$form_state, $form) {
+  if ($element['#value'] && !@json_decode($element['#value'])) {
+    form_error($element, t('%title contains invalid JSON code!', array(
+      '%title' => $element['#title'],
+    )));
+  }
+}
+
+/**
+ * Validates class name to be instance of SimpleXMLElement
+ */
+function feed_import_element_validate_simplexmlclass($element, &$form_state, $form) {
+  if (!$element['#value']) {
+    return;
+  }
+  if ($element['#value'] != 'SimpleXMLElement' && !is_subclass_of($element['#value'], 'SimpleXMLElement')) {
+    form_error($element, t('%title must extend SimpleXMLElement class!', array(
+      '%title' => $element['#title'],
+    )));
+  }
+}
+
+/**
+ * Validates XML declaration.
+ */
+function feed_import_element_validate_xmldec($element, &$form_state, $form) {
+  if ($element['#value'] !== '' && !preg_match("/^\<\?xml (.*)\?\>$/", $element['#value'])) {
+    form_error($element, t('%title must have a valid XML declaration!', array(
+      '%title' => $element['#title'],
+    )));
+  }
+}
+
+/**
+ * Validates a not numeric string.
+ */
+function feed_import_element_validate_not_numeric($element, &$form_state, $form) {
+  if (is_numeric($element['#value'])) {
+    form_error($element, t('%title must not be numeric!', array(
+      '%title' => $element['#title'],
+    )));
+  }
 }

@@ -32,21 +32,6 @@ abstract class FeedImportConfigurable {
   }
 
   /**
-   * Validates option value
-   *
-   * @param string $option_name
-   *    Option to check
-   * @param mixed $value
-   *    Option value
-   *
-   * @return bool
-   *    TRUE if option is valid
-   */
-  public static function validateOption($option_name, $value) {
-    return TRUE;
-  }
-
-  /**
    * Helper function to get lines of a string
    *
    * @param string $str

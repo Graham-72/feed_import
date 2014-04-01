@@ -102,16 +102,6 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
     return $item;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option_name, $value) {
-    if ($option_name == 'class') {
-      return $value == 'SimpleXMLElement' || is_subclass_of($value, 'SimpleXMLElement');
-    }
-    return TRUE;
-  }
-
 }
 
 
@@ -435,26 +425,6 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
     }
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option_name, $value) {
-    switch ($option_name) {
-      case 'stream':
-        // Stream setting must be a valid json.
-        return !$value || json_decode($value);
-      case 'size':
-        return $value > 0;
-      case 'properties':
-        return (bool) preg_match("/^\<\?xml (.*)\?\>$/", $value);
-      case 'substr':
-        return in_array($value, array('substr', 'mb_substr', 'drupal_substr'));
-      case 'class':
-        return $value == 'SimpleXMLElement' || is_subclass_of($value, 'SimpleXMLElement');
-    }
-    return TRUE;
-  }
-
 }
 
 /**
@@ -626,21 +596,6 @@ class CSVFIReader extends FeedImportUniVectorReader {
     }
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option_name, $value) {
-    switch ($option_name) {
-      case 'stream':
-        // Stream setting must be a valid json.
-        return !$value || json_decode($value);
-      case 'length':
-        return $value >= 0;
-      case 'delimiter': case 'enclosure': case 'escape':
-        return strlen($value) == 1;
-    }
-    return TRUE;
-  }
 }
 
 /**
@@ -698,14 +653,4 @@ class JSONFIReader extends FeedImportVectorReader {
     return array_shift($this->items);
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option_name, $value) {
-    if ($option_name == 'stream') {
-      // Stream setting must be a valid json.
-      return !$value || json_decode($value);
-    }
-    return TRUE;
-  }
 }

@@ -58,16 +58,6 @@ class FeedImportMultiFilter extends FeedImportConfigurable {
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public static function validateOption($option_name, $value) {
-    if ($option_name == 'param') {
-      return !is_numeric($value);
-    }
-    return TRUE;
-  }
-
-  /**
    * Parse function name and returns a callable.
    *
    * @param string $function
