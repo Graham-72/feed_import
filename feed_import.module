@@ -546,6 +546,14 @@ function feed_import_feed_import_reader_info() {
         '#description' => t('Use this only when the CSV have on the first line the column names.'),
         '#default_value' => FALSE,
       ),
+      'length' => array(
+        '#type' => 'textfield',
+        '#title' => t('Line length'),
+        '#description' => t('This is only a hint.'),
+        '#required' => TRUE,
+        '#default_value' => 0,
+        '#element_validate' => array('element_validate_integer'),
+      ),
       'delimiter' => array(
         '#type' => 'textfield',
         '#title' => t('Delimiter'),
