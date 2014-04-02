@@ -384,7 +384,7 @@ interface FeedImportStaticHashManager {
 /**
  * Class which provides methods to manage hashes.
  */
-abstract class FeedImportHashManager extends FeedImportConfigurable {
+abstract class FeedImportHashManager extends FeedImportConfigurable implements FeedImportStaticHashManager {
 
   // Expire entities.
   protected $ttl = 0;
