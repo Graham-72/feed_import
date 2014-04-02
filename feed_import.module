@@ -967,7 +967,7 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
     drupal_set_title(t('Edit feed - @name', array('@name' => $feed->name)));
   }
   else {
-    drupal_set_title(t('Add new field'));
+    drupal_set_title(t('Add new feed'));
   }
 
   $form['name'] = array(
@@ -1044,6 +1044,13 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
       '#description' => t('You can also use a percentage by appending %. Percentage is reported to items count of last import.') . ' ' .
                         t('Use 0 to ignore this setting.'),
     );
+    
+    $form['preprocess'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Pre-process callback'),
+      '#description' => t('You can use a pre-process function before the feed is imported in order to make some changes to configuration.'),
+      '#default_value' => isset($feed->settings['preprocess']) ? $feed->settings['preprocess'] : '',
+    );
   }
   else {
     $form['cron_import'] = array(
@@ -1105,6 +1112,7 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
   $feed->cron_import = $v['cron_import'];
   if (isset($v['feed'])) {
     $feed->settings['feed'] = $v['feed'];
+    $feed->settings['preprocess'] = $v['preprocess'];
   }
   if (FeedImport::saveFeed($feed)) {
     drupal_set_message(t('Feed saved'));

@@ -252,6 +252,7 @@ class FeedImport {
       'last_run_items' => 0,
       'settings' => array(
         'uniq_path' => NULL,
+        'preprocess' => NULL,
         'feed' => array(
           'protect_on_invalid_source' => FALSE,
           'protect_on_fewer_items' => 0,
@@ -364,6 +365,11 @@ class FeedImport {
    *    Path to filters dir
    */
   public static function import($feed, $filters_dir) {
+    if (!empty($feed->settings['preprocess'])
+        && function_exists($feed->settings['preprocess'])) {
+      // Preprocess feed before import.
+      call_user_func($feed->settings['preprocess'], $feed);
+    }
     $class = $feed->settings['processor']['class'];
     $fi = new $class($feed->machine_name);
     $fi->setErrorHandler(TRUE);
