@@ -317,6 +317,7 @@ class ChunkedXMLFIReader extends FeedImportSimpleXPathReader {
    * {@inheritdoc}
    */
   public function setOptions(array $options, $overwrite = FALSE) {
+    parent::setOptions($options, $overwrite);
     // Set substr function.
     if (!empty($this->options['substr']) && function_exists($this->options['substr'])) {
       $this->substr = $this->options['substr'];
