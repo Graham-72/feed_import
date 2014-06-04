@@ -1052,7 +1052,7 @@ function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
       '#description' => t('You can also use a percentage by appending %. Percentage is reported to items count of last import.') . ' ' .
                         t('Use 0 to ignore this setting.'),
     );
-    
+
     $form['preprocess'] = array(
       '#type' => 'textfield',
       '#title' => t('Pre-process callback'),
@@ -1099,9 +1099,11 @@ function feed_import_machine_name_exists($name) {
  * Edit feed form validate
  */
 function feed_import_edit_feed_form_validate($form, &$form_state) {
-  if (is_numeric($form_state['values']['machine_name']) ||
-      is_numeric($form_state['values']['machine_name'][0])) {
-    form_error($form['machine_name'], t('Machine name must be not numeric!'));
+  if (!empty($form_state['values']['machine_name'])) {
+    if (is_numeric($form_state['values']['machine_name']) ||
+        is_numeric($form_state['values']['machine_name'][0])) {
+      form_error($form['machine_name'], t('Machine name must be not numeric!'));
+    }
   }
 }
 
@@ -2338,32 +2340,82 @@ function feed_import_import_feed_form_validate($form, &$form_state) {
  * Import form submit
  */
 function feed_import_import_feed_form_submit($form, &$form_state) {
-  if ($code = @json_decode($form_state['values']['code'], TRUE)) {
+
+  $options = array(
+    'name' => $form_state['values']['name'],
+    'machine_name' => $form_state['values']['machine_name'],
+  );
+
+  if ($code = feed_import_import_feed_from_json($form_state['values']['code'], $options)) {
+    drupal_set_message(t('Feed imported'));
+    drupal_set_message(t('Please check the Group setting in Hash Manager before importing any items!'), 'warning');
+    drupal_goto(FEED_IMPORT_PATH . '/edit/' . $code->machine_name . '/feed');
+  }
+  else {
+    drupal_set_message(t('Feed cannot be imported!'), 'error');
+    drupal_goto(FEED_IMPORT_PATH);
+  }
+
+}
+
+/**
+ * Import a feed from a json file.
+ * 
+ * @param  string $json    The JSON encoded feed configuration
+ * @param  array  $options An array of options to add to $json configuration
+ * @param  bool   $cleanup TRUE to reset import information
+ * 
+ * @return mixed A feed configuration object on success or false on error
+ */
+function feed_import_import_feed_from_json($json, array $options = array(), $cleanup = TRUE) {
+
+  if ($code = @json_decode($json, TRUE)) {
+
+    // Get an empty feed configuration.
     $ef = FeedImport::getEmptyFeed();
+    
+    // Add options.
+    $code = $options + $code;
+    
+    // Add empty feed items.
     $code += $ef;
-    $code['settings'] += $ef['settings'];
-    $code = (object) $code;
-    $code->name = $form_state['values']['name'];
-    $code->machine_name = $form_state['values']['machine_name'];
-    $code->cron_import = 0;
-    $code->last_run = 0;
-    $code->last_run_duration = 0;
-    $code->last_run_items = 0;
-		if (empty($code->settings['hashes']['options']['group'])) {
-    	$code->settings['hashes']['options']['group'] = $code->machine_name;
-		}
-    unset($code->id);
-    if (FeedImport::saveFeed($code)) {
-      drupal_set_message(t('Feed imported'));
-			drupal_set_message(t('Please check the Group setting in Hash Manager before importing any items!'), 'warning');
-      drupal_goto(FEED_IMPORT_PATH . '/edit/' . $code->machine_name . '/feed');
+    
+    // Add settings options if any.
+    if (!empty($options['settings'])) {
+      $code['settings'] = $options['settings'] + $code['settings'];
     }
-    else {
-      drupal_set_message(t('Feed cannot be imported!'), 'error');
-      drupal_goto(FEED_IMPORT_PATH);
+    
+    // Add empty feed settings.
+    $code['settings'] += $ef['settings'];
+    
+    // Not needed anymore.
+    unset($json, $ef, $options, $code['id']);
+    
+    // Convert to object.
+    $code = (object) $code;
+
+    // Cleanup import info.
+    if ($cleanup) {
+      $code->cron_import = 0;
+      $code->last_run = 0;
+      $code->last_run_duration = 0;
+      $code->last_run_items = 0;
+    }
+
+    // Check for group, if no group then use machine_name as group.
+    if (empty($code->settings['hashes']['options']['group'])) {
+      $code->settings['hashes']['options']['group'] = $code->machine_name;
+    }
+    
+    // Save feed.
+    if (FeedImport::saveFeed($code)) {
+      return $code;
     }
   }
+
+  return FALSE;
 }
+
 
 /**
  * Process a feed
