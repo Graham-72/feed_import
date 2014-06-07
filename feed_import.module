@@ -435,6 +435,11 @@ function feed_import_feed_import_reader_info() {
         )),
         '#default_value' => '',
       ),
+      'namespaces' => array(
+        '#type' => 'textarea',
+        '#title' => t('Register namespaces for XML (only for XMLs having namespaces)'),
+        '#description' => t('Each namespace must be on a line in the following format: name=URI'),
+      ),
       'options' => $libxml,
       'silence_load_errors' => array(
         '#type' => 'checkbox',

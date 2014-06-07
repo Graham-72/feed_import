@@ -59,6 +59,9 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
 
     // Check for namespace settings.
     if (!empty($this->options['namespaces'])) {
+      if (!is_array($this->options['namespaces'])) {
+        $this->options['namespaces'] = static::cleanLines($this->options['namespaces']);
+      }
       $this->nsname = $this->nsuri = array();
       foreach ($this->options['namespaces'] as $key => &$ns) {
         $ns = explode('=', $ns, 2);
@@ -214,7 +217,22 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
       $this->xpath->registerNamespace('php', 'http://php.net/xpath');
       $this->xpath->registerPhpFunctions($this->options['php_func']);
     }
-
+    
+    // Check for namespace settings.
+    if (!empty($this->options['namespaces'])) {
+      if (!is_array($this->options['namespaces'])) {
+        $this->options['namespaces'] = static::cleanLines($this->options['namespaces']);
+      }
+      foreach ($this->options['namespaces'] as $key => &$ns) {
+        $ns = explode('=', $ns, 2);
+        if (count($ns) == 2 && !empty($ns[0]) && !empty($ns[1])) {
+          $this->xpath->registerNamespace($ns[0], $ns[1]);
+        }
+      }
+      // Not needed anymore.
+      unset($this->options['namespaces'], $ns);
+    }
+    
     $this->items = $this->xpath->query($this->options['parent']);
     if ($this->items === FALSE) {
       return FALSE;
@@ -235,7 +253,6 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
   }
 
 }
-
 
 /**
  * CunkedXML Reader class, used for huge XML files.
