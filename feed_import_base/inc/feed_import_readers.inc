@@ -49,13 +49,18 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
       // No raw or url resource provided.
       return FALSE;
     }
-
+    
+    // Add X inclusions, using a simple hack for SimpleXMLElement
+    if ($opts & LIBXML_XINCLUDE) {
+      dom_import_simplexml($this->items)->ownerDocument->xinclude();
+    }
+    
     if (!$this->items) {
       return FALSE;
     }
 
     // Not needed anymore.
-    unset($this->options['raw']);
+    unset($this->options['raw'], $opts);
 
     // Check for namespace settings.
     if (!empty($this->options['namespaces'])) {
@@ -199,7 +204,12 @@ class DomXMLFIReader extends FeedImportDomXPathReader {
     if (!$loaded) {
       return FALSE;
     }
-
+    
+    // Add X inclusions
+    if ($opts & LIBXML_XINCLUDE) {
+      $doc->xinclude();
+    }
+    
     unset($this->options['raw'], $opts, $opt, $htmlok, $loaded, $e);
 
     $doc->recover = $this->options['recover'];
