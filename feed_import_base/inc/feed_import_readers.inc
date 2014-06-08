@@ -51,7 +51,7 @@ class SimpleXMLFIReader extends FeedImportSimpleXPathReader {
     }
     
     // Add X inclusions, using a simple hack for SimpleXMLElement
-    if ($opts & LIBXML_XINCLUDE) {
+    if (($this->items instanceof SimpleXMLElement) && ($opts & LIBXML_XINCLUDE)) {
       dom_import_simplexml($this->items)->ownerDocument->xinclude();
     }
     
