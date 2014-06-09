@@ -39,8 +39,6 @@ function feed_import_base_permission() {
  * Implements hook_menu().
  */
 function feed_import_base_menu() {
-  // FEED_IMPORT_BASE_PATH is defined at the top of this file.
-  // This is used for arguments to know the position.
   $items = array();
   $items['admin/config/services/feed_import/settings'] = array(
     'title' => 'Settings',

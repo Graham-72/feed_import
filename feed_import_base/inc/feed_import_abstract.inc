@@ -350,6 +350,8 @@ interface FeedImportStaticHashManager {
   /**
    * Returns an array of expired entity ids keyed by entity name
    *
+   * @param string $name
+   *    Feed machine name
    * @param int $max
    *    Max number of ids or 0 for all
    * @return array
@@ -357,7 +359,7 @@ interface FeedImportStaticHashManager {
    *    entity_name:
    *      hash_id: enity_id
    */
-  public static function getExpired($max = 0);
+  public static function getExpired($name, $max = 0);
 
   /**
    * Reschedules all entities

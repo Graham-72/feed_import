@@ -391,21 +391,20 @@ class FeedImport {
   }
 
   /**
-   * Gets all hash manager classes.
+   * Gets all hash manager classes used by feeds.
    *
    * @return array
    *    An array of classes
    */
   public static function getHashManagers() {
     static $hm = array();
-    if ($hm) {
-      return $hm;
-    }
-    $base = 'FeedImportHashManager';
-    foreach (get_declared_classes() as $class) {
-      if (is_subclass_of($class, $base)) {
-        $hm[] = $class;
+    if (!$hm) {
+      foreach (static::loadAllFeeds() as $feed) {
+        if (!empty($feed->settings['hashes']['class'])) {
+          $hm[] = $feed->settings['hashes']['class'];
+        }
       }
+      $hm = array_unique($hm);
     }
     return $hm;
   }
@@ -422,8 +421,12 @@ class FeedImport {
    */
   public static function deleteExpired($max = 0) {
     $deleted = 0;
-    foreach (static::getHashManagers() as $class) {
-      $items = $class::getExpired($max);
+    foreach (static::loadAllFeeds() as $feed) {
+      if (empty($feed->settings['hashes']['class'])) {
+        continue;
+      }
+      $class = $feed->settings['hashes']['class'];
+      $items = $class::getExpired($feed->machine_name, $max);
       foreach ($items as $e => &$ids) {
         $entity = static::getEntityInfo($e);
         // Delete entities.
@@ -1842,9 +1845,10 @@ class FeedImportSQLHashes extends FeedImportHashManager {
   /**
    * {@inheritdoc}
    */
-  public static function getExpired($max = 0) {
+  public static function getExpired($name, $max = 0) {
     $q = db_select('feed_import_hashes', 'f')
           ->fields('f', array('entity', 'id', 'entity_id'))
+          ->condition('feed_machine_name', $name)
           ->condition('expire', array(static::MARK_PROTECTED + 1, time()), 'BETWEEN');
     if ($max) {
       $q->range(0, $max);
