@@ -2365,37 +2365,40 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
 
 /**
  * Import a feed from a json file.
- * 
+ *
  * @param  string $json    The JSON encoded feed configuration
  * @param  array  $options An array of options to add to $json configuration
  * @param  bool   $cleanup TRUE to reset import information
- * 
+ *
  * @return mixed A feed configuration object on success or false on error
  */
-function feed_import_import_feed_from_json($json, array $options = array(), $cleanup = TRUE) {
+function feed_import_import_feed_from_json($json, array $options = array(), $cleanup = TRUE, $keep_id = FALSE) {
 
   if ($code = @json_decode($json, TRUE)) {
 
     // Get an empty feed configuration.
     $ef = FeedImport::getEmptyFeed();
-    
+
     // Add options.
     $code = $options + $code;
-    
+
     // Add empty feed items.
     $code += $ef;
-    
+
     // Add settings options if any.
     if (!empty($options['settings'])) {
       $code['settings'] = $options['settings'] + $code['settings'];
     }
-    
+
     // Add empty feed settings.
     $code['settings'] += $ef['settings'];
-    
+
     // Not needed anymore.
-    unset($json, $ef, $options, $code['id']);
-    
+    unset($json, $ef, $options);
+    if (!$keep_id) {
+      unset($code['id']);
+    }
+
     // Convert to object.
     $code = (object) $code;
 
@@ -2411,7 +2414,7 @@ function feed_import_import_feed_from_json($json, array $options = array(), $cle
     if (empty($code->settings['hashes']['options']['group'])) {
       $code->settings['hashes']['options']['group'] = $code->machine_name;
     }
-    
+
     // Save feed.
     if (FeedImport::saveFeed($code)) {
       return $code;
