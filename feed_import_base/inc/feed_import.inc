@@ -59,7 +59,22 @@ class FeedImport {
       'properties' => array(),
       'fields' => array(),
     );
-
+    
+    if ($info->controller) {
+      $info->controller->canCreate = method_exists($info->controller, 'create');
+      $info->controller->canSave = method_exists($info->controller, 'save');
+      $info->controller->canDelete = method_exists($info->controller, 'delete');
+      $info->controller->canResetCache = method_exists($info->controller, 'resetCache');
+    }
+    else {
+      $info->controller = (object) array(
+        'canCreate' => FALSE,
+        'canSave' => FALSE,
+        'canDelete' => FALSE,
+        'canResetCache' => FALSE,
+      );
+    }
+    
     if (!$info->saveCallback && function_exists($entity_name . '_save')) {
       $info->saveCallback = $entity_name . '_save';
     }
@@ -1418,13 +1433,27 @@ class FeedImportProcessor extends FeedImportConfigurable {
         // Check if entity is changed and save changes.
         if ($changed) {
           // Save entity.
-          if (!$saveCallback && !$current->save()) {
+          if ($saveCallback) {
+            $saveCallback($current);
+          }
+          elseif (method_exists($current, 'save')) {
+            if (!$current->save()) {
+              unset($current);
+              continue;
+            }
+          }
+          elseif ($this->entityInfo->controller->canSave) {
+            if (!$this->entityInfo->controller->save($current)) {
+              unset($current);
+              continue;
+            }
+          }
+          else {
+            // Don't know how to save entity...
             unset($current);
             continue;
           }
-          else {
-            $saveCallback($current);
-          }
+
           // Set report about updated items.
           $this->report['updated']++;
           // Check after save callback
@@ -1460,7 +1489,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
         if ($createCallback) {
           $entity = $createCallback($entity, $this->entityInfo->name);
         }
-        elseif (method_exists($this->entityInfo->controller, 'create')) {
+        elseif ($this->entityInfo->controller->canCreate) {
           $entity = $this->entityInfo->controller->create($entity);
         }
         else {
@@ -1479,12 +1508,30 @@ class FeedImportProcessor extends FeedImportConfigurable {
           }
         }
         
-        // Save entity, if any.
-        if (!$entity || (!$saveCallback && ($entity->save() === FALSE))) {
+        // No entity to save.
+        if (!$entity) {
+          unset($entity);
           continue;
         }
-        else {
+        elseif ($saveCallback) {
           $saveCallback($entity);
+        }
+        elseif (method_exists($entity, 'save')) {
+          if (!$entity->save()) {
+            unset($entity);
+            continue;
+          }
+        }
+        elseif ($this->entityInfo->controller->canSave) {
+          if (!$this->entityInfo->controller->save($entity)) {
+            unset($entity);
+            continue;
+          }
+        }
+        else {
+          // Don't know how to save entity...
+          unset($entity);
+          continue;
         }
         
         ENTITY_SAVED:
@@ -1508,7 +1555,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       }
       // Remove entity cache.
       if ($this->staticCacheEntities == $this->resetStaticCache) {
-        $this->entityInfo->controller->resetCache();
+        $this->entityInfo->controller->canResetCache && $this->entityInfo->controller->resetCache();
         $this->staticCacheEntities = 0;
       }
     }
@@ -1559,7 +1606,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
 
     // Reset the static cache.
     if ($this->staticCacheEntities && $this->resetStaticCache) {
-      $this->entityInfo->controller->resetCache();
+      $this->entityInfo->controller->canResetCache && $this->entityInfo->controller->resetCache();
       $this->staticCacheEntities = 0;
     }
 
