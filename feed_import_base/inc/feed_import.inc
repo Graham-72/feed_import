@@ -1142,6 +1142,9 @@ class FeedImportProcessor extends FeedImportConfigurable {
           // We matched one path.
           break;
         }
+        else {
+          $val = NULL;
+        }
       }
       // Check if default action is needed.
       if ($val === NULL) {
