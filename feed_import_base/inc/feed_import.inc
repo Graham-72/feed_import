@@ -105,10 +105,18 @@ class FeedImport {
       // Get properties info.
       $prop_info = entity_get_property_info($entity_name);
       if (isset($prop_info['properties'])) {
-        $info->properties = array_diff(
-          array_keys($prop_info['properties']),
-          array_keys($info->fields)
-        );
+        foreach ($prop_info['properties'] as $pname => $pval) {
+          if (isset($pval['schema field'])) {
+            $pval = $pval['schema field'];
+          }
+          else {
+            $pval = $pname;
+          }
+          if (!isset($info->fields[$pval])) {
+            $info->properties[] = $pval;
+          }
+        }
+        $info->properties = array_unique($info->properties);
       }
     }
     elseif (isset($entity['schema_fields_sql']['base table'])) {
