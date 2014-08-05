@@ -489,7 +489,7 @@ class FeedImportFilter {
    * @return int
    *   Vocabulary vid
    */
-  public static function getVidFromName($name) {
+  public static function getVidFromName($name, $by_machine_name = FALSE) {
     static $vids = array();
     $name = drupal_strtolower($name);
     if (isset($vids[$name])) {
@@ -497,7 +497,7 @@ class FeedImportFilter {
     }
     $query = new EntityFieldQuery();
     $query = $query->entityCondition('entity_type', 'taxonomy_vocabulary')
-                    ->propertyCondition('name', $name)
+                    ->propertyCondition($by_machine_name ? 'machine_name' : 'name', $name)
                     ->execute();
     if (empty($query)) {
       $vids[$name] = 0;
