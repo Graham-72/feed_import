@@ -566,7 +566,8 @@ function feed_import_feed_import_reader_info() {
         '#default_value' => ',',
         '#maxlength' => 1,
         '#size' => 1,
-        '#required' => TRUE,
+        '#element_validate' => 'feed_import_element_validate_not_empty',
+        //'#required' => TRUE,
       ),
       'enclosure' => array(
         '#type' => 'textfield',
@@ -877,6 +878,15 @@ function feed_import_get_class_settings($setting) {
  */
 function _feed_import_lines($str) {
   return preg_split('/\r?\n/', $str);
+}
+
+/**
+ * Checks if an elmeent is not empty.
+ */
+function feed_import_element_validate_not_empty($element, &$form_state) {
+  if (!strlen($element['#value'])) {
+    form_error($element, t('%name must not be empty.', array('%name' => $element['#title'])));
+  }
 }
 
 /**
