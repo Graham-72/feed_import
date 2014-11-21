@@ -872,7 +872,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
 
       // Set field info.
       $this->fieldsInfo[$f['field']] = &$f;
-
+      
+      // Add cardinality
+      $f['cardinality'] = isset($this->entityInfo->fields[$f['field']]['cardinality'])
+                            ? $this->entityInfo->fields[$f['field']]['cardinality']
+                            : 1;
+      
       // Check if column must be guessed.
       if ($f['column'] === TRUE && isset($this->entityInfo->fields[$f['field']])) {
         $f['column'] = $this->entityInfo->fields[$f['field']]['column'];
@@ -944,6 +949,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
             'field' => $f,
             'column' => FALSE,
             'update_mode' => static::UPDATE_COMBINE,
+            'cardinality' => 1,
           );
         }
         $this->baseEntity[$f] = $value;
@@ -955,6 +961,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
           'column' => isset($this->entityInfo->fields[$f]) ?
                       $this->entityInfo->fields[$f]['column'] : 'value',
           'update_mode' => static::UPDATE_COMBINE,
+          'cardinality' => isset($this->entityInfo->fields[$f]['cardinality']) ?
+                            $this->entityInfo->fields[$f]['cardinality'] : 1,
         );
       }
     }
@@ -984,7 +992,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       // However, set it to NONE, and if used will be overwritten.
       $this->baseEntity[$lk] = LANGUAGE_NONE;
     }
-
+  
     return TRUE;
   }
 
@@ -1053,6 +1061,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
       // Make it look multivalued.
       if (!is_array($value)) {
         $value = array($value);
+      }
+      elseif ($field['cardinality'] != -1 && ($cnt = count($value)) > $field['cardinality']) {
+        // Remove extra values.
+        array_splice($value, $field['cardinality'], $cnt - $field['cardinality'], NULL);
       }
 
       // Set field properties.
@@ -1246,35 +1258,71 @@ class FeedImportProcessor extends FeedImportConfigurable {
 
             // Check if duplicate field values are allowed.
             if ($field['update_mode'] == static::UPDATE_MERGE) {
-              $ec = array_merge($ec, $en);
-              // Mark as changed.
-              $changed = TRUE;
+              if ($field['cardinality'] == -1) {
+                $ec = array_merge($ec, $en);
+                // Mark as changed.
+                $changed = TRUE;
+              }
+              elseif (($cnt = count($ec)) < $field['cardinality']) {
+                $cnt = $field['cardinality'] - $cnt;
+                while ($cnt-- && $en) {
+                  $ec[] = array_shift($en);
+                }
+                $changed = TRUE;
+              }
               unset($ec, $en);
               continue;
             }
 
             // Well, we must search to see if item already exists.
-            $cnt = count($ec);
-            while ($en) {
-              $val = array_shift($en);
-              // Check if already exists.
-              $add = TRUE;
+            if ($field['cardinality'] == -1) {
+              $cnt = count($ec);
+              while ($en) {
+                $val = array_shift($en);
+                // Check if already exists.
+                $add = TRUE;
+                for ($i = 0; $i < $cnt; $i++) {
+                  // Compare by key-value.
+                  if (!array_diff_assoc($val, $ec[$i])) {
+                    $add = FALSE;
+                    break;
+                  }
+                }
+                // Do not exists so add it.
+                if ($add) {
+                  $ec[] = $val;
+                  $cnt++;
+                  // Mark as changed.
+                  $changed = TRUE;
+                }
+              } 
+            }
+            else {
+              $cnt = count($en);
+              $ecn = array();
               for ($i = 0; $i < $cnt; $i++) {
-                // Compare by key-value.
-                if (!array_diff_assoc($val, $ec[$i])) {
-                  $add = FALSE;
-                  break;
+                $not_found = true;
+                foreach ($ec as $key => &$val)  {
+                  if (!array_diff_assoc($en[$i], $val)) {
+                    $ecn[] = &$val;
+                    unset($ec[$key]);
+                    $not_found = false;
+                    break;
+                  }
+                }
+                unset($val);
+                if ($not_found) {
+                  $ecn[] = &$en[$i];
+                  $changed = TRUE;
                 }
               }
-              // Do not exists so add it.
-              if ($add) {
-                $ec[] = $val;
-                $cnt++;
-                // Mark as changed.
-                $changed = TRUE;
+              if ($changed && $ec && $cnt < $field['cardinality']) {
+                array_splice($ec, $field['cardinality'], $field['cardinality'] - $cnt, NULL);
+                $ecn = array_merge($ecn, $ec);
               }
+              $ec = $ecn;
+              unset($ecn);
             }
-
             // Remove refs.
             unset($en, $ec);
           }
