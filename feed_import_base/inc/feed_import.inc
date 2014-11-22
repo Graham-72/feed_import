@@ -19,6 +19,9 @@ class FeedImport {
 
   // Entity info cache.
   protected static $entityInfo = array();
+  
+  // Default compare function.
+  
 
   /**
    * Gets info about an entity.
@@ -96,6 +99,8 @@ class FeedImport {
             'column' => key($field_info['columns']),
             'columns' => array_keys($field_info['columns']),
             'cardinality' => $field_info['cardinality'],
+            'type' => $field_info['type'],
+            'module' => $field_info['module'],
           );
         }
       }
@@ -149,6 +154,9 @@ class FeedImport {
     return static::$entityNames;
   }
 
+  // Default field compare function.
+  public static $defaultFieldCompareFunction = '_feed_import_base_compare_other_fields';
+
   /**
    * Sets processor settings.
    *
@@ -182,7 +190,7 @@ class FeedImport {
 
     $ok = $ok && $fi->setHashManager($hm);
     $ok = $ok && $fi->setUniq($s['uniq_path']);
-    $ok = $ok && $fi->setFields($s['fields'], $s['static_fields']);
+    $ok = $ok && $fi->setFields($s['fields'], $s['static_fields'], static::getFieldsCompareFunctions(), static::$defaultFieldCompareFunction);
 
     $ok = $ok && $fi->setCustomSettings(array_diff_key($s, array(
       'uniq_path' => 1, 'processor' => 1, 'reader' => 1, 'hashes' => 1,
@@ -191,6 +199,28 @@ class FeedImport {
     )));
 
     return $ok ? TRUE : $fi->getErrors();
+  }
+  
+  /**
+   * Returns field compare functions.
+   */
+  public static function getFieldsCompareFunctions() {
+    $funcs = module_invoke_all('feed_import_field_compare_functions');
+    foreach ($funcs as $type => &$f) {
+      if (is_array($f)) {
+        for ($i = 0, $max = count($f); $i < $max; $i++) {
+          if (is_callable($f[$i]))  {
+            $f = $f[$i];
+            continue 2;
+          }
+        }
+        unset($funcs[$type]);
+      }
+      elseif (!is_callable($f)) {
+        unset($funcs[$type]); 
+      }
+    }
+    return $funcs;
   }
 
   // A list of all feeds configuration.
@@ -846,11 +876,15 @@ class FeedImportProcessor extends FeedImportConfigurable {
    *     List of dynamic fields
    * @param array $static_fields
    *     List of static fields
+   * @param array $compare_functions
+   *     List of compare functions
+   * @param string $default_compare
+   *     Default compare function
    *
    * @return boolean
    *     TRUE if fields were set
    */
-  public function setFields(array $fields = array(), array $static_fields = array()) {
+  public function setFields(array $fields = array(), array $static_fields = array(), array $compare_functions = array(), $default_compare = '_feed_import_base_compare_other_fields') {
 
     // Check for requirements.
     if (!$this->entityInfo || !$this->reader || !$this->filters || !empty($this->baseEntity)) {
@@ -877,6 +911,17 @@ class FeedImportProcessor extends FeedImportConfigurable {
       $f['cardinality'] = isset($this->entityInfo->fields[$f['field']]['cardinality'])
                             ? $this->entityInfo->fields[$f['field']]['cardinality']
                             : 1;
+
+      // Add compare function
+      if ($f['column']) {
+        $f['compare'] = $this->entityInfo->fields[$f['field']]['module'] . ':' . $this->entityInfo->fields[$f['field']]['type'];
+        if (isset($compare_functions[$f['compare']])) {
+          $f['compare'] = $compare_functions[$f['compare']];
+        }
+        else {
+          $f['compare'] = $default_compare;
+        }
+      }
       
       // Check if column must be guessed.
       if ($f['column'] === TRUE && isset($this->entityInfo->fields[$f['field']])) {
@@ -992,7 +1037,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       // However, set it to NONE, and if used will be overwritten.
       $this->baseEntity[$lk] = LANGUAGE_NONE;
     }
-  
+
     return TRUE;
   }
 
@@ -1245,7 +1290,6 @@ class FeedImportProcessor extends FeedImportConfigurable {
             // Get a ref to use short names.
             $en = &$new[$fn][$lang];
             $ec = &$curr->{$fn}[$lang];
-
             // Check if overwrite is enabled
             if ($overwrite) {
               if ($ec != $en) {
@@ -1265,9 +1309,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
               }
               elseif (($cnt = count($ec)) < $field['cardinality']) {
                 $cnt = $field['cardinality'] - $cnt;
-                while ($cnt-- && $en) {
-                  $ec[] = array_shift($en);
-                }
+                $cnt = array_merge($ec, count($en) <= $cnt ? $en : array_slice($en, 0, $cnt));
                 $changed = TRUE;
               }
               unset($ec, $en);
@@ -1277,13 +1319,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
             // Well, we must search to see if item already exists.
             if ($field['cardinality'] == -1) {
               $cnt = count($ec);
-              while ($en) {
-                $val = array_shift($en);
+              foreach ($en as &$val) {
                 // Check if already exists.
                 $add = TRUE;
                 for ($i = 0; $i < $cnt; $i++) {
-                  // Compare by key-value.
-                  if (!array_diff_assoc($val, $ec[$i])) {
+                  // Compare by function.
+                  if ($field['compare']($val, $ec[$i])) {
                     $add = FALSE;
                     break;
                   }
@@ -1303,7 +1344,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
               for ($i = 0; $i < $cnt; $i++) {
                 $not_found = true;
                 foreach ($ec as $key => &$val)  {
-                  if (!array_diff_assoc($en[$i], $val)) {
+                  // Compare by function.
+                  if ($field['compare']($en[$i], $val)) {
                     $ecn[] = &$val;
                     unset($ec[$key]);
                     $not_found = false;
@@ -1316,24 +1358,20 @@ class FeedImportProcessor extends FeedImportConfigurable {
                   $changed = TRUE;
                 }
               }
-              if ($changed && $ec && $cnt < $field['cardinality']) {
-                array_splice($ec, $field['cardinality'], $field['cardinality'] - $cnt, NULL);
-                $ecn = array_merge($ecn, $ec);
+              if ($changed) {
+                $ec = $ecn;
               }
-              $ec = $ecn;
               unset($ecn);
             }
             // Remove refs.
             unset($en, $ec);
           }
-          elseif ($overwrite) {
+          else {
             // Overwrite.
             $curr->{$fn}[$lang] = $new[$fn][$lang];
             // Mark as changed.
             $changed = TRUE;
           }
-          // Remove from memory.
-          unset($new[$fn]);
         }
         elseif ($overwrite && isset($curr->{$fn}[$lang])) {
           // Forced update mode.

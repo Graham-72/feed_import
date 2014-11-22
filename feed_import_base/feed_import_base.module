@@ -507,3 +507,39 @@ function feed_import_base_entity_delete($entity, $type) {
     $id && is_numeric($id) && FeedImport::addDeletedEntity($type, $id);
   }
 }
+
+/**
+ * Implements hook_feed_import_field_compare_functions().
+ */
+function feed_import_base_feed_import_field_compare_functions() {
+  return array(
+    'image:image' => '_feed_import_base_compare_image_field',
+    'taxonomy:taxonomy_term_reference' => '_feed_import_base_compare_taxonomy_term_reference_field',
+  );
+}
+
+/**
+ * Field compare any.
+ *
+ * @param array $new New field data
+ * @param array $current Current field data
+ *
+ * @return bool True if they are the same
+ */
+function _feed_import_base_compare_other_fields(&$new, &$current) {
+  return !array_diff_assoc($new, $current);
+}
+
+/**
+ * Field compare callback for image:image.
+ */
+function _feed_import_base_compare_image_field(&$new, &$current) {
+  return $new['fid'] == $current['fid'];
+}
+
+/**
+ * Field compare callback for taxonomy:taxonomy_term_reference.
+ */
+function _feed_import_base_compare_taxonomy_term_reference_field(&$new, &$current) {
+  return $new['tid'] == $current['tid'];
+}
