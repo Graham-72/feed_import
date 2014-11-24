@@ -319,6 +319,7 @@ class FeedImport {
             'reset_cache' => 100,
             'break_on_undefined_filter' => TRUE,
             'skip_defined_functions_check' => FALSE,
+            'updates_only' => FALSE,
           ),
         ),
         'reader' => array(
@@ -586,6 +587,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
   protected $machineName;
   // Flag to skip imported items.
   protected $skipImportedItems = FALSE;
+  // Flag to only apply updates.
+  protected $updatesOnly = FALSE;
   // Entity info.
   protected $entityInfo;
   // Current reader.
@@ -634,6 +637,8 @@ class FeedImportProcessor extends FeedImportConfigurable {
   public $current;
   // Current prefiltered values.
   public $prefilteredValue;
+  // Callback to alter uniq value
+  protected $uniqAlter = FALSE;
 
   /**
    * Constructor.
@@ -754,6 +759,9 @@ class FeedImportProcessor extends FeedImportConfigurable {
     if (isset($options['break_on_undefined_filter'])) {
       $this->breakOnUndefinedFilter = (bool) $options['break_on_undefined_filter'];
     }
+    if (isset($options['updates_only'])) {
+      $this->updatesOnly = (bool) $options['updates_only'];
+    }
     
     $cbks = array(
       'before_combine' => &$this->beforeCombine,
@@ -761,6 +769,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       'before_create'  => &$this->beforeCreate,
       'before_save'    => &$this->beforeSave,
       'after_save'     => &$this->afterSave,
+      'uniq_alter'     => &$this->uniqAlter,
     );
     
     foreach ($cbks as $opt => &$val) {
@@ -1176,6 +1185,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
       if (is_array($uniq)) {
         $uniq = isset($uniq[0]) ? $uniq[0] : reset($uniq);
       }
+      // Check if uniq alter callback exists.
+      if ($this->uniqAlter) {
+        $uniq = call_user_func($this->uniqAlter, $uniq);
+      }
       // Create hash.
       $entity[static::TEMP_HASH] = $this->hashes->hash($uniq);
     }
@@ -1568,7 +1581,11 @@ class FeedImportProcessor extends FeedImportConfigurable {
         unset($ids[$hash], $current, $entity, $hash);
       }
       else {
-        
+        // Check if this imports accepts only updates.
+        if ($this->updatesOnly) {
+          $this->report['skipped']++;
+          goto UNSET_E_VARS;
+        }
         // Check before save callback
         if ($beforeCreate) {
           switch ($beforeCreate($entity)) {
