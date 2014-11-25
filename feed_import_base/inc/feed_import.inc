@@ -769,7 +769,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
       'before_create'  => &$this->beforeCreate,
       'before_save'    => &$this->beforeSave,
       'after_save'     => &$this->afterSave,
-      'uniq_alter'     => &$this->uniqAlter,
+      'uniq_callback'     => &$this->uniqAlter,
     );
     
     foreach ($cbks as $opt => &$val) {
