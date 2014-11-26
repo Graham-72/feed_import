@@ -1353,30 +1353,47 @@ class FeedImportProcessor extends FeedImportConfigurable {
             }
             else {
               $cnt = count($en);
-              $ecn = array();
               $field_changed = false;
-              for ($i = 0; $i < $cnt; $i++) {
-                $not_found = true;
-                foreach ($ec as $key => &$val)  {
-                  // Compare by function.
-                  if ($field['compare']($en[$i], $val)) {
-                    $ecn[] = &$val;
-                    //unset($ec[$key]);
-                    $not_found = false;
+              if ($cnt == count($ec)) {
+                // Same number of items, it is possible that the
+                // field is still the same
+                // Just check if the items are the same.
+                for ($i = 0; $i < $cnt; $i++) {
+                  if (!$field['compare']($en[$i], $ec[$i])) {
+                    $field_changed = true;
                     break;
                   }
                 }
-                unset($val);
-                if ($not_found) {
-                  $ecn[] = &$en[$i];
-                  $field_changed = TRUE;
-                }
               }
+              else {
+                // Different number of items, the field is 100% changed.
+                $field_changed = true;
+              }
+              
               if ($field_changed) {
+                // Get the new field values, but try to copy the existing ones.
+                $ecn = array();
+                for ($i = 0; $i < $cnt; $i++) {
+                  $not_found = true;
+                  foreach ($ec as $key => &$val)  {
+                    // Compare by function.
+                    if ($field['compare']($en[$i], $val)) {
+                      // Value is the same, just get a reference.
+                      $ecn[] = &$val;
+                      $not_found = false;
+                      break;
+                    }
+                  }
+                  unset($val);
+                  if ($not_found) {
+                    // The value is new.
+                    $ecn[] = &$en[$i];
+                  }
+                }
                 $ec = $ecn;
                 $changed = true;
+                unset($ecn);
               }
-              unset($ecn);
             }
             // Remove refs.
             unset($en, $ec);
