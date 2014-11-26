@@ -1354,6 +1354,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
             else {
               $cnt = count($en);
               $ecn = array();
+              $field_changed = false;
               for ($i = 0; $i < $cnt; $i++) {
                 $not_found = true;
                 foreach ($ec as $key => &$val)  {
@@ -1368,10 +1369,10 @@ class FeedImportProcessor extends FeedImportConfigurable {
                 unset($val);
                 if ($not_found) {
                   $ecn[] = &$en[$i];
-                  $changed = TRUE;
+                  $field_changed = $changed = TRUE;
                 }
               }
-              if ($changed) {
+              if ($field_changed) {
                 $ec = $ecn;
               }
               unset($ecn);
