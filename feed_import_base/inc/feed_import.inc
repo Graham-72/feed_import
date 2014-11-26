@@ -1361,7 +1361,7 @@ class FeedImportProcessor extends FeedImportConfigurable {
                   // Compare by function.
                   if ($field['compare']($en[$i], $val)) {
                     $ecn[] = &$val;
-                    unset($ec[$key]);
+                    //unset($ec[$key]);
                     $not_found = false;
                     break;
                   }
