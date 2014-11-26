@@ -1369,11 +1369,12 @@ class FeedImportProcessor extends FeedImportConfigurable {
                 unset($val);
                 if ($not_found) {
                   $ecn[] = &$en[$i];
-                  $field_changed = $changed = TRUE;
+                  $field_changed = TRUE;
                 }
               }
               if ($field_changed) {
                 $ec = $ecn;
+                $changed = true;
               }
               unset($ecn);
             }
