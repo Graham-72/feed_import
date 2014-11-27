@@ -1329,71 +1329,47 @@ class FeedImportProcessor extends FeedImportConfigurable {
               continue;
             }
 
-            // Well, we must search to see if item already exists.
-            if ($field['cardinality'] == -1) {
-              $cnt = count($ec);
-              foreach ($en as &$val) {
-                // Check if already exists.
-                $add = TRUE;
-                for ($i = 0; $i < $cnt; $i++) {
-                  // Compare by function.
-                  if ($field['compare']($val, $ec[$i])) {
-                    $add = FALSE;
-                    break;
-                  }
+            $cnt = count($en);
+            $field_changed = false;
+            if ($cnt == count($ec)) {
+              // Same number of items, it is possible that the
+              // field is still the same
+              // Just check if the items are the same.
+              for ($i = 0; $i < $cnt; $i++) {
+                if (!$field['compare']($en[$i], $ec[$i])) {
+                  $field_changed = true;
+                  break;
                 }
-                // Do not exists so add it.
-                if ($add) {
-                  $ec[] = $val;
-                  $cnt++;
-                  // Mark as changed.
-                  $changed = TRUE;
-                }
-              } 
+              }
             }
             else {
-              $cnt = count($en);
-              $field_changed = false;
-              if ($cnt == count($ec)) {
-                // Same number of items, it is possible that the
-                // field is still the same
-                // Just check if the items are the same.
-                for ($i = 0; $i < $cnt; $i++) {
-                  if (!$field['compare']($en[$i], $ec[$i])) {
-                    $field_changed = true;
+              // Different number of items, the field is 100% changed.
+              $field_changed = true;
+            }
+            
+            if ($field_changed) {
+              // Get the new field values, but try to copy the existing ones.
+              $ecn = array();
+              for ($i = 0; $i < $cnt; $i++) {
+                $not_found = true;
+                foreach ($ec as $key => &$val)  {
+                  // Compare by function.
+                  if ($field['compare']($en[$i], $val)) {
+                    // Value is the same, just get a reference.
+                    $ecn[] = &$val;
+                    $not_found = false;
                     break;
                   }
                 }
-              }
-              else {
-                // Different number of items, the field is 100% changed.
-                $field_changed = true;
-              }
-              
-              if ($field_changed) {
-                // Get the new field values, but try to copy the existing ones.
-                $ecn = array();
-                for ($i = 0; $i < $cnt; $i++) {
-                  $not_found = true;
-                  foreach ($ec as $key => &$val)  {
-                    // Compare by function.
-                    if ($field['compare']($en[$i], $val)) {
-                      // Value is the same, just get a reference.
-                      $ecn[] = &$val;
-                      $not_found = false;
-                      break;
-                    }
-                  }
-                  unset($val);
-                  if ($not_found) {
-                    // The value is new.
-                    $ecn[] = &$en[$i];
-                  }
+                unset($val);
+                if ($not_found) {
+                  // The value is new.
+                  $ecn[] = &$en[$i];
                 }
-                $ec = $ecn;
-                $changed = true;
-                unset($ecn);
               }
+              $ec = $ecn;
+              $changed = true;
+              unset($ecn);
             }
             // Remove refs.
             unset($en, $ec);
