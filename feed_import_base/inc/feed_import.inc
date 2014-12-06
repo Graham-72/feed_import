@@ -1305,7 +1305,17 @@ class FeedImportProcessor extends FeedImportConfigurable {
             $ec = &$curr->{$fn}[$lang];
             // Check if overwrite is enabled
             if ($overwrite) {
-              if ($ec != $en) {
+              if (($cnt = count($en)) == count($ec)) {
+                // Same number of values. Might be the same.
+                for ($i = 0; $i < $cnt; $i++) {
+                  if (!$field['compare']($en[$i], $ec[$i])) {
+                    $ec[$i] = $en[$i];
+                    $changed = true;
+                  }
+                }
+              }
+              else {
+                // Different number of values.
                 $ec = $en;
                 $changed = TRUE;
               }
