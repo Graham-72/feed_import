@@ -2252,7 +2252,7 @@ function feed_import_generate_path_item($pos, array $values, $collapsed = FALSE)
     ),
     '#default_value' => $values['default_action'],
     '#title' => t('Action when filtered result is empty'),
-    '#description' => t('If the filter is empty you can choose what action to take next.'),
+    '#description' => t('If the filtered result is empty you can choose what action to take next.'),
     '#id' => 'default_action_' . $pos,
   );
   $container['default_value'] = array(
@@ -2264,13 +2264,13 @@ function feed_import_generate_path_item($pos, array $values, $collapsed = FALSE)
     '#prefix' => '<div style="display: none;" rel="default_action_' . $pos . '">',
     '#suffix' => '</div>',
   );
+  $options = module_invoke_all('feed_import_field_merge_classes');
+  foreach ($options as &$option) {
+    $option = $option['title'];
+  }
   $container['update_mode'] = array(
     '#type' => 'select',
-    '#options' => array(
-      FeedImportProcessor::UPDATE_COMBINE => t('Merge field - no duplicates'),
-      FeedImportProcessor::UPDATE_MERGE => t('Merge field - allow duplicates'),
-      FeedImportProcessor::UPDATE_OVERWRITE => t('Overwrite field'),
-    ),
+    '#options' => $options,
     '#default_value' => $values['update_mode'],
     '#title' => t('Field update mode'),
     '#description' => t('How to update existing entities.'),

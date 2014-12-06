@@ -496,3 +496,38 @@ abstract class FeedImportHashManager extends FeedImportConfigurable implements F
   abstract public function hash(&$uniq);
 
 }
+
+/**
+ * Abstract class that helps merging fields on update.
+ */
+abstract class FeedImportMergeField {
+  
+  /**
+   * Remove field if is missing from source.
+   *
+   * @return bool
+   *    True to overwrite
+   */
+  public function overwriteEmpty() {
+    return FALSE;
+  }
+  
+  /**
+   * Merge the new and current field values.
+   * The merge should be set in $current ref. variable
+   *
+   * @param array $current
+   *    Current field values
+   * @param array $new
+   *    New field values
+   * @param array $field
+   *    Field info
+   *      cardinality - field cardinality
+   *      compare - compare function for field value
+   *
+   * @return bool
+   *    True if $current was changed
+   */
+  abstract public function merge(array &$current, array &$new, array &$field);
+  
+}

@@ -509,6 +509,34 @@ function feed_import_base_entity_delete($entity, $type) {
 }
 
 /**
+ * Implements hook_feed_import_field_merge_classes().
+ */
+function feed_import_base_feed_import_field_merge_classes() {
+  return array(
+    FeedImportProcessor::UPDATE_COMBINE => array(
+      'title' => t('Merge field - no duplicates'),
+      'description' => t('Tries to avoid updates by checking if field values already exists.'),
+      'class' => 'FeedImportMergeNoDuplicates',
+    ),
+    FeedImportProcessor::UPDATE_MERGE => array(
+      'title' => t('Merge field - allow duplicates'),
+      'description' => t('Appends new values to field.'),
+      'class' => 'FeedImportMergeDuplicates',
+    ),
+    FeedImportProcessor::UPDATE_OVERWRITE => array(
+      'title' => t('Overwrite field'),
+      'description' => t('Overwrites field values if are distinct. Field will be removed if there are no values.'),
+      'class' => 'FeedImportMergeOverwrite',
+    ),
+    FeedImportProcessor::UPDATE_OVERWRITE_FAST => array(
+      'title' => t('Fast overwrite field'),
+      'description' => t('Always overwrites field values. Field will NOT be removed if there are no values.'),
+      'class' => 'FeedImportMergeOverwriteFast',
+    ),
+  );
+}
+
+/**
  * Implements hook_feed_import_field_compare_functions().
  */
 function feed_import_base_feed_import_field_compare_functions() {
