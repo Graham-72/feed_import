@@ -491,7 +491,7 @@ class FeedImportFilter {
    */
   public static function getVidFromName($name, $by_machine_name = FALSE) {
     static $vids = array();
-    $name = drupal_strtolower($name);
+    $name = backdrop_strtolower($name);
     if (isset($vids[$name])) {
       return $vids[$name];
     }
@@ -566,14 +566,14 @@ class FeedImportFilter {
     if (!empty($existing)) {
       $existing = taxonomy_term_load_multiple($existing, array('vid' => $voc));
       foreach ($existing as &$term) {
-        $tids[drupal_strtolower($term->name)] = $term->tid;
+        $tids[backdrop_strtolower($term->name)] = $term->tid;
         $term = NULL;
       }
     }
     unset($existing);
 
     foreach ($name as &$term) {
-      $lterm = drupal_strtolower($term);
+      $lterm = backdrop_strtolower($term);
       if (!isset($tids[$lterm])) {
         $t = new stdClass();
         $t->vid = $voc;
@@ -663,7 +663,7 @@ class FeedImportFilter {
       return NULL;
     }
     $field = trim($field, '/');
-    $field = drupal_substr($field, strrpos($field, '/') + 1);
+    $field = backdrop_substr($field, strrpos($field, '/') + 1);
     if (file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
       return file_save_data($image, $path . $field, (int) $options);
     }
@@ -727,7 +727,7 @@ class FeedImportFilter {
   public static function userHashPassword($field) {
     static $not_included = TRUE;
     if ($not_included) {
-      require_once DRUPAL_ROOT . '/' . variable_get('password_inc', 'includes/password.inc');
+      require_once BACKDROP_ROOT . '/' . settings_get('password_inc', 'core/includes/password.inc');
       $not_included = FALSE;
     }
     if (is_array($field)) {

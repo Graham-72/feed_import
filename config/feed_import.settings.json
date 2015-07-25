@@ -1,0 +1,18 @@
+{
+  "_config_name": "feed_import.settings",
+  "feed_import_import_running": [],
+  "feed_import_use_cron": 0,
+  "feed_import_let_overlap": [],
+  "feed_import_import_running": [],
+  "feed_import_last_executed_import": 0,
+  "feed_import_delete_items_per_cron": 300,
+  "feed_import_reports": 1,
+  "feed_import_invoke_hooks": 0,
+  "feed_import_filters_dir": 0,
+  "feed_import_time_settings": 0,
+  "feed_import_interval_start": "00:00",
+  "feed_import_interval_stop": "00:00",
+  "feed_import_time_between_imports": 3600,
+  "feed_import_interval_start": "00:00",
+  "feed_import_interval_stop": "00:00"
+}

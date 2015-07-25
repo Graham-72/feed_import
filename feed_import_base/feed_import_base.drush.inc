@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains drupal commands for feed import
+ * Contains backdrop commands for feed import
  */
 
 /**
@@ -27,7 +27,7 @@ function feed_import_base_drush_command() {
       'force' => 'Pass force to ignore cron time settings',
     ),
     'aliases' => array('feedcron'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+    'bootstrap' => DRUSH_BOOTSTRAP_BACKDROP_LOGIN,
   );
   $items['feed-import-base-feed'] = array(
     'description' => "Imports specified feed",
@@ -38,12 +38,12 @@ function feed_import_base_drush_command() {
       'drush feedimport myfeed' => "Imports feed with machine name myfeed",
     ),
     'aliases' => array('feedimport'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+    'bootstrap' => DRUSH_BOOTSTRAP_BACKDROP_LOGIN,
   );
   $items['feed-import-base-list'] = array(
     'description' => "Show all available feeds",
     'aliases' => array('feedlist'),
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_LOGIN,
+    'bootstrap' => DRUSH_BOOTSTRAP_BACKDROP_LOGIN,
   );
   return $items;
 }
@@ -60,7 +60,7 @@ function drush_feed_import_base_cron($force = FALSE) {
   }
   feed_import_base_cron();
   $conf['feed_import_use_cron'] = FALSE;
-  drupal_set_message(t('Feed Import cron run'));
+  backdrop_set_message(t('Feed Import cron run'));
 }
 
 /**
@@ -72,7 +72,7 @@ function drush_feed_import_base_feed($name) {
     return;
   }
   _feed_import_base_process_feed($feed, TRUE);
-  drupal_set_message(t('Feed @name imported', array('@name' => $feed->name)));
+  backdrop_set_message(t('Feed @name imported', array('@name' => $feed->name)));
 }
 
 /**

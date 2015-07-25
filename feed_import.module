@@ -48,7 +48,7 @@ function feed_import_menu() {
   $items[FEED_IMPORT_PATH . '/add'] = array(
     'title' => 'Add feed',
     'description' => 'Adds a new feed',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_edit_feed_form'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 1,
@@ -57,7 +57,7 @@ function feed_import_menu() {
   $items[FEED_IMPORT_PATH . '/import'] = array(
     'title' => 'Import feed',
     'description' => 'Imports a feed from JSON code',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_import_feed_form'),
     'type' => MENU_LOCAL_ACTION,
     'weight' => 2,
@@ -81,14 +81,14 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/delete/%feed_import'] = array(
     'title' => 'Export feed',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_delete_feed_form', $feedarg),
     'type' => MENU_CALLBACK,
   ) + $access;
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/feed'] = array(
     'title' => 'Edit feed',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_edit_feed_form', $feedarg),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%',
@@ -97,7 +97,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/feed/feed'] = array(
     'title' => 'Feed',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_edit_feed_form', $feedarg),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/feed',
@@ -106,7 +106,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/feed/processor'] = array(
     'title' => 'Processor',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array(
       'feed_import_class_settings_form',
       $feedarg,
@@ -120,7 +120,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/feed/hashmanager'] = array(
     'title' => 'Hash Manager',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array(
       'feed_import_class_settings_form',
       $feedarg,
@@ -134,7 +134,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/source'] = array(
     'title' => 'Edit source',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array(
       'feed_import_class_settings_form',
       $feedarg,
@@ -148,7 +148,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/fields'] = array(
     'title' => 'Edit fields',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_fields_form', $feedarg),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%',
@@ -157,7 +157,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/fields/fields'] = array(
     'title' => 'Edit fields',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_fields_form', $feedarg),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/fields',
@@ -166,7 +166,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/fields/reorder'] = array(
     'title' => 'Re-order fields',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_reorder_fields_form', $feedarg),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/fields',
@@ -175,7 +175,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/fields/static'] = array(
     'title' => 'Edit static fields',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_static_fields_form', $feedarg),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/fields',
@@ -184,7 +184,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters'] = array(
     'title' => 'Edit filters',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_edit_filter_form', $feedarg, 'filters'),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%',
@@ -193,7 +193,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/filters'] = array(
     'title' => 'Edit filters',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_edit_filter_form', $feedarg, 'filters'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
@@ -202,7 +202,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/prefilters'] = array(
     'title' => 'Edit pre-filters',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_edit_filter_form', $feedarg, 'prefilters'),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
@@ -211,7 +211,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/functions'] = array(
     'title' => 'Dynamic filters',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_dynamic_func_form', $feedarg),
     'type' => MENU_LOCAL_TASK,
     'tab_parent' => FEED_IMPORT_PATH . '/edit/%/filters',
@@ -220,7 +220,7 @@ function feed_import_menu() {
 
   $items[FEED_IMPORT_PATH . '/edit/%feed_import/filters/settings'] = array(
     'title' => 'Filter settings',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array(
       'feed_import_class_settings_form',
       $feedarg,
@@ -385,7 +385,7 @@ function feed_import_feed_import_reader_info() {
         '#options' => array(
           'substr' => t('Default PHP substring'),
           'mb_substr' => t('Multibyte PHP substring'),
-          'drupal_substr' => t('Drupal substring'),
+          'backdrop_substr' => t('Backdrop substring'),
         ),
         '#default_value' => 'substr',
         '#required' => TRUE,
@@ -914,13 +914,13 @@ function feed_import_list_feeds() {
   if (ini_get('safe_mode')) {
     $msg = array('@number' => ini_get('max_execution_time'));
     $msg = t('Looks like safe mode is on, large imports can break if maximum time limit of @number seconds is exceeded.', $msg);
-    drupal_set_message($msg, 'warning');
+    backdrop_set_message($msg, 'warning');
   }
   // Load all feeds.
   $feeds = FeedImport::loadAllFeeds();
 
   $running = array();
-  if ($run = variable_get('feed_import_import_running', array())) {
+  if ($run = config_get('feed_import.settings','feed_import_import_running') {
     foreach ($run as $r) {
       $running += array_count_values($r);
     }
@@ -978,7 +978,7 @@ function feed_import_list_feeds() {
     );
   }
   // Path to CSS file.
-  $path = drupal_get_path('module', 'feed_import') . '/feed_import.css';
+  $path = backdrop_get_path('module', 'feed_import') . '/feed_import.css';
 
   return array(
     '#theme' => 'table',
@@ -1001,10 +1001,10 @@ function feed_import_list_feeds() {
  */
 function feed_import_edit_feed_form($form, &$form_state, $feed = FALSE) {
   if ($feed) {
-    drupal_set_title(t('Edit feed - @name', array('@name' => $feed->name)));
+    backdrop_set_title(t('Edit feed - @name', array('@name' => $feed->name)));
   }
   else {
-    drupal_set_title(t('Add new feed'));
+    backdrop_set_title(t('Add new feed'));
   }
 
   $form['name'] = array(
@@ -1154,11 +1154,11 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
     $feed->settings['preprocess'] = $v['preprocess'];
   }
   if (FeedImport::saveFeed($feed)) {
-    drupal_set_message(t('Feed saved'));
-    drupal_goto(FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed');
+    backdrop_set_message(t('Feed saved'));
+    backdrop_goto(FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/feed');
   }
   else {
-    drupal_set_message(t('Error saving feed'), 'error');
+    backdrop_set_message(t('Error saving feed'), 'error');
   }
 }
 
@@ -1168,13 +1168,13 @@ function feed_import_edit_feed_form_submit($form, &$form_state) {
 function feed_import_class_settings_form($form, &$form_state, $feed, $setting, $title = FALSE) {
   // Get all settings.
   if (!($settings = feed_import_get_class_settings($setting))) {
-    drupal_goto(FEED_IMPORT_PATH);
+    backdrop_goto(FEED_IMPORT_PATH);
   }
 
   // Set title if any.
   if ($title) {
     $title .= ' - @name';
-    drupal_set_title(t($title, array('@name' => $feed->name)), PASS_THROUGH);
+    backdrop_set_title(t($title, array('@name' => $feed->name)), PASS_THROUGH);
   }
 
   // Get setting name.
@@ -1272,7 +1272,7 @@ function feed_import_class_settings_form($form, &$form_state, $feed, $setting, $
 function feed_import_class_settings_form_submit($form, &$form_state) {
   $v = &$form_state['values'];
   if (!($feed = FeedImport::loadFeed($v['machine_name']))) {
-    drupal_goto(FEED_IMPORT_PATH);
+    backdrop_goto(FEED_IMPORT_PATH);
   }
   $feed->settings[$v['setting']] = array(
     'name' => $v['name'],
@@ -1281,8 +1281,8 @@ function feed_import_class_settings_form_submit($form, &$form_state) {
   );
 
   if (FeedImport::saveFeed($feed)) {
-    drupal_set_message(t('Feed saved'));
-    drupal_goto(request_path());
+    backdrop_set_message(t('Feed saved'));
+    backdrop_goto(request_path());
   }
 }
 
@@ -1375,7 +1375,7 @@ function _feed_import_generate_class_options_form(array &$setting, array &$paren
  */
 function feed_import_static_fields_form($form, &$form_state, $feed) {
   // Set page title
-  drupal_set_title(t('Edit static fields - @name', array('@name' => $feed->name)), PASS_THROUGH);
+  backdrop_set_title(t('Edit static fields - @name', array('@name' => $feed->name)), PASS_THROUGH);
   $form['machine_name'] = array(
     '#type' => 'value',
     '#value' => $feed->machine_name,
@@ -1547,10 +1547,10 @@ function feed_import_static_fields_form_submit($form, &$form_state) {
 
   // Save static fields in feed.
   if (FeedImport::saveFeed($feed)) {
-    drupal_set_message(t('Feed saved'));
+    backdrop_set_message(t('Feed saved'));
   }
 
-  drupal_goto(FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/fields/static');
+  backdrop_goto(FEED_IMPORT_PATH . '/edit/' . $feed->machine_name . '/fields/static');
 }
 
 /**
@@ -1612,7 +1612,7 @@ function _feed_import_fields_optgrup(array $el) {
  */
 function feed_import_reorder_fields_form($form, &$form_state, $feed) {
   // Set page title
-  drupal_set_title(t('Re-order fields - @name', array('@name' => $feed->name)), PASS_THROUGH);
+  backdrop_set_title(t('Re-order fields - @name', array('@name' => $feed->name)), PASS_THROUGH);
 
   $form['machine_name'] = array(
     '#type' => 'value',
@@ -1658,7 +1658,7 @@ function feed_import_reorder_fields_form_submit($form, &$form_state) {
   }
   $feed->settings['fields'] = array_merge($fields, $feed->settings['fields']);
   if (FeedImport::saveFeed($feed)) {
-    drupal_set_message(t('Feed saved'));
+    backdrop_set_message(t('Feed saved'));
   }
 }
 
@@ -1673,8 +1673,8 @@ function theme_feed_import_reorder_fields_form($form) {
   else {
     foreach ($form['#feed_fields'] as &$field) {
       $field = array(
-        drupal_render($form['table_content'][$field]['field']),
-        drupal_render($form['table_content'][$field]['weight']),
+        backdrop_render($form['table_content'][$field]['field']),
+        backdrop_render($form['table_content'][$field]['weight']),
       );
       $field = array(
         'data' => $field,
@@ -1689,8 +1689,8 @@ function theme_feed_import_reorder_fields_form($form) {
       '#attributes' => array('id' => 'table'),
       '#empty' => t('There are no fields.'),
   );
-  drupal_add_tabledrag('table', 'order', 'sibling', 'weight');
-  return drupal_render_children($form);
+  backdrop_add_tabledrag('table', 'order', 'sibling', 'weight');
+  return backdrop_render_children($form);
 }
 
 /**
@@ -1708,7 +1708,7 @@ function feed_import_sort_filter_by_weight($a, $b) {
  */
 function feed_import_edit_filter_form($form, &$form_state, $feed, $f) {
   // Set page title.
-  drupal_set_title(
+  backdrop_set_title(
     t('Edit @filter - @name', array(
       '@filter' => $f,
       '@name' => $feed->name,
@@ -1892,7 +1892,7 @@ function feed_import_edit_filter_form_submit($form, &$form_state) {
       '@filter' => $form_state['#item_filter'] == 'filters' ? t('Filters') : t('Pre-filters'),
       '@name' => $feed->name,
     );
-    drupal_set_message(t('@filter saved for @name', $vars));
+    backdrop_set_message(t('@filter saved for @name', $vars));
   }
 }
 
@@ -1923,12 +1923,12 @@ function theme_feed_import_edit_filter_form($form) {
             $row[$d]['#checked'] = FALSE;
           }
           $row[$d]['#value'] = $row[$d]['#default_value'];
-          $d = drupal_render($row[$d]);
+          $d = backdrop_render($row[$d]);
         }
         $rows[] = array('data' => $data, 'class' => array('draggable'));
       }
     }
-    drupal_add_tabledrag('table_' . $field, 'order', 'sibling', 'weight');
+    backdrop_add_tabledrag('table_' . $field, 'order', 'sibling', 'weight');
 
     $form['container_' . $field]['table_content'][$field] = array(
       '#theme' => 'table',
@@ -1938,7 +1938,7 @@ function theme_feed_import_edit_filter_form($form) {
       '#empty' => t('There are no filters.'),
     );
   }
-  return drupal_render_children($form);
+  return backdrop_render_children($form);
 }
 
 /**
@@ -1999,11 +1999,11 @@ function feed_import_add_filter_actions($field) {
   return array(
     ('add_new_filter_' . $field) => array(
       '#type' => 'button',
-      '#value' => t('Add new filter to @field', array('@field' => drupal_strtoupper($field))),
+      '#value' => t('Add new filter to @field', array('@field' => backdrop_strtoupper($field))),
     ),
     ('delete_selected_filters_' . $field) => array(
       '#type' => 'button',
-      '#value' => t('Remove selected from @field', array('@field' => drupal_strtoupper($field))),
+      '#value' => t('Remove selected from @field', array('@field' => backdrop_strtoupper($field))),
     ),
   );
 }
@@ -2013,7 +2013,7 @@ function feed_import_add_filter_actions($field) {
  */
 function feed_import_fields_form($form, &$form_state, $feed) {
   // Set page title.
-  drupal_set_title(t('Edit fields - @name', array('@name' => $feed->name)), PASS_THROUGH);
+  backdrop_set_title(t('Edit fields - @name', array('@name' => $feed->name)), PASS_THROUGH);
 
   $form['machine_name'] = array(
     '#type' => 'value',
@@ -2064,7 +2064,7 @@ function feed_import_fields_form($form, &$form_state, $feed) {
     $fv = &$form_state['values'];
     $form_state['#field_added'] = FALSE;
     $field = $fv['add_new_item_mode'] ? 'add_new_item_field' : 'add_new_item_manual';
-    if ($field = drupal_strtolower($fv[$field])) {
+    if ($field = backdrop_strtolower($fv[$field])) {
       $i = -1; $exists = FALSE;
       while (++$i <= $form_state['#current_item']) {
         if (isset($fv['fields']['container_' . $i]['field']) &&
@@ -2159,7 +2159,7 @@ function feed_import_fields_form($form, &$form_state, $feed) {
   // Add js.
   $form['#attached'] = array(
     'js' => array(
-      drupal_get_path('module', 'feed_import') . '/feed_import.js' => array(
+      backdrop_get_path('module', 'feed_import') . '/feed_import.js' => array(
         'type' => 'file',
       ),
     ),
@@ -2202,7 +2202,7 @@ function feed_import_fields_form_submit($form, &$form_state) {
   $feed->settings['fields'] = $fields;
   // Save feed.
   if (FeedImport::saveFeed($feed)) {
-    drupal_set_message(t('Feed saved'));
+    backdrop_set_message(t('Feed saved'));
   }
 }
 
@@ -2376,13 +2376,13 @@ function feed_import_import_feed_form_submit($form, &$form_state) {
   );
 
   if ($code = feed_import_import_feed_from_json($form_state['values']['code'], $options)) {
-    drupal_set_message(t('Feed imported'));
-    drupal_set_message(t('Please check the Group setting in Hash Manager before importing any items!'), 'warning');
-    drupal_goto(FEED_IMPORT_PATH . '/edit/' . $code->machine_name . '/feed');
+    backdrop_set_message(t('Feed imported'));
+    backdrop_set_message(t('Please check the Group setting in Hash Manager before importing any items!'), 'warning');
+    backdrop_goto(FEED_IMPORT_PATH . '/edit/' . $code->machine_name . '/feed');
   }
   else {
-    drupal_set_message(t('Feed cannot be imported!'), 'error');
-    drupal_goto(FEED_IMPORT_PATH);
+    backdrop_set_message(t('Feed cannot be imported!'), 'error');
+    backdrop_goto(FEED_IMPORT_PATH);
   }
 
 }
@@ -2457,24 +2457,24 @@ function feed_import_process_feed($feed) {
 
   switch ($status) {
     case FeedImport::FEED_OK:
-      drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
+      backdrop_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
       break;
     case FeedImport::FEED_OVERLAP_ERR:
-      drupal_set_message(t('Cannot process feed because another one is running!'), 'error');
+      backdrop_set_message(t('Cannot process feed because another one is running!'), 'error');
       break;
     case FeedImport::FEED_CONFIG_ERR:
-      drupal_set_message(t('Cannot process feed because source is misconfigured!'), 'error');
+      backdrop_set_message(t('Cannot process feed because source is misconfigured!'), 'error');
       break;
     case FeedImport::FEED_SOURCE_ERR:
-      drupal_set_message(t('Cannot process feed because there is a source error!'), 'error');
-      drupal_set_message(t('All items were rescheduled due to delete protection!'), 'warning');
+      backdrop_set_message(t('Cannot process feed because there is a source error!'), 'error');
+      backdrop_set_message(t('All items were rescheduled due to delete protection!'), 'warning');
       break;
     case FeedImport::FEED_ITEMS_ERR:
-      drupal_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
-      drupal_set_message(t('All items were rescheduled due to delete protection!'), 'warning');
+      backdrop_set_message(t('Feed @name processed!', array('@name' => $feed->name)));
+      backdrop_set_message(t('All items were rescheduled due to delete protection!'), 'warning');
       break;
   }
-  drupal_goto(FEED_IMPORT_PATH);
+  backdrop_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -2533,8 +2533,8 @@ function feed_import_delete_feed_form_submit($form, &$form_state) {
     return;
   }
   FeedImport::deleteFeed($feed, (bool) $form_state['values']['hashes']);
-  drupal_set_message(t('Feed deleted'));
-  drupal_goto(FEED_IMPORT_PATH);
+  backdrop_set_message(t('Feed deleted'));
+  backdrop_goto(FEED_IMPORT_PATH);
 }
 
 /**
@@ -2542,8 +2542,8 @@ function feed_import_delete_feed_form_submit($form, &$form_state) {
  */
 function feed_import_dynamic_func_form($form, &$form_state, $feed) {
   if (empty($form_state['values'])) {
-    drupal_set_message(t('Dynamic filter functions are created using eval() which can be dangerous for import!'), 'warning');
-    drupal_set_title(t('Dynamic filter functions - @name', array('@name' => $feed->name)), PASS_THROUGH);
+    backdrop_set_message(t('Dynamic filter functions are created using eval() which can be dangerous for import!'), 'warning');
+    backdrop_set_title(t('Dynamic filter functions - @name', array('@name' => $feed->name)), PASS_THROUGH);
   }
 
   $form['description'] = array(
@@ -2596,7 +2596,7 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
   if ($cbk == 'add_new_func') {
     $fv = &$form_state['values'];
     $form_state['#field_added'] = FALSE;
-    if ($field = drupal_strtolower($fv['func'])) {
+    if ($field = backdrop_strtolower($fv['func'])) {
       $i = -1; $exists = FALSE;
       while (++$i <= $form_state['#current_item']) {
         if (isset($fv['fields']['container_' . $i]['name']) &&
@@ -2655,7 +2655,7 @@ function feed_import_dynamic_func_form($form, &$form_state, $feed) {
   // Add js.
   $form['#attached'] = array(
     'js' => array(
-      drupal_get_path('module', 'feed_import') . '/feed_import.js' => array(
+      backdrop_get_path('module', 'feed_import') . '/feed_import.js' => array(
         'type' => 'file',
       ),
     ),
@@ -2685,7 +2685,7 @@ function feed_import_dynamic_func_form_submit($form, &$form_state) {
   }
   $feed->settings['functions'] = $funcs;
   if (FeedImport::saveFeed($feed)) {
-    drupal_set_message(t('Feed saved'));
+    backdrop_set_message(t('Feed saved'));
   }
 }
 
@@ -2802,3 +2802,17 @@ function feed_import_element_validate_updates_only($element, &$form_state, $form
     )));
   }
 }
+
+<?php
+/**
+ * Implements hook_config_info().
+ */
+function feed_import_config_info() {
+  $prefixes['feed_import.settings'] = array(
+    'label' => t('Feed Import'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+?>
+

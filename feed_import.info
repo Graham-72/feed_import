@@ -1,7 +1,8 @@
 name = Feed Import
 description = Imports content from various file types (like XML, HTML, CSV, JSON, ...) or from databases
 package = Feeds
-core = 7.x
+backdrop = 1.x
+type - module
 
 dependencies[] = feed_import_base
 

@@ -144,20 +144,6 @@ function feed_import_base_schema() {
  * Implements hook_uninstall().
  */
 function feed_import_base_uninstall() {
-  $vars = array(
-    'feed_import_time_between_imports',
-    'feed_import_last_executed_import',
-    'feed_import_delete_items_per_cron',
-    'feed_import_import_running',
-    'feed_import_use_cron',
-    'feed_import_let_overlap',
-    'feed_import_time_settings',
-    'feed_import_interval_start',
-    'feed_import_interval_stop',
-    'feed_import_filters_dir',
-    'feed_import_reports',
-    'feed_import_invoke_hooks',
-  );
   array_map('variable_del', $vars);
   db_drop_table('feed_import_hashes');
   db_drop_table('feed_import_settings');

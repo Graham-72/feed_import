@@ -5,7 +5,7 @@
  */
 
 (function ($) {
-  Drupal.behaviors.feed_import = {
+  Backdrop.behaviors.feed_import = {
     attach: function (context, settings) {
       var fsets = $('fieldset[id^="item_container_"]', context);
       var addevent = false;
@@ -31,16 +31,16 @@
       if (addevent) {
         // Get selects.
         $('select[id^="default_action_"]', fsets).each(function () {
-          Drupal.behaviors.feed_import.checkSelectVisibility(this);
+          Backdrop.behaviors.feed_import.checkSelectVisibility(this);
           $(this).bind('change', function() {
-            Drupal.behaviors.feed_import.checkSelectVisibility(this);
+            Backdrop.behaviors.feed_import.checkSelectVisibility(this);
           });
         });
         // Function names
         $('input[id^="func_name_"]', fsets).each(function () {
-          Drupal.behaviors.feed_import.changeFieldsetTitle(this);
+          Backdrop.behaviors.feed_import.changeFieldsetTitle(this);
           $(this).bind('keyup', function() {
-            Drupal.behaviors.feed_import.changeFieldsetTitle(this);
+            Backdrop.behaviors.feed_import.changeFieldsetTitle(this);
           });
         });
       }

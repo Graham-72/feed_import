@@ -43,7 +43,7 @@ function feed_import_base_menu() {
   $items['admin/config/services/feed_import/settings'] = array(
     'title' => 'Settings',
     'description' => 'Manages feed import global settings',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('feed_import_base_settings_form'),
     'access callback' => 'user_access',
     'access arguments' => array('feed import'),
@@ -58,9 +58,9 @@ function feed_import_base_menu() {
  */
 function feed_import_base_cron() {
   // Check if cron import is enabled.
-  if (variable_get('feed_import_use_cron', FALSE)) {
-    $overlap = variable_get('feed_import_let_overlap', array());
-    $running = variable_get('feed_import_import_running', array());
+  if (config_get('feed_import.settings','feed_import_use_cron')) {
+    $overlap = config_get('feed_import.settings','feed_import_let_overlap');
+    $running = config_get('feed_import.settings','feed_import_import_running');
     // Check if we can import.
     if (_feed_import_base_cron_in_time()) {
       $feeds = array_filter(FeedImport::loadAllFeeds(), '_feed_import_base_feed_enabled');
@@ -77,14 +77,14 @@ function feed_import_base_cron() {
       unset($feeds, $feed);
       if ($to_import) {
         _feed_import_base_process_feed($to_import);
-        variable_set('feed_import_last_executed_import', REQUEST_TIME);
+        config_set('feed_import.settings','feed_import_last_executed_import', REQUEST_TIME);
       }
     }
   }
   // Delete expired items.
-  if (($d = variable_get('feed_import_delete_items_per_cron', 300)) > 0) {
+  if (($d = config_get('feed_import.settings','feed_import_delete_items_per_cron') > 0) {
     $d = FeedImport::deleteExpired($d);
-    if ($d && variable_get('feed_import_reports', TRUE)) {
+    if ($d && config_get('feed_import.settings','feed_import_reports')) {
       watchdog('Feed Import', 'Deleted @count expired items', array(
       '@count' => $d,
       ), WATCHDOG_NOTICE);
@@ -96,11 +96,11 @@ function feed_import_base_cron() {
  * Imports a feed.
  */
 function _feed_import_base_process_feed($feed, $recheck = FALSE) {
-  $running = _feed_import_base_variable_get('feed_import_import_running', array());
-  $invoke_hooks = variable_get('feed_import_invoke_hooks', FALSE);
+  $running = _feed_import_base_config_get('feed_import.settings','feed_import_import_running');
+  $invoke_hooks = config_get('feed_import.settings','feed_import_invoke_hooks');
   
   if ($recheck) {
-    $overlap = variable_get('feed_import_let_overlap', array());
+    $overlap = config_get('feed_import.settings','feed_import_let_overlap');
     if (!in_array($feed->entity, $overlap) &&
         !empty($running[$feed->entity]) &&
         in_array($feed->machine_name, $running[$feed->entity])
@@ -118,13 +118,13 @@ function _feed_import_base_process_feed($feed, $recheck = FALSE) {
   }
 
   $running[$feed->entity][] = $feed->machine_name;
-  variable_set('feed_import_import_running', $running);
+  config_set('feed_import.settings','feed_import_import_running', $running);
   unset($running);
   register_shutdown_function('_feed_import_base_remove_running', $feed);
   $report = FeedImport::import($feed, _feed_import_base_get_filters_dir());
   _feed_import_base_remove_running($feed);
   $feed->skip_remove_running = TRUE;
-  $report_errors = variable_get('feed_import_reports', TRUE);
+  $report_errors = config_get('feed_import.settings','feed_import_reports');
   // Check for errors.
   if (empty($report['init_error'])) {
     // Save last run and duration.
@@ -246,7 +246,7 @@ function _feed_import_base_remove_running($feed) {
   if (!empty($running[$feed->entity]) &&
       ($pos = array_search($feed->machine_name, $running[$feed->entity])) !== FALSE) {
     unset($running[$feed->entity][$pos]);
-    variable_set('feed_import_import_running', $running);
+    config_set('feed_import.settings','feed_import_import_running', $running);
   }
 }
 
@@ -339,8 +339,8 @@ function _feed_import_base_sort_feeds($a, $b) {
  * Returns curent filters dir.
  */
 function _feed_import_base_get_filters_dir() {
-  if (($dir = variable_get('feed_import_filters_dir', FALSE)) === FALSE) {
-    $dir = drupal_get_path('module', 'feed_import_base') . '/filters';
+  if (($dir = config_get('feed_import.settings','feed_import_filters_dir')) === FALSE) {
+    $dir = backdrop_get_path('module', 'feed_import_base') . '/filters';
   }
   return $dir;
 }
@@ -352,18 +352,18 @@ function _feed_import_base_get_filters_dir() {
  *    Cron can run
  */
 function _feed_import_base_cron_in_time() {
-  if (variable_get('feed_import_time_settings', 0)) {
+  if (config_get('feed_import.settings','feed_import_time_settings')) {
     // Specified interval.
     $time1 = $time2 = 0;
-    list($h, $m) = explode(':', variable_get('feed_import_interval_start', '00:00'));
+    list($h, $m) = explode(':', config_get('feed_import.settings','feed_import_interval_start'));
     $time1 = mktime($h, $m, 0);
-    list($h, $m) = explode(':', variable_get('feed_import_interval_stop', '00:00'));
+    list($h, $m) = explode(':', config_get('feed_import.settings','feed_import_interval_stop'));
     $time2 = mktime($h, $m, 0);
     return $time1 < $time2 && $time1 <= REQUEST_TIME && REQUEST_TIME <= $time2;
   }
   else {
-    $last_executed = variable_get('feed_import_last_executed_import', 0);
-    $time_between = variable_get('feed_import_time_between_imports', 3600);
+    $last_executed = config_get('feed_import.settings','feed_import_last_executed_import');
+    $time_between = config_get('feed_import.settings','feed_import_time_between_imports');
     return ($last_executed + $time_between) < REQUEST_TIME;
   }
 }
@@ -374,13 +374,13 @@ function _feed_import_base_cron_in_time() {
 function feed_import_base_settings_form($form, &$form_state) {
   $form['feed_import_reports'] = array(
     '#type' => 'checkbox',
-    '#default_value' => variable_get('feed_import_reports', TRUE),
+    '#default_value' => config_get('feed_import.settings','feed_import_reports'),
     '#title' => t('Provide import reports'),
     '#description' => t('These are log reports.'),
   );
   $form['feed_import_use_cron'] = array(
     '#type' => 'checkbox',
-    '#default_value' => variable_get('feed_import_use_cron', 0),
+    '#default_value' => config_get('feed_import.settings','feed_import_use_cron'),
     '#title' => t('Cron import'),
     '#description' => t('Run import for enabled feeds at cron'),
   );
@@ -396,12 +396,12 @@ function feed_import_base_settings_form($form, &$form_state) {
   $form['container']['feed_import_time_settings'] = array(
     '#type' => 'radios',
     '#options' => array(t('From time to time'), t('Specified time interval')),
-    '#default_value' => variable_get('feed_import_time_settings', 0),
+    '#default_value' => config_get('feed_import.settings','feed_import_time_settings'),
     '#title' => t('When feeds can be imported'),
   );
   $form['container']['feed_import_time_between_imports'] = array(
     '#type' => 'textfield',
-    '#default_value' => variable_get('feed_import_time_between_imports', 3600),
+    '#default_value' => config_get('feed_import.settings','feed_import_time_between_imports'),
     '#title' => t('Time between two imports at cron (seconds)'),
     '#description' => t('Time betwen two cron imports.'),
     '#states' => array(
@@ -412,7 +412,7 @@ function feed_import_base_settings_form($form, &$form_state) {
   );
   $form['container']['feed_import_interval_start'] = array(
     '#type' => 'textfield',
-    '#default_value' => variable_get('feed_import_interval_start', '00:00'),
+    '#default_value' => config_get('feed_import.settings','feed_import_interval_start'),
     '#title' => t('Start time'),
     '#description' => t('Format is hh:mm.'),
     '#states' => array(
@@ -423,7 +423,7 @@ function feed_import_base_settings_form($form, &$form_state) {
   );
   $form['container']['feed_import_interval_stop'] = array(
     '#type' => 'textfield',
-    '#default_value' => variable_get('feed_import_interval_stop', '24:00'),
+    '#default_value' => config_get('feed_import.settings','feed_import_interval_stop'),
     '#title' => t('End time'),
     '#description' => t('Format is hh:mm. This must be greater than start time.'),
     '#states' => array(
@@ -434,7 +434,7 @@ function feed_import_base_settings_form($form, &$form_state) {
   );
   $form['feed_import_delete_items_per_cron'] = array(
     '#type' => 'textfield',
-    '#default_value' => variable_get('feed_import_delete_items_per_cron', 300),
+    '#default_value' => config_get('feed_import.settings','feed_import_delete_items_per_cron'),
     '#title' => t('Expired items delete per cron'),
     '#description' => t('How many expired items to delete when cron runs.'),
     '#required' => TRUE,
@@ -451,19 +451,26 @@ function feed_import_base_settings_form($form, &$form_state) {
     '#type' => 'select',
     '#multiple' => TRUE,
     '#options' => FeedImport::getAllEntities(),
-    '#default_value' => variable_get('feed_import_let_overlap', array()),
+    '#default_value' => config_get('feed_import.settings','feed_import_let_overlap'),
     '#title' => t('Allow import overlap for specified entities'),
     '#description' => t('This is not indicated for nodes.'),
   );
 
   $form['feed_import_invoke_hooks'] = array(
     '#type' => 'checkbox',
-    '#default_value' => variable_get('feed_import_invoke_hooks', FALSE),
+    '#default_value' => config_get('feed_import.settings','feed_import_invoke_hooks'),
     '#title' => t('Invoke hooks on import sucess or error'),
     '#description' => t('This can be useful for sending alerts.'),
   );
 
-  return system_settings_form($form);
+  // Add a submit button
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  return $form;
 }
 
 /**
@@ -496,6 +503,18 @@ function feed_import_base_settings_form_validate($form, &$form_state) {
     }
   }
 }
+
+
+/**
+ * Submit handler for module_settings_form().
+ */
+function feed_import_base_settings_form_submit($form, &$form_state) {
+  $config = config('feed_import_base.settings');
+  $config->set('my_setting', $form_state['values']['my_setting']);
+  $config->save();
+  backdrop_set_message(t('The configuration options have been saved.'));
+}
+
 
 /**
  * Implements hook_entity_delete().
@@ -571,3 +590,41 @@ function _feed_import_base_compare_image_field(&$new, &$current) {
 function _feed_import_base_compare_taxonomy_term_reference_field(&$new, &$current) {
   return $new['tid'] == $current['tid'];
 }
+
+
+
+/**
+ * Implements hook_autoload_info().
+ */
+function feed_import_base_autoload_info()
+{
+  return array(
+    'FeedImportFilter' => 'filters/feed_import_default_filters.php',
+    'FeedImportProcessor' => 'inc/feed_import.inc',
+    'FeedImportSQLHashes' => 'inc/feed_import.inc',
+    'FeedImportSQLHashesv2' => 'inc/feed_import.inc',
+    'FeedImportConfigurable' => 'inc/feed_import_abstract.inc',
+    'FeedImportReader' => 'inc/feed_import_abstract.inc',
+    'FeedImportSimpleXPathReader' => 'inc/feed_import_abstract.inc',
+    'FeedImportDomXPathReader' => 'inc/feed_import_abstract.inc',
+    'FeedImportVectorReader' => 'inc/feed_import_abstract.inc',
+    'FeedImportUniVectorReader' => 'inc/feed_import_abstract.inc',
+    'FeedImportHashManager' => 'inc/feed_import_abstract.inc',
+    'FeedImportMergeField' => 'inc/feed_import_abstract.inc',
+    'FeedImportMultiFilter' => 'inc/feed_import_filter.inc',
+    'FeedImportMergeNoDuplicates' => 'inc/feed_import_merge.inc',
+    'FeedImportMergeDuplicates' => 'inc/feed_import_merge.inc',
+    'FeedImportMergeOverwrite' => 'inc/feed_import_merge.inc',
+    'FeedImportMergeOverwriteFast' => 'inc/feed_import_merge.inc',
+    'SimpleXMLFIReader' => 'inc/feed_import_readers.inc',
+    'DomXMLFIReader' => 'inc/feed_import_readers.inc',
+    'ChunkedXMLFIReader' => 'inc/feed_import_readers.inc',
+    'SQLFIReader' => 'inc/feed_import_readers.inc',
+    'CSVFIReader' => 'inc/feed_import_readers.inc',
+    'JSONFIReader' => 'inc/feed_import_readers.inc',
+  );
+}
+
+
+
+

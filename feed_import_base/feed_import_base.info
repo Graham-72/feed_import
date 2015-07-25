@@ -1,12 +1,7 @@
 name = Feed Import Base
 description = Feed Import core functions
 package = Feeds
-core = 7.x
-
-files[] = inc/feed_import_abstract.inc
-files[] = inc/feed_import_filter.inc
-files[] = inc/feed_import_readers.inc
-files[] = inc/feed_import_merge.inc
-files[] = inc/feed_import.inc
+backdrop = 1.x
+type = module
 
 configure = admin/config/services/feed_import/settings
