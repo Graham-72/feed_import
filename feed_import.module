@@ -895,7 +895,7 @@ function _feed_import_lines($str) {
 }
 
 /**
- * Checks if an elmeent is not empty.
+ * Checks if an element is not empty.
  */
 function feed_import_element_validate_not_empty($element, &$form_state) {
   if (!strlen($element['#value'])) {
@@ -2802,6 +2802,25 @@ function feed_import_element_validate_updates_only($element, &$form_state, $form
     )));
   }
 }
+
+/**
+ * Validation functions that were in form.inc in Drupal 7
+ */
+
+function element_validate_integer($element, &$form_state) {
+    $value = $element ['#value'];
+    if ($value !== '' && (!is_numeric($value) || intval($value) != $value)) {
+        form_error($element, t('%name must be an integer.', array('%name' => $element ['#title'])));
+    }
+}
+
+function element_validate_integer_positive($element, &$form_state) {
+    $value = $element ['#value'];
+    if ($value !== '' && (!is_numeric($value) || intval($value) != $value || $value <= 0)) {
+        form_error($element, t('%name must be a positive integer.', array('%name' => $element ['#title'])));
+    }
+}
+
 
 /**
  * Implements hook_config_info().
