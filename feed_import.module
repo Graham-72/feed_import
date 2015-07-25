@@ -920,7 +920,7 @@ function feed_import_list_feeds() {
   $feeds = FeedImport::loadAllFeeds();
 
   $running = array();
-  if ($run = config_get('feed_import.settings','feed_import_import_running') {
+  if ($run = config_get('feed_import.settings','feed_import_import_running')){
     foreach ($run as $r) {
       $running += array_count_values($r);
     }
@@ -2803,7 +2803,6 @@ function feed_import_element_validate_updates_only($element, &$form_state, $form
   }
 }
 
-<?php
 /**
  * Implements hook_config_info().
  */
@@ -2814,5 +2813,4 @@ function feed_import_config_info() {
   );
   return $prefixes;
 }
-?>
 

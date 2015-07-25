@@ -12,7 +12,5 @@
   "feed_import_time_settings": 0,
   "feed_import_interval_start": "00:00",
   "feed_import_interval_stop": "00:00",
-  "feed_import_time_between_imports": 3600,
-  "feed_import_interval_start": "00:00",
-  "feed_import_interval_stop": "00:00"
+  "feed_import_time_between_imports": 3600
 }

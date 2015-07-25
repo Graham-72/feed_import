@@ -82,7 +82,7 @@ function feed_import_base_cron() {
     }
   }
   // Delete expired items.
-  if (($d = config_get('feed_import.settings','feed_import_delete_items_per_cron') > 0) {
+  if ($d = config_get('feed_import.settings','feed_import_delete_items_per_cron') > 0){
     $d = FeedImport::deleteExpired($d);
     if ($d && config_get('feed_import.settings','feed_import_reports')) {
       watchdog('Feed Import', 'Deleted @count expired items', array(
@@ -600,6 +600,7 @@ function feed_import_base_autoload_info()
 {
   return array(
     'FeedImportFilter' => 'filters/feed_import_default_filters.php',
+    'FeedImport' => 'inc/feed_import.inc',
     'FeedImportProcessor' => 'inc/feed_import.inc',
     'FeedImportSQLHashes' => 'inc/feed_import.inc',
     'FeedImportSQLHashesv2' => 'inc/feed_import.inc',
