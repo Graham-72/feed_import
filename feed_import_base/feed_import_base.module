@@ -242,7 +242,7 @@ function _feed_import_base_remove_running($feed) {
     unset($feed->skip_remove_running);
     return;
   }
-  $running = config_get('feed_import_import_running', array());
+  $running = config_get('feed_import.settings','feed_import_import_running');
   if (!empty($running[$feed->entity]) &&
       ($pos = array_search($feed->machine_name, $running[$feed->entity])) !== FALSE) {
     unset($running[$feed->entity][$pos]);
