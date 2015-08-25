@@ -51,7 +51,7 @@ function feed_import_base_schema() {
         'type' => 'varchar',
         'length' => 32,
         'not null' => TRUE,
-        'description' => 'An uniq hash to identify feed item',
+        'description' => 'A unique hash to identify feed item',
       ),
 
       'expire' => array(

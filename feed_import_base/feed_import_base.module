@@ -446,7 +446,7 @@ function feed_import_base_settings_form($form, &$form_state) {
   $form['feed_import_invoke_hooks'] = array(
     '#type' => 'checkbox',
     '#default_value' => config_get('feed_import.settings','feed_import_invoke_hooks'),
-    '#title' => t('Invoke hooks on import sucess or error'),
+    '#title' => t('Invoke hooks on import success or error'),
     '#description' => t('This can be useful for sending alerts.'),
   );
 
@@ -496,7 +496,7 @@ function feed_import_base_settings_form_validate($form, &$form_state) {
  * Submit handler for module_settings_form().
  */
 function feed_import_base_settings_form_submit($form, &$form_state) {
-  $config = config('feed_import_base.settings');
+  $config = config('feed_import.settings');
   $config->set('my_setting', $form_state['values']['my_setting']);
   $config->save();
   backdrop_set_message(t('The configuration options have been saved.'));
@@ -588,6 +588,7 @@ function feed_import_base_autoload_info()
   return array(
     'FeedImportFilter' => 'filters/feed_import_default_filters.php',
     'FeedImport' => 'inc/feed_import.inc',
+    'FeedImportFilter' => 'filters/feed_import_default_filters.php',
     'FeedImportProcessor' => 'inc/feed_import.inc',
     'FeedImportSQLHashes' => 'inc/feed_import.inc',
     'FeedImportSQLHashesv2' => 'inc/feed_import.inc',

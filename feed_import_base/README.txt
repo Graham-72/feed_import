@@ -17,7 +17,7 @@ By default there are 6 provided readers:
   -XML files - XPATH mapped
   -XML Chunked for huge xml files - XPATH mapped
   -DomDocument XML/HTML - XPATH mapped
-  -CSV fiels - Column name or index mapped
+  -CSV files - Column name or index mapped
   -JSON files - Path to value mapped
   -SQL databases - Column name mapped
 
@@ -36,7 +36,7 @@ Used to filter values. This module provides a powerful filter class.
 The processor
 -------------
 The processor takes care of all import process.
-This module provides just one processor compatibile with all readers.
+This module provides just one processor compatible with all readers.
 
 
 Hooks
@@ -45,7 +45,7 @@ There are two hooks you could implement:
 
 hook_feed_import_error($error_type, $feed, $report)
 
-$error_type - an integer indicationg error type.
+$error_type - an integer indicating error type.
 Can be one of the following constant from FeedImport class:
 FEED_OVERLAP_ERR - overlap error
 FEED_ITEMS_ERR   - few items error
