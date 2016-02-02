@@ -22,6 +22,7 @@ also the project page at drupal.org/project/feed_import
 ## Status
 
   Currently under development. It has been used successfully for CSV import.
+
   It is a port from version 7.x-3.4 of the Drupal module.
 
 ## Installation and use
@@ -41,7 +42,7 @@ This project is GPL v2 software. See the LICENSE file in this directory.
 + Sorin Sarca (sorin-sarca)
 
 ### Port to Backdrop
-+Graham Oliver github.com/Graham-72
++ Graham Oliver github.com/Graham-72
 
 ### Acknowledgement
 
