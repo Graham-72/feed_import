@@ -1560,7 +1560,7 @@ function feed_import_static_fields_form_submit($form, &$form_state) {
  *    Entity info
  *
  * @return array
- *    Array with groupped fields
+ *    Array with grouped fields
  */
 function _feed_import_get_fields_opts($e) {
   $er = array();
